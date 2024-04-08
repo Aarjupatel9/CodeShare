@@ -14,12 +14,25 @@ export default function MainPage() {
     if (!slug) {
       navigate("/" + generateRandomString(10));
     }
-    userService.getData(slug).then((res) => {
-      if (res.success) {
-        main_area.current.value = res.data.data;
-      }
-    });
+    userService
+      .getData(slug)
+      .then((res) => {
+        if (res.success) {
+          main_area.current.value = res.data.data;
+        } else {
+          clearMainArea();
+        }
+      })
+      .catch((error) => {
+        console.log(error);
+        clearMainArea();
+      });
   }, [slug]);
+
+  function clearMainArea() {
+    main_area.current.value = "";
+  }
+
   const saveData = () => {
     console.log(main_area.current.value);
     var body = {
@@ -28,24 +41,25 @@ export default function MainPage() {
     };
     userService.saveData(body).then((res) => {
       alert("data saved");
+    }).catch((error)=>{
+      alert("error while saving data");
+      console.log(error);
     });
   };
 
-  const redirect = ()=>{
-    navigate("/"+tmpSlug);
-  }
+  const redirect = () => {
+    navigate("/" + tmpSlug);
+  };
 
   function generateRandomString(length) {
     const characters =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     let result = "";
-
     for (let i = 0; i < length; i++) {
       result += characters.charAt(
         Math.floor(Math.random() * characters.length)
       );
     }
-
     return result;
   }
 
@@ -55,7 +69,6 @@ export default function MainPage() {
         <div className="flex flex-row justify-center items-center gap-2 ">
           <input
             class=" font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded"
-
             onChange={(e) => {
               setTmpSlug(e.target.value);
             }}
@@ -64,7 +77,7 @@ export default function MainPage() {
             onClick={redirect}
             class="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded"
           >
-            redirect 
+            redirect
           </button>
         </div>
         <button
