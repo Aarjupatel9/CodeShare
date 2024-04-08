@@ -9,9 +9,6 @@ node_modules
 # testing
 /coverage
 
-# production
-build
-
 # documentation
 Documentation
 
@@ -37,8 +34,8 @@ Documentation
 # uploads
 uploads
 
-# env
-.env
+# # env
+# .env
 
 # misc
 .DS_Store
