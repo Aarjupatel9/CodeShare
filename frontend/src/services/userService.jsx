@@ -12,7 +12,7 @@ class UserService {
           "Access-Control-Allow-Headers": "Content-Type,Authorization",
         }
       };
-      fetch("http://localhost:8080/data/getData/"+slug, fetchPostOptions)
+      fetch("http://43.205.203.95:8080/data/getData/"+slug, fetchPostOptions)
         .then((response) => {
           console.log(response);
           return response.json();
@@ -44,7 +44,7 @@ class UserService {
         },
         body: JSON.stringify(data),
       };
-      fetch("http://localhost:8080/data/saveData/", fetchPostOptions)
+      fetch("http://43.205.203.95:8080/data/saveData/", fetchPostOptions)
         .then((response) => {
           return response.json();
         })
