@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import userService from "../services/userService";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -6,6 +6,8 @@ export default function MainPage() {
   const main_area = useRef(null);
   const navigate = useNavigate();
   const { slug } = useParams();
+
+  const [tmpSlug, setTmpSlug] = useState("");
 
   useEffect(() => {
     console.log("slug : " + slug);
@@ -29,6 +31,10 @@ export default function MainPage() {
     });
   };
 
+  const redirect = ()=>{
+    navigate("/"+tmpSlug);
+  }
+
   function generateRandomString(length) {
     const characters =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -44,13 +50,30 @@ export default function MainPage() {
   }
 
   return (
-    <div className="flex flex-col justify-center items-center gap-2 ">
-      <button
-        onClick={saveData}
-        class="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded"
-      >
-        Save
-      </button>
+    <div className="flex flex-col justify-center items-center gap-2  mt-2">
+      <div className="flex flex-row justify-start items-start gap-4 ">
+        <div className="flex flex-row justify-center items-center gap-2 ">
+          <input
+            class=" font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded"
+
+            onChange={(e) => {
+              setTmpSlug(e.target.value);
+            }}
+          />
+          <button
+            onClick={redirect}
+            class="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded"
+          >
+            redirect 
+          </button>
+        </div>
+        <button
+          onClick={saveData}
+          class="bg-blue-500 hover:bg-blue-400 text-white font-bold py-2 px-4 border-b-4 border-blue-700 hover:border-blue-500 rounded"
+        >
+          Save
+        </button>
+      </div>
 
       <textarea
         ref={main_area}
