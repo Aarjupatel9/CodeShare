@@ -1,6 +1,7 @@
-
 class UserService {
   getData(slug) {
+    const server_host =process.env.REACT_APP_SERVER_PATH ;
+
     return new Promise(function (resolve, reject) {
       const fetchPostOptions = {
         method: "POST",
@@ -12,13 +13,12 @@ class UserService {
           "Access-Control-Allow-Headers": "Content-Type,Authorization",
         }
       };
-      fetch("http://43.205.203.95:8080/data/getData/"+slug, fetchPostOptions)
+      fetch(server_host + "/data/getData/" + slug, fetchPostOptions)
         .then((response) => {
           console.log(response);
           return response.json();
         })
         .then((res) => {
-          console.log("res  : " +res);
           if (res) {
             resolve(res);
           } else {
@@ -32,6 +32,9 @@ class UserService {
     });
   }
   saveData(data) {
+    // const host = process.env.REACT_APP_SERVER_PATH;
+    const server_host =process.env.REACT_APP_SERVER_PATH ;
+
     return new Promise(function (resolve, reject) {
       const fetchPostOptions = {
         method: "POST",
@@ -44,7 +47,7 @@ class UserService {
         },
         body: JSON.stringify(data),
       };
-      fetch("http://43.205.203.95:8080/data/saveData/", fetchPostOptions)
+      fetch(server_host + "/data/saveData/", fetchPostOptions)
         .then((response) => {
           return response.json();
         })

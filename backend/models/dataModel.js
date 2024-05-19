@@ -8,7 +8,7 @@ const dataModelsSchema = mongoose.Schema({
     },
     data: {
         type: String,
-        required: true
+        required: false
     },
     language: {
         type: String,
