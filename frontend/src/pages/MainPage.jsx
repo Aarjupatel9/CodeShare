@@ -74,7 +74,7 @@ const [isRedirectFocused, setIsRedirectFocused] = useState(true);
     saveData();
   });
   useKey('Enter', (event) => {
-    event.preventDefault();
+    // event.preventDefault();
     if(isRedirectFocused){
       redirect();
     }
