@@ -9,6 +9,7 @@
   "author": "aarju patel",
   "license": "ISC",
   "dependencies": {
+    "aws-sdk": "^2.1667.0",
     "body-parser": "^1.20.1",
     "child_process": "^1.0.2",
     "cookie-parser": "^1.4.6",
