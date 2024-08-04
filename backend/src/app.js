@@ -12,7 +12,7 @@ const userRoute = require('../routes/userRoute');
 const app = express();
 
 app.use(cors({
-    origin: 'http://43.205.203.95:3000',
+    origin: 'http://43.205.203.95',
     credentials: true
 }));
 
