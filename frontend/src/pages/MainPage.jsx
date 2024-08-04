@@ -59,6 +59,10 @@ export default function MainPage() {
       data: mainTextArea.current.value,
     };
     userService.saveData(body).then((res) => {
+      var obj = structuredClone(latestVersion);
+      obj.timeformate = getTimeInFormate(res.newData.time);
+      obj.time=  res.newData.time;
+      setLatestVersion(x);
       toast.success("data saved");
     }).catch((error) => {
       toast.error("error while saving data");
