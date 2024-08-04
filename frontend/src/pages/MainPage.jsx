@@ -62,7 +62,7 @@ export default function MainPage() {
       var obj = structuredClone(latestVersion);
       obj.timeformate = getTimeInFormate(res.newData.time);
       obj.time=  res.newData.time;
-      setLatestVersion(x);
+      setLatestVersion(obj);
       toast.success("data saved");
     }).catch((error) => {
       toast.error("error while saving data");
