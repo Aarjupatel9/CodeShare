@@ -123,13 +123,11 @@ export default function MainPage() {
       slug: slug,
       data: mainTextArea.current.value,
     };
-    const dataSavePromise = userService.saveData(body).then((res) => {
+    userService.saveData(body).then((res) => {
       var obj = structuredClone(latestVersion);
-      if(res?.newData?.time){
-        obj.timeformate = getTimeInFormate(res.newData.time);
-        obj.time = res.newData.time;
-        setLatestVersion(obj);
-      }
+      obj.timeformate = getTimeInFormate(res.newData.time);
+      obj.time=  res.newData.time;
+      setLatestVersion(obj);
       toast.success("data saved");
     }).catch((error) => {
       toast.error("error while saving data");

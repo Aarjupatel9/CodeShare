@@ -76,7 +76,7 @@ exports.saveData = async (req, res) => {
             res.status(200).json({
                 success: true,
                 message: "data save successfully",
-                newData: newData,
+                newData:newData,
             });
         }
     } catch (e) {
