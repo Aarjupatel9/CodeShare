@@ -123,7 +123,7 @@ export default function MainPage() {
       slug: slug,
       data: mainTextArea.current.value,
     };
-    userService.saveData(body).then((res) => {
+    var dataSavePromise = userService.saveData(body).then((res) => {
       var obj = structuredClone(latestVersion);
       obj.timeformate = getTimeInFormate(res.newData.time);
       obj.time=  res.newData.time;
