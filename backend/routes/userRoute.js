@@ -7,7 +7,7 @@ const {saveData, getData, saveFile, removeFile } = require("../controllers/userC
 router.route("/saveData").post(saveData);
 router.route("/saveFile").post(saveFile);
 router.route("/removeFile").post(removeFile);
-router.route("/getData/:slug/:flag").post(getData);
+router.route("/getData").post(getData);
 
 
 

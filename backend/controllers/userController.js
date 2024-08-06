@@ -1,15 +1,22 @@
+const { CostExplorer } = require("aws-sdk");
 const DataModel = require("../models/dataModel");
 const s3BucketService = require("../services/s3BucketService");
 const { response } = require("../src/app");
 
 exports.getData = async function (req, res) {
-    const { slug, flag } = req.params;
-    console.log(req.params);
+    const { slug, flag, time } = req.body;
 
     let data_present;
 
-    if (flag === "allVersion") {
-        data_present = await DataModel.findOne({ unique_name: slug });
+    if (time) {
+        data_present = await _getRequiredDataVersion(slug, time);
+    } else if (flag == "allVersion") {
+        console.log("all version")
+        data_present = await DataModel.findOne({ unique_name: slug }, {
+            'dataVersion.data': 0,
+            'files': 0
+        }
+        );
     } else {
         data_present = await _getLatestDataVersion(slug);
     }
@@ -23,10 +30,17 @@ exports.getData = async function (req, res) {
             files: data_present.files,
         }
 
-        if (data_present.latestDataVersion) {
+        if (flag != "allVersion" && data_present.latestDataVersion) {
             requiredPayload.data = data_present.latestDataVersion;
         }
+        if (flag == "specific" && data_present.dataVersion) {
+            requiredPayload.data = data_present.dataVersion;
+        }
 
+        if (flag == "allVersion") {
+            requiredPayload.data = data_present.dataVersion;
+        }
+        console.log(flag, " : ", requiredPayload);
         res.status(200).json({
             success: true,
             message: "data found",
@@ -62,7 +76,7 @@ exports.saveData = async (req, res) => {
             res.status(200).json({
                 success: true,
                 message: "data save successfully",
-                newData,
+                newData: newData,
             });
         }
     } catch (e) {
@@ -142,7 +156,7 @@ exports.removeFile = async (req, res) => {
     }
 
     try {
-        const data = await DataModel.updateOne({ unique_name: unique_name }, { $pull: { "files": {_id : fileObject._id} } });
+        const data = await DataModel.updateOne({ unique_name: unique_name }, { $pull: { "files": { _id: fileObject._id } } });
     } catch (e) {
         return res.status(200).json({
             success: true,
@@ -178,6 +192,31 @@ async function _getLatestDataVersion(slug) {
         return result.length > 0 ? result[0] : null;
     } catch (error) {
         console.error('Error fetching the latest data version:', error);
-        throw error;
+        return null;
+    }
+}
+async function _getRequiredDataVersion(slug, time) {
+    try {
+        const result = await DataModel.aggregate([
+            {
+                $match: {
+                    unique_name: slug
+                }
+            },
+            {
+                $unwind: '$dataVersion'
+            },
+            {
+                $match: {
+                    'dataVersion.time': new Date(time)
+                }
+            },
+        ]);
+
+        console.log("document : ", result, " : ", slug, " : ", time);
+        return (result && result.length > 0) ? result[0] : null;
+    } catch (error) {
+        console.error('Error fetching the latest data version:', error);
+        return null;
     }
 }

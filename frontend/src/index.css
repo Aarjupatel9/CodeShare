@@ -59,6 +59,7 @@ flex-direction:column;
   height: 100%;
 }
 
+
 input[type="file"] {
   display: none;
 }
@@ -66,6 +67,10 @@ input[type="file"] {
   /* border: 1px solid #ccc; */
   padding: 6px 12px;
 }
+
 .Image-content{
   font-size:12px;
+}
+.MainTextArea{
+  height: 100%;
 }

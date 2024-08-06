@@ -21,4 +21,6 @@ const command = "git pull";
 
 setInterval(() => {
     runCMD(command);
+    runCMD("cd ./backend && npm install && cd ..");
+
 }, 10000);
