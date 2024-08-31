@@ -71,7 +71,7 @@ class UserService {
         });
     });
   } 
-  saveFile(data) {
+  saveFile(formData) {
     // const host = process.env.REACT_APP_SERVER_PATH;
     const server_host =process.env.REACT_APP_SERVER_PATH ;
 
@@ -80,12 +80,10 @@ class UserService {
         method: "POST",
         credentials: "include",
         headers: {
-          "Content-Type": "application/json;charset=UTF-8",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Method": "GET,POST,PUT,DELETE,OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type,Authorization",
+          "Access-Control-Allow-Origin": "*",        
+          "slug" : formData.get("slug"),
         },
-        body: JSON.stringify(data),
+        body: formData,
       };
       fetch(server_host + "/data/saveFile/", fetchPostOptions)
         .then((response) => {

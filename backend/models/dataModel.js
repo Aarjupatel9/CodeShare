@@ -38,6 +38,10 @@ const dataModelsSchema = mongoose.Schema({
             type: {
                 type: String,
                 required: true,
+            },
+            others: {
+                type : Object,
+                required:false, 
             }
         }
     ],

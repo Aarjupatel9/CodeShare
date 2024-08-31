@@ -70,6 +70,8 @@ input[type="file"] {
 
 .Image-content{
   font-size:12px;
+  border-radius: 5px;
+  border:1px
 }
 .MainTextArea{
   height: 100%;

@@ -1,4 +1,9 @@
 const AWS = require('aws-sdk');
+const { S3Client } = require('@aws-sdk/client-s3')
+const multer = require('multer');
+const multerS3 = require('multer-s3');
+const path = require('path');
+
 
 const BUCKET_NAME = process.env.AWS_BUCKET_NAME
 const region = process.env.AWS_BUCKET_REGION
@@ -18,6 +23,7 @@ const s3 = new AWS.S3({
  * @param type Image type
  * @return string S3 image URL or error accordingly
  */
+//not used deprecated
 async function upload(imageName, base64Image, type) {
     const params = {
         Bucket: `${BUCKET_NAME}/images`,
@@ -38,6 +44,7 @@ async function upload(imageName, base64Image, type) {
 
     return data;
 }
+//used to remove file
 async function remove(fileKey) {
     const params = {
         Bucket: `${BUCKET_NAME}/images`,
@@ -58,6 +65,8 @@ async function remove(fileKey) {
  * @param params S3 bucket params
  * @return data/err S3 response object
  */
+
+//not used deprecated
 function promiseUpload(params) {
     return new Promise(function (resolve, reject) {
         s3.upload(params, function (err, data) {
@@ -68,7 +77,10 @@ function promiseUpload(params) {
             }
         });
     });
-} function promiseRemove(params) {
+} 
+
+
+function promiseRemove(params) {
     return new Promise(function (resolve, reject) {
         s3.deleteObject(params, function (err, data) {
             if (err) {
@@ -80,4 +92,45 @@ function promiseUpload(params) {
     });
 }
 
-module.exports = { upload, remove };
+
+
+
+
+
+// Initialize AWS S3
+
+const s3Client = new S3Client({
+    credentials: {
+        accessKeyId: accessKeyId,
+        secretAccessKey:secretAccessKey
+    },
+    region: region
+});
+// Configure multer-s3
+const multerUpload = multer({
+    limits:{fileSize: 2000000}, // 1 mb
+    storage: multerS3({
+        s3: s3Client,
+        bucket: BUCKET_NAME,
+        // acl: 'public-read',  // or 'private'
+        key: function (req, file, cb) {
+            cb(null, (file.originalname +"_"+ Date.now().toString() + path.extname(file.originalname)).replace(" ", "-"));
+        }
+    })
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+module.exports = { upload, remove,multerUpload };
