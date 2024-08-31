@@ -115,7 +115,7 @@ function removeFormS3Client(input) {
 
 // nfigure multer-s3
 const multerUpload = multer({
-  limits: { fileSize: 2000000 }, // 1 mb
+  limits: { fileSize: 80000000 }, // 1 mb
   storage: multerS3({
     s3: s3Client,
     bucket: BUCKET_NAME,
