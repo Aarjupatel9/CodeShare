@@ -6,15 +6,15 @@ import {
   currentVersionIcon,
   versionIndicatorIcon,
   fileIcon,
-  fileUploadIcon,
   downloadIcon,
   removeIcon,
+  defaultFileIcon,
   fileAddIcon,
   downArrowIcon,
 } from "../assets/svgs";
 
 export default function MainPage() {
-  var MAX_FILE_NAME_VISIBLE = 25;
+  var MAX_FILE_NAME_VISIBLE = 20;
   const mainTextArea = useRef(null);
   const navigate = useNavigate();
   const { slug } = useParams();
@@ -38,6 +38,7 @@ export default function MainPage() {
     } else {
       setAllVersionData([]);
       setFileList([]);
+      setLatestVersion({ time: "", data: "", _id: "" });
       setTmpSlug(slug);
       userService
         .getData(slug, null, "latest")
@@ -146,10 +147,12 @@ export default function MainPage() {
     var dataSavePromise = userService
       .saveData(body)
       .then((res) => {
-        var obj = structuredClone(latestVersion);
-        obj.timeformate = getTimeInFormate(res.newData.time);
-        obj.time = res.newData.time;
-        setLatestVersion(obj);
+        if (res.newData) {
+          var obj = structuredClone(latestVersion);
+          obj.timeformate = getTimeInFormate(res.newData.time);
+          obj.time = res.newData.time;
+          setLatestVersion(obj);
+        }
         toast.success("data saved");
       })
       .catch((error) => {
@@ -177,14 +180,10 @@ export default function MainPage() {
 
   const onSelectFile = async (event) => {
     const file = event.target.files[0];
-    const convertedFile = await convertToBase64(file);
-    var requestPayload = {
-      file: convertedFile,
-      fileName: file.name,
-      slug: slug,
-      type: "image/png",
-    };
-
+    if (file.size > 10e6) {
+      window.alert("Please upload a file smaller than 10 MB");
+      return false;
+    }
     const formData = new FormData();
     formData.append("file", file);
     formData.append("fileName", file.name);
@@ -216,15 +215,6 @@ export default function MainPage() {
         },
       }
     );
-  };
-  const convertToBase64 = (file) => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        resolve(reader.result);
-      };
-    });
   };
 
   const redirect = () => {
@@ -304,142 +294,246 @@ export default function MainPage() {
     console.log(allVersionData);
   }, [allVersionData]);
 
+  const confirmFileRemove = (file) => {
+    toast.custom((t) => (
+      <div className="z-[1000] bg-gray-100 border border-gray-2 p-4 rounded w-[300] h-[300] flex- flex-col justify-center items-center space-y-2 shadow-md rounded">
+        <div
+          className={`px-2 py-2 line-clamp-4 ${
+            t.visible ? "animate-enter" : "animate-leave"
+          }`}
+        >
+          Are you sure to Delete file - {file.name} ?
+        </div>
+
+        <div className="flex flex-row gap-2 justify-center">
+          <button
+            onClick={() => {
+              toast.dismiss(t.id);
+            }}
+            className="bg-slate-700 hover:bg-slate-800 text-white buttons border-b-1 border-blue-700 hover:border-blue-500 rounded"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => {
+              remvoeCurrentFile(file);
+              toast.dismiss(t.id);
+            }}
+            className="bg-red-700 hover:bg-red-800 text-white buttons border-b-1 border-blue-700 hover:border-blue-500 rounded"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    ));
+  };
+
   return (
     <div className="MainPage">
       <aside
         id="separator-sidebar"
-        className=" SideBar z-40  h-screen transition-transform -translate-x-full sm:translate-x-0"
+        className="hidden md:block lg:block SideBar z-40  h-screen "
         aria-label="Sidebar"
       >
-        <div className="h-full px-3 py-4 overflow-y-auto bg-gray-50 dark:bg-gray-800">
-          {/* redirect functionality */}
-          <ul className="space-y-2 font-medium">
-            <div
-              onFocus={() => {
-                setIsRedirectFocused(true);
+        <div className="h-full px-2 py-4 overflow-y-auto bg-gray-50 dark:bg-gray-800">
+          {/* redirect */}
+          <div
+            onFocus={() => {
+              setIsRedirectFocused(true);
+            }}
+            onBlur={() => {
+              setIsRedirectFocused(false);
+            }}
+            className="flex flex-col space-y-2 font-small justify-center items-center gap-2 "
+          >
+            <input
+              className=" font-bold px-4 border-b border-blue-700 hover:border-blue-500  "
+              onChange={(e) => {
+                setTmpSlug(e.target.value);
               }}
-              onBlur={() => {
-                setIsRedirectFocused(false);
-              }}
-              className="flex flex-col justify-center items-center gap-2 "
+              value={tmpSlug}
+            />
+            <button
+              onClick={redirect}
+              className="bg-blue-500 hover:bg-blue-400 text-white  buttons border-b-1 border-blue-700 hover:border-blue-500 rounded"
             >
-              <input
-                className=" font-bold  px-4 border-b-2 border-blue-700 hover:border-blue-500 rounded"
-                onChange={(e) => {
-                  setTmpSlug(e.target.value);
-                }}
-                value={tmpSlug}
-              />
-              <button
-                onClick={redirect}
-                className="bg-blue-500 hover:bg-blue-400 text-white  buttons border-b-1 border-blue-700 hover:border-blue-500 rounded"
-              >
-                Redirect
-              </button>
-            </div>
-          </ul>
+              Redirect
+            </button>
+          </div>
+
           {/* File upload functionality */}
-          <ul className="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
-            <li>
+          <div className="pt-4 mt-4 space-y-2 font-medium text-sm border-t border-gray-200 dark:border-gray-700">
+            <div>
               <label className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group">
                 <input type="file" accept="*" onChange={onSelectFile} />
                 {fileAddIcon}
                 Select to Upload Files
               </label>
-              {/* </div> */}
-            </li>
-            {/* File List functionality */}
-          </ul>{" "}
-          <ul className="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
+            </div>
+          </div>
+
+          {/* File List functionality */}
+          <div className="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
             {fileList.map((file, index) => {
               return (
                 <li
                   key={index}
-                  className="Image-content flex flex-row items-center gap-1 justify-between  border-blue-300"
+                  className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between  border-blue-300  hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
                 >
-                  <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group flex-1">
+                  <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg group flex-1">
                     {fileIcon(file.type)}
-                    <span className="ms-3">
+                    <span
+                      className="ms-3 cursor-pointer line-clamp-1"
+                      title={file.name}
+                    >
                       {file.name ? getPresizeFileName(file.name) : "file"}{" "}
+                      {/* {file.name ? file.name : "file"}{" "} */}
                     </span>
                   </div>
-                  <div className="flex flex-row">
-                    <a href={file.url} target="_blank">
+                  <div className="flex flex-row min-w-[50px]">
+                    <a href={file.url} target="_blank" download={file.name}>
                       {downloadIcon}
                     </a>
-                    <div onClick={() => remvoeCurrentFile(file)}>
+                    <div onClick={() => confirmFileRemove(file)}>
                       {removeIcon}
                     </div>
                   </div>
                 </li>
               );
             })}
-          </ul>
+          </div>
         </div>
       </aside>
 
-      <div className="MainArea p-4 gap-2">
-        <div className="flex flex-row justify-end gap-2 items-center ">
-          <button
-            onClick={saveData}
-            title="Ctr + S also worked!"
-            className="bg-blue-500 hover:bg-blue-400 text-white buttons font-bold border-b-1 border-blue-700 hover:border-blue-500 rounded"
-          >
-            Save
-          </button>
-
-          <button
-            id="dropdownDefaultButton"
-            onMouseOver={() => {
-              getAllversionData(false);
-            }}
-            onClick={() => {
-              getAllversionData(true);
-            }}
-            data-dropdown-toggle="dropdown"
-            className="text-dark bg-slate-100  hover:bg-slate-200  focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-2 py-1 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-            type="button"
-          >
-            {latestVersion.timeformate
-              ? "Last save on - " + latestVersion.timeformate
-              : "History "}
-            {downArrowIcon}
-          </button>
-
-          {/* <!-- Dropdown menu --> */}
-          <div
-            id="dropdown"
-            className="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow dark:bg-gray-700 "
-          >
-            <ul
-              className="py-2 text-sm text-gray-700 dark:text-gray-200 max-h-96 overflow-auto"
-              aria-labelledby="dropdownDefaultButton"
+      <div className="MainArea sm:size-full  text-xs md:text:sm p-1 md:p-4 gap-2">
+        {/* app bar header */}
+        <div className="flex flex-row justify-between gap-2 items-center text-xs">
+          <div className="flex flex-row">
+            <button
+              id="fileDropdownDefaultButton"
+              onMouseOver={() => {
+                getAllversionData(false);
+              }}
+              onClick={() => {
+                getAllversionData(true);
+              }}
+              data-dropdown-toggle="fileDropdown"
+              className="md:hidden  text-dark bg-slate-100  hover:bg-slate-200  focus:outline-none focus:ring-blue-300 font-medium rounded-lg px-2 py-1 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+              type="button"
             >
-              {allVersionData.map((v, index) => {
-                return (
-                  <li
-                    key={index}
-                    className="flex px-1 items-center justify-end "
-                  >
-                    <div title="Current version">
-                      {v.isCurrent && currentVersionIcon(v)}
-                      {v.isLoaded && !v.isCurrent && versionIndicatorIcon}
-                    </div>
-                    <div
-                      title="Click to load this version"
-                      onClick={() => {
-                        loadSpecificVersion(v.time, index);
-                      }}
-                      className="cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+              {defaultFileIcon} Files
+            </button>
+
+            {/* <!-- Dropdown menu --> */}
+            <div
+              id="fileDropdown"
+              className="z-10 hidden divide-y divide-gray-100 rounded-lg shadow bg-slate-100 dark:bg-gray-700 "
+            >
+              <ul
+                className=" text-sm text-gray-700 dark:text-gray-200 max-h-96 overflow-auto"
+                aria-labelledby="fileDropdownDefaultButton"
+              >
+                <div className="space-y-2 font-medium text-sm border-t border-gray-200 dark:border-gray-700">
+                  <label className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group">
+                    <input type="file" accept="*" onChange={onSelectFile} />
+                    {fileAddIcon}
+                    Select to Upload Files
+                  </label>
+                </div>
+                <div className="pt-1 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
+                  {fileList.map((file, index) => {
+                    return (
+                      <li
+                        key={index}
+                        className="Image-content flex flex-row items-center gap-1 justify-between  border-blue-300"
+                      >
+                        <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group flex-1">
+                          {fileIcon(file.type)}
+                          <span className="ms-3">
+                            {file.name ? getPresizeFileName(file.name) : "file"}{" "}
+                          </span>
+                        </div>
+                        <div className="flex flex-row">
+                          <a
+                            href={file.url}
+                            target="_blank"
+                            download={file.name}
+                          >
+                            {downloadIcon}
+                          </a>
+                          <div onClick={() => confirmFileRemove(file)}>
+                            {removeIcon}
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </div>
+              </ul>
+            </div>
+          </div>
+          <div className="flex flex-row gap-1   ">
+            <button
+              onClick={saveData}
+              title="Ctr + S also worked!"
+              className="bg-blue-500 hover:bg-blue-400 text-white buttons  font-bold border-b-1 border-blue-700 hover:border-blue-500 rounded"
+            >
+              Save
+            </button>
+            <button
+              id="dropdownDefaultButton"
+              onMouseOver={() => {
+                getAllversionData(false);
+              }}
+              onClick={() => {
+                getAllversionData(true);
+              }}
+              data-dropdown-toggle="dropdown"
+              className="text-dark bg-slate-100  hover:bg-slate-200  focus:outline-none focus:ring-blue-300 font-medium rounded-lg px-2 py-1 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+              type="button"
+            >
+              {latestVersion.timeformate
+                ? "Last save on - " + latestVersion.timeformate
+                : "History "}
+              {downArrowIcon}
+            </button>
+            {/* <!-- Dropdown menu --> */}
+            <div
+              id="dropdown"
+              className="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow dark:bg-gray-700 "
+            >
+              <ul
+                className="py-2 text-sm text-gray-700 dark:text-gray-200 max-h-96 overflow-auto"
+                aria-labelledby="dropdownDefaultButton"
+              >
+                {allVersionData.map((v, index) => {
+                  return (
+                    <li
+                      key={index}
+                      className="flex px-1 items-center justify-end "
                     >
-                      Version - {v.timeformat}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+                      <div title="Current version">
+                        {v.isCurrent && currentVersionIcon(v)}
+                        {v.isLoaded && !v.isCurrent && versionIndicatorIcon}
+                      </div>
+                      <div
+                        title="Click to load this version"
+                        onClick={() => {
+                          loadSpecificVersion(v.time, index);
+                        }}
+                        className="cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                      >
+                        Version - {v.timeformat}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>{" "}
           </div>
         </div>
+
+        {/* code area */}
         <div className="MainTextArea text-sm relative">
           {isClipBoardAvailable && (
             <div

@@ -79,7 +79,7 @@ export const downloadIcon = (
 
 export const removeIcon = (
   <svg
-    className="h-6 w-6 cursor-pointer hover:bg-gray-100"
+    className="h-6 w-6 cursor-pointer text-gray-800 dark:text-white"
     xmlns="http://www.w3.org/2000/svg"
     x="0px"
     y="0px"
@@ -187,6 +187,7 @@ export const downArrowIcon = (
     />
   </svg>
 );
+
 export const currentVersionIcon = (...arg) => {
   return (
     <svg
@@ -229,11 +230,34 @@ export const versionIndicatorIcon = (
   </svg>
 );
 
+const videoIcon = (
+  <svg
+    className="w-6 h-6 text-gray-800 dark:text-white"
+    aria-hidden="true"
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    fill="none"
+    viewBox="0 0 24 24"
+  >
+    <path
+      stroke="currentColor"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      d="M10 3v4a1 1 0 0 1-1 1H5m14-4v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1ZM9 12h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Zm5.697 2.395v-.733l1.269-1.219v2.984l-1.268-1.032Z"
+    />
+  </svg>
+);
+
 const fileIcons = {
-  "text/plain": imageIcon,
+  "text/plain": defaultFileIcon,
+  "image/png": imageIcon,
+  "image/jpeg": imageIcon,
+  "image/jpg": imageIcon,
   "application/x-zip-compressed": zipIcon,
   "application/pdf": pdfIcon,
   "text/csv": csvIcon,
+  "video/mp4": videoIcon,
   defaultType: defaultFileIcon,
 };
 
@@ -241,11 +265,9 @@ export const fileIcon = (type) => {
   if (fileIcons[type]) {
     return fileIcons[type];
   }
-
   if (type.includes("zip")) {
     return fileIcons["application/x-zip-compressed"];
   }
-
   if (type.includes("pdf")) {
     return fileIcons["application/pdf"];
   }
@@ -253,7 +275,10 @@ export const fileIcon = (type) => {
     return fileIcons["text/plain"];
   }
   if (type.includes("image")) {
-    return fileIcons["text/fileUploadIcon"];
+    return fileIcons["image/png"];
+  }
+  if (type.includes("video")) {
+    return fileIcons["video/mp4"];
   }
 
   return fileIcons["defaultType"];
