@@ -427,7 +427,7 @@ export default function MainPage() {
                   setDropdownVisibility(() => {
                     var val = structuredClone(dropdownVisibility);
                     val.file = !val.file;
-                    val.history= false;
+                    val.history = false;
                     return val;
                   });
                 }}
@@ -442,54 +442,55 @@ export default function MainPage() {
 
               {dropdownVisibility.file && (
                 <div
-                  class="absolute left-0 z-10 mt-2 min-w-48 max-w-96 max-h-96 overflow-auto p-1 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                  class="absolute left-0 z-10 mt-2 min-w-[240px] max-w-96 max-h-96 overflow-auto p-1 px-3 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
                   role="menu"
                   aria-orientation="vertical"
                   aria-labelledby="menu-button"
-                  tabindex="-1"
                 >
                   <ul
                     className=" text-sm text-gray-700 dark:text-gray-200 "
                     aria-labelledby="fileDropdownDefaultButton"
                   >
-                    <div className="space-y-2 font-medium text-sm border-t border-gray-200 dark:border-gray-700">
+                    <div className="space-y-2 font-medium text-sm border-gray-200 dark:border-gray-700">
                       <label className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group">
                         <input type="file" accept="*" onChange={onSelectFile} />
                         {fileAddIcon}
                         Select to Upload Files
                       </label>
                     </div>
-                    <div className="pt-1 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
-                      {fileList.map((file, index) => {
-                        return (
-                          <li
-                            key={index}
-                            className="Image-content flex flex-row items-center gap-1 justify-between  border-blue-300"
-                          >
-                            <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group flex-1">
-                              {fileIcon(file.type)}
-                              <span className="ms-3">
-                                {file.name
-                                  ? getPresizeFileName(file.name)
-                                  : "file"}{" "}
-                              </span>
-                            </div>
-                            <div className="flex flex-row">
-                              <a
-                                href={file.url}
-                                target="_blank"
-                                download={file.name}
-                              >
-                                {downloadIcon}
-                              </a>
-                              <div onClick={() => confirmFileRemove(file)}>
-                                {removeIcon}
+                    {fileList.length > 0 && (
+                      <div className="pt-1 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
+                        {fileList.map((file, index) => {
+                          return (
+                            <li
+                              key={index}
+                              className="Image-content flex flex-row items-center gap-1 justify-between  border-blue-300"
+                            >
+                              <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group flex-1">
+                                {fileIcon(file.type)}
+                                <span className="ms-3">
+                                  {file.name
+                                    ? getPresizeFileName(file.name)
+                                    : "file"}{" "}
+                                </span>
                               </div>
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </div>
+                              <div className="flex flex-row">
+                                <a
+                                  href={file.url}
+                                  target="_blank"
+                                  download={file.name}
+                                >
+                                  {downloadIcon}
+                                </a>
+                                <div onClick={() => confirmFileRemove(file)}>
+                                  {removeIcon}
+                                </div>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </div>
+                    )}
                   </ul>
                 </div>
               )}
@@ -531,13 +532,12 @@ export default function MainPage() {
                 {downArrowIcon}
               </button>
 
-              {dropdownVisibility.history && (
+              {dropdownVisibility.history && allVersionData.length > 0 && (
                 <div
-                  class="absolute right-0 z-10 mt-2 min-w-[240px]  max-h-96 overflow-auto p-1 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                  class="absolute right-0 z-10 mt-2 min-w-[240px] max-w-96  max-h-96 overflow-auto p-1 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
                   role="menu"
                   aria-orientation="vertical"
                   aria-labelledby="menu-button"
-                  tabindex="-1"
                 >
                   <ul
                     className="py-2 text-sm text-gray-700 dark:text-gray-200 "
@@ -586,6 +586,9 @@ export default function MainPage() {
           )}
           <textarea
             ref={mainTextArea}
+            onFocus={() => {
+              setDropdownVisibility({ file: false, history: false });
+            }}
             id="mainTextArea"
             className="text-sm z-10 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
           ></textarea>
