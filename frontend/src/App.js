@@ -2,6 +2,7 @@ import "./App.css";
 import MainPage from "./pages/MainPage";
 import { Routes, Route } from "react-router-dom";
 import toast, {Toaster} from 'react-hot-toast';
+import 'flowbite'; 
 
 function App() {
   return (

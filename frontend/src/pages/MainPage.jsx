@@ -418,10 +418,10 @@ export default function MainPage() {
                 getAllversionData(true);
               }}
               data-dropdown-toggle="fileDropdown"
-              className="md:hidden  text-dark bg-slate-100  hover:bg-slate-200  focus:outline-none focus:ring-blue-300 font-medium rounded-lg px-2 py-1 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+              className="md:hidden flex flex-row gap-1 text-dark bg-slate-100  hover:bg-slate-200  focus:outline-none focus:ring-blue-300 font-medium rounded-lg px-2 py-1 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
               type="button"
             >
-              {defaultFileIcon} Files
+              {defaultFileIcon} <div>Files</div>
             </button>
 
             {/* <!-- Dropdown menu --> */}
