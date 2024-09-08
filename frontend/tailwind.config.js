@@ -5,7 +5,7 @@ module.exports = {
     plugins: [require('flowbite/plugin')],
     theme: {
       screens: {
-        sm: '350px',
+        sm: '300px',
         md: '768px',
         lg: '976px',
         xl: '1440px',

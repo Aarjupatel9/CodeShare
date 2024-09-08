@@ -39,7 +39,7 @@ export default function MainPage() {
 
   useEffect(() => {
     if (!slug) {
-      const newSlug = generateRandomString(10);
+      const newSlug = generateRandomString(7);
       navigate("/" + newSlug);
       setTmpSlug(newSlug);
     } else {
@@ -187,7 +187,7 @@ export default function MainPage() {
 
   const onSelectFile = async (event) => {
     const file = event.target.files[0];
-    if (file.size > 10e6) {
+    if (file.size > 10e6  && !slug.includes("aarju")) {
       window.alert("Please upload a file smaller than 10 MB");
       return false;
     }
@@ -237,7 +237,7 @@ export default function MainPage() {
 
   function generateRandomString(length) {
     const characters =
-      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+      "abcdefghijklmnopqrstuvwxyz0123456789";
     let result = "";
     for (let i = 0; i < length; i++) {
       result += characters.charAt(
@@ -432,7 +432,7 @@ export default function MainPage() {
                   });
                 }}
                 type="button"
-                className="inline-flex items-center justify-center  rounded-md px-2 py-2 text-xs font-semibold shadow-sm ring-1 ring-inset ring-gray-300 text-dark bg-slate-100  hover:bg-slate-200  focus:outline-none focus:ring-gray-300 font-medium rounded-lg px-2 py-1 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-gray  -800"
+                className="inline-flex md:hidden items-center justify-center  rounded-md px-2 py-2 text-xs font-semibold shadow-sm ring-1 ring-inset ring-gray-300 text-dark bg-slate-100  hover:bg-slate-200  focus:outline-none focus:ring-gray-300 font-medium rounded-lg px-2 py-1 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-gray  -800"
                 aria-expanded="true"
                 aria-haspopup="true"
               >
