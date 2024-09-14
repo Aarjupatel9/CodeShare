@@ -5,16 +5,13 @@ const logger = require('morgan');
 require("dotenv").config();
 var bodyParser = require("body-parser");
 
-
 // routes
 const userRoute = require('../routes/userRoute');
 
 const app = express();
 
 app.use(cors({
-    origin: 'http://43.205.203.95',
-    // origin: 'http://192.168.125.14:3000',
-    // origin: 'http://localhost:3000',
+    origin: ['http://localhost:3000','http://43.205.203.95'],
     credentials: true
 }));
 
@@ -44,7 +41,7 @@ app.get('/', (req, res) => {
 app.use("/data", userRoute);
 
 app.get('*', (req, res) => {
-    return res.status(404).json({ message: 'Not found, Check the URL properly !!!' });
+    return res.status(404).json({ message: 'Conteng Not found, Check the URL properly !!!' });
 })
 
 app.use((err, req, res, next) => {

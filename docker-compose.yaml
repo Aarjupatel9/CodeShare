@@ -1,0 +1,33 @@
+# version: '3.8'
+
+# Services
+services:
+  # backend service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: code_share_backend
+    image: mhkdeveloper/code_share_backend:latest
+    ports:
+      - "8080:8080"
+    env_file: backend/.env
+
+  # frontend service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: code_share_frontend
+    image: mhkdeveloper/code_share_frontend:latest
+    ports:
+      - "80:80"
+    env_file:
+      - frontend/.env
+   
+    depends_on:
+      - backend
+
+# Volumes define
+volumes: 
+  CodeShare:

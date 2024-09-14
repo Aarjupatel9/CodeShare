@@ -8,6 +8,8 @@ const BUCKET_NAME = process.env.AWS_BUCKET_NAME;
 const region = process.env.AWS_BUCKET_REGION;
 const accessKeyId = process.env.AWS_ACCESS_KEY;
 const secretAccessKey = process.env.AWS_SECRET_KEY;
+var max_file_size = process.env.MAX_FILE_SIZE
+
 
 const s3 = new AWS.S3({
   accessKeyId: accessKeyId,
@@ -115,7 +117,7 @@ function removeFormS3Client(input) {
 
 // nfigure multer-s3
 const multerUpload = multer({
-  limits: { fileSize: 1024*1024*88}, // 11 mb
+  limits: { fileSize: max_file_size},
   storage: multerS3({
     s3: s3Client,
     bucket: BUCKET_NAME,
@@ -131,7 +133,7 @@ const multerUpload = multer({
         ).replace(" ", "-")
       );
     },
-  }),
+  })
 });
 
 module.exports = { upload, remove, multerUpload };

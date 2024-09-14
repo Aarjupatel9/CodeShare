@@ -1,7 +1,8 @@
 const DataModel = require("../models/dataModel");
 const s3BucketService = require("../services/s3BucketService");
-const { response } = require("../src/app");
 
+var max_file_size = process.env.MAX_FILE_SIZE
+var allowed_for_slug = process.env.ALLOW_FILE_LIMIT
 
 exports.getData = async function (req, res) {
   const { slug, flag, time } = req.body;
@@ -21,11 +22,11 @@ exports.getData = async function (req, res) {
       }
     );
   } else {
-  console.log("in latest")
+    console.log("in latest")
     data_present = await _getLatestDataVersion(slug);
   }
 
-  console.log("data_present :" ,data_present)
+  console.log("data_present :", data_present)
 
   if (data_present) {
     const requiredPayload = {
@@ -96,18 +97,27 @@ exports.saveData = async (req, res) => {
   }
 };
 
-exports.validateFile = async (req, res,next) => {
-  try {  
+exports.validateFile = async (req, res, next) => {
+  try {
     const unique_name = req.headers.slug;
+    const fileSize = req.headers.fileSize;
     console.log("validateFile req : ", req.headers);
     if (!unique_name) {
       return res.status(400).json({
         success: false,
         massege: "Slug is required",
       });
+    } else if ((!fileSize || fileSize > max_file_size) && !unique_name.includes(allowed_for_slug)) {
+      return res.status(400).json({
+        success: false,
+        massege: "File Size must be less then " + max_file_size + " bytes",
+      });
     } else {
       next();
     }
+
+
+
   } catch (err) {
     console.error(`Error while validating file: ${err.message}`);
     return res.status(500).json({
@@ -117,15 +127,15 @@ exports.validateFile = async (req, res,next) => {
   }
 };
 
-exports.saveFileNew = async (req, res,next) => {
-    console.log("savenewFile start");
-  
+exports.saveFileNew = async (req, res, next) => {
+  console.log("savenewFile start");
+
   const unique_name = req.body.slug;
 
   console.log("saveFileNew body : ", req.body);
   console.log("saveFileNew file : ", req.file);
 
-  
+
 
   try {
     var fileObject = {
@@ -133,13 +143,13 @@ exports.saveFileNew = async (req, res,next) => {
       url: req.file.location,
       key: req.file.key,
       type: req.file.mimetype,
-      others:{
-        contentType :  req.file.contentType,
-        encoding : req.file.encoding,
-        bucket : req.file.bucket,
-        metadata : req.file.metadata,
-        etag : req.file.etag,
-        acl : req.file.acl
+      others: {
+        contentType: req.file.contentType,
+        encoding: req.file.encoding,
+        bucket: req.file.bucket,
+        metadata: req.file.metadata,
+        etag: req.file.etag,
+        acl: req.file.acl
       }
     };
     try {

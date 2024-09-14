@@ -187,7 +187,7 @@ export default function MainPage() {
 
   const onSelectFile = async (event) => {
     const file = event.target.files[0];
-    if (file.size > 10e6  && !slug.includes("aarju")) {
+    if (file.size > 10e6 && !slug.includes("aarju")) {
       window.alert("Please upload a file smaller than 10 MB");
       return false;
     }
@@ -305,9 +305,8 @@ export default function MainPage() {
     toast.custom((t) => (
       <div className="z-[1000] bg-gray-100 border border-gray-2 p-4 rounded w-[300] h-[300] flex- flex-col justify-center items-center space-y-2 shadow-md rounded">
         <div
-          className={`px-2 py-2 line-clamp-4 ${
-            t.visible ? "animate-enter" : "animate-leave"
-          }`}
+          className={`px-2 py-2 line-clamp-4 ${t.visible ? "animate-enter" : "animate-leave"
+            }`}
         >
           Are you sure to Delete file - {file.name} ?
         </div>
@@ -356,7 +355,7 @@ export default function MainPage() {
             onBlur={() => {
               setIsRedirectFocused(false);
             }}
-            className="flex flex-col space-y-2 font-small justify-center items-center gap-2 "
+            className="flex flex-col space-y-2 text-sm justify-center items-center gap-2 "
           >
             <input
               className=" font-bold px-4 border-b border-blue-700 hover:border-blue-500  "
@@ -418,6 +417,29 @@ export default function MainPage() {
       </aside>
 
       <div className="MainArea sm:size-full  text-xs md:text:sm p-1 md:p-4 gap-2">
+        <div
+          onFocus={() => {
+            setIsRedirectFocused(true);
+          }}
+          onBlur={() => {
+            setIsRedirectFocused(false);
+          }}
+          className="md:hidden flex flex-row space-x-2 py-2 text-sm justify-center items-center gap-2 "
+        >
+          <input
+            className="font-bold px-4 border-b border-blue-700 hover:border-blue-500  "
+            onChange={(e) => {
+              setTmpSlug(e.target.value);
+            }}
+            value={tmpSlug}
+          />
+          <button
+            onClick={redirect}
+            className="bg-blue-500 hover:bg-blue-400 text-white  buttons border-b-1 border-blue-700 hover:border-blue-500 rounded"
+          >
+            Redirect
+          </button>
+        </div>
         {/* app bar header */}
         <div className="flex flex-row justify-between gap-2 items-center text-xs">
           <div className="flex flex-row">
