@@ -5,58 +5,51 @@ var max_file_size = process.env.MAX_FILE_SIZE
 var allowed_for_slug = process.env.ALLOW_FILE_LIMIT
 
 exports.getData = async function (req, res) {
-  const { slug, flag, time } = req.body;
-  console.log("body , ", req.body);
+  try {
+    const { slug, flag, time } = req.body;
+    let data_present;
+    if (time) {
+      data_present = await _getRequiredDataVersion(slug, time);
+    } else if (flag == "allVersion") {
+      data_present = await _getAllVersion(slug);
+    } else {
+      data_present = await _getLatestDataVersion(slug);
+    }
 
-  let data_present;
+    if (data_present) {
+      const requiredPayload = {
+        _id: data_present._id,
+        data: data_present.data,
+        unique_name: data_present.unique_name,
+        language: data_present.language,
+        files: data_present.files,
+      };
 
-  if (time) {
-    data_present = await _getRequiredDataVersion(slug, time);
-  } else if (flag == "allVersion") {
-    console.log("all version");
-    data_present = await DataModel.findOne(
-      { unique_name: slug },
-      {
-        "dataVersion.data": 0,
-        files: 0,
+      if (flag != "allVersion" && data_present.latestDataVersion) {
+        requiredPayload.data = data_present.latestDataVersion;
       }
-    );
-  } else {
-    console.log("in latest")
-    data_present = await _getLatestDataVersion(slug);
-  }
+      if (flag == "specific" && data_present.dataVersion) {
+        requiredPayload.data = data_present.dataVersion;
+      }
+      if (flag == "allVersion") {
+        requiredPayload.data = data_present.dataVersion;
+      }
 
-  console.log("data_present :", data_present)
-
-  if (data_present) {
-    const requiredPayload = {
-      _id: data_present._id,
-      data: data_present.data,
-      unique_name: data_present.unique_name,
-      language: data_present.language,
-      files: data_present.files,
-    };
-
-    if (flag != "allVersion" && data_present.latestDataVersion) {
-      requiredPayload.data = data_present.latestDataVersion;
+      res.status(200).json({
+        success: true,
+        message: "data found",
+        result: requiredPayload,
+      });
+    } else {
+      res.status(200).json({
+        success: false,
+        message: "data not found",
+      });
     }
-    if (flag == "specific" && data_present.dataVersion) {
-      requiredPayload.data = data_present.dataVersion;
-    }
-
-    if (flag == "allVersion") {
-      requiredPayload.data = data_present.dataVersion;
-    }
-    console.log(flag, " : ", requiredPayload);
-    res.status(200).json({
-      success: true,
-      message: "data found",
-      result: requiredPayload,
-    });
-  } else {
-    res.status(200).json({
+  } catch (e) {
+    res.status(500).json({
       success: false,
-      message: "data not found",
+      message: "internal server error : " + e,
     });
   }
 };
@@ -64,7 +57,6 @@ exports.getData = async function (req, res) {
 exports.saveData = async (req, res) => {
   try {
     const { slug, data } = req.body;
-
     const latestVersion = await _getLatestDataVersion(slug);
     if (latestVersion?.latestDataVersion?.data == data) {
       return res.status(201).json({
@@ -81,7 +73,6 @@ exports.saveData = async (req, res) => {
       { $push: { dataVersion: newData } },
       { upsert: true }
     );
-    console.log("data find query : " + data_present.toString());
     if (data_present) {
       res.status(200).json({
         success: true,
@@ -101,7 +92,6 @@ exports.validateFile = async (req, res, next) => {
   try {
     const unique_name = req.headers.slug;
     const fileSize = req.headers.fileSize;
-    console.log("validateFile req : ", req.headers);
     if (!unique_name) {
       return res.status(400).json({
         success: false,
@@ -115,9 +105,6 @@ exports.validateFile = async (req, res, next) => {
     } else {
       next();
     }
-
-
-
   } catch (err) {
     console.error(`Error while validating file: ${err.message}`);
     return res.status(500).json({
@@ -128,16 +115,8 @@ exports.validateFile = async (req, res, next) => {
 };
 
 exports.saveFileNew = async (req, res, next) => {
-  console.log("savenewFile start");
-
-  const unique_name = req.body.slug;
-
-  console.log("saveFileNew body : ", req.body);
-  console.log("saveFileNew file : ", req.file);
-
-
-
   try {
+    const unique_name = req.body.slug;
     var fileObject = {
       name: req.file.originalname,
       url: req.file.location,
@@ -180,41 +159,87 @@ exports.saveFileNew = async (req, res, next) => {
 };
 
 exports.saveFile = async (req, res) => {
-  const base64File = req.body.file;
-  const unique_name = req.body.slug;
-  const type = req.body.type;
+  try {
+    const base64File = req.body.file;
+    const unique_name = req.body.slug;
+    const type = req.body.type;
 
-  if (!unique_name) {
-    return res.status(404).json({
+    if (!unique_name) {
+      return res.status(404).json({
+        success: false,
+        massege: "Slug is required",
+      });
+    }
+    const fileName = unique_name + "-" + req.body.fileName;
+    let response;
+    try {
+      response = await s3BucketService.upload(fileName, base64File, type);
+
+      var fileObject = {
+        name: fileName,
+        url: response.Location,
+        key: response.key,
+        type: type,
+      };
+      try {
+        const data = await DataModel.updateOne(
+          { unique_name: unique_name },
+          { $push: { files: fileObject } },
+          { upsert: true }
+        );
+      } catch (e) {
+        return res.status(200).json({
+          success: true,
+          message: `Error uploading file: ${e}`,
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "File successfully saved",
+        result: fileObject,
+      });
+    } catch (err) {
+      console.error(`Error uploading file: ${err.message}`);
+      return res.status(200).json({
+        success: true,
+        message: `Error uploading file: ${fileName}`,
+      });
+    }
+  } catch (e) {
+    res.status(500).json({
       success: false,
-      massege: "Slug is required",
+      message: "internal server error : " + e,
     });
   }
-  const fileName = unique_name + "-" + req.body.fileName;
-  console.log(
-    fileName,
-    " , ",
-    unique_name,
-    " , ",
-    type,
-    " , " + typeof base64File
-  );
+};
 
-  let response;
+exports.removeFile = async (req, res) => {
   try {
-    response = await s3BucketService.upload(fileName, base64File, type);
+    const fileObject = req.body.file;
+    var fileKey = fileObject.key;
+    const unique_name = req.body.slug;
+    if (!unique_name) {
+      return res.status(404).json({
+        success: false,
+        massege: "Slug is required",
+      });
+    }
+    let response;
+    try {
+      response = await s3BucketService.remove(fileKey);
+    } catch (err) {
+      console.error(`Error removing file : ${err.message}`);
+      return res.status(200).json({
+        success: true,
+        message: `Error removing file in bucket : ${fileKey}`,
+      });
+    }
 
-    var fileObject = {
-      name: fileName,
-      url: response.Location,
-      key: response.key,
-      type: type,
-    };
     try {
       const data = await DataModel.updateOne(
         { unique_name: unique_name },
-        { $push: { files: fileObject } },
-        { upsert: true }
+        { $pull: { files: { _id: fileObject._id } } }
       );
     } catch (e) {
       return res.status(200).json({
@@ -225,58 +250,15 @@ exports.saveFile = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "File successfully saved",
-      result: fileObject,
+      message: "File removed successfully",
+      file: fileObject,
     });
-  } catch (err) {
-    console.error(`Error uploading file: ${err.message}`);
-    return res.status(200).json({
-      success: true,
-      message: `Error uploading file: ${fileName}`,
-    });
-  }
-};
-
-exports.removeFile = async (req, res) => {
-  const fileObject = req.body.file;
-  var fileKey = fileObject.key;
-  const unique_name = req.body.slug;
-  if (!unique_name) {
-    return res.status(404).json({
-      success: false,
-      massege: "Slug is required",
-    });
-  }
-
-  console.log(unique_name, " , ", fileObject);
-  let response;
-  try {
-    response = await s3BucketService.remove(fileKey);
-  } catch (err) {
-    console.error(`Error removing file : ${err.message}`);
-    return res.status(200).json({
-      success: true,
-      message: `Error removing file in bucket : ${fileKey}`,
-    });
-  }
-
-  try {
-    const data = await DataModel.updateOne(
-      { unique_name: unique_name },
-      { $pull: { files: { _id: fileObject._id } } }
-    );
   } catch (e) {
-    return res.status(200).json({
-      success: true,
-      message: `Error uploading file: ${e}`,
+    res.status(500).json({
+      success: false,
+      message: "internal server error : " + e,
     });
   }
-
-  res.status(200).json({
-    success: true,
-    message: "File removed successfully",
-    file: fileObject,
-  });
 };
 
 async function _getLatestDataVersion(slug) {
@@ -296,7 +278,6 @@ async function _getLatestDataVersion(slug) {
         },
       },
     ]);
-    console.log("document : ", result, " : ", slug);
     return result.length > 0 ? result[0] : null;
   } catch (error) {
     console.error("Error fetching the latest data version:", error);
@@ -321,10 +302,43 @@ async function _getRequiredDataVersion(slug, time) {
       },
     ]);
 
-    console.log("document : ", result, " : ", slug, " : ", time);
     return result && result.length > 0 ? result[0] : null;
   } catch (error) {
     console.error("Error fetching the latest data version:", error);
     return null;
   }
 }
+
+async function _getAllVersion(slug) {
+  const pipeline = [
+    {
+      $match: { unique_name: slug } // Step 1: Match the document
+    }, {
+      $project: {
+        files: 0,
+        data: 0
+      }
+    },
+    {
+      $project: {
+        unique_name: 1,
+        language: 1,
+        dataVersion: {
+          $map: {
+            input: { $slice: ["$dataVersion", -30] }, // Get last 5 entries
+            as: "version",
+            in: {
+              time: "$$version.time",
+              // Exclude the data field from the dataVersion array
+            }
+          }
+        }
+      }
+    }
+  ];
+  // Execute the aggregation pipeline
+  data_present = await DataModel.aggregate(pipeline);
+  data_present = Array.isArray(data_present) ? data_present[0] : data_present;
+  return data_present;
+}
+ 

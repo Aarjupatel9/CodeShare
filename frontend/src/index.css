@@ -59,6 +59,10 @@ flex-direction:column;
   height: 100%;
 }
 
+.MainTextArea > .tox{
+  height:100% !important;
+}
+
 
 input[type="file"] {
   display: none;

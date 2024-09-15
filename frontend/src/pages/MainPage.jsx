@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import userService from "../services/userService";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
-
+import { Editor, } from '@tinymce/tinymce-react';
 import flobiteJS from "flowbite/dist/flowbite.min.js";
 
 import {
@@ -16,6 +16,8 @@ import {
   downArrowIcon,
 } from "../assets/svgs";
 
+var tinyApiKey = process.env.REACT_APP_TINYMCE_KEY;
+
 export default function MainPage() {
   var MAX_FILE_NAME_VISIBLE = 20;
   const mainTextArea = useRef(null);
@@ -27,6 +29,7 @@ export default function MainPage() {
     data: "",
     _id: "",
   });
+  const [editorValue, setEditorValue] = useState("");
   const [allVersionData, setAllVersionData] = useState([]);
   const [fileList, setFileList] = useState([]);
   const [tmpSlug, setTmpSlug] = useState("");
@@ -34,6 +37,7 @@ export default function MainPage() {
     file: false,
     history: false,
   });
+
 
   const isClipBoardAvailable = navigator?.clipboard ? true : false;
 
@@ -46,16 +50,21 @@ export default function MainPage() {
       setAllVersionData([]);
       setFileList([]);
       setLatestVersion({ time: "", data: "", _id: "" });
+      setEditorValue("");
       setTmpSlug(slug);
       userService
         .getData(slug, null, "latest")
         .then((res) => {
           if (res.success) {
-            mainTextArea.current.value = res.result.data.data;
+            if (mainTextArea && mainTextArea.current) {
+              mainTextArea.current.value = res.result.data.data;
+            }
             res.result.data.timeformate = getTimeInFormate(
               res.result.data.time
             );
             setLatestVersion(res.result.data);
+            setEditorValue(res.result.data.data);
+
 
             if (res.result.files && res.result.files.length > 0) {
               setFileList(res.result.files);
@@ -67,7 +76,7 @@ export default function MainPage() {
           }
         })
         .catch((error) => {
-          console.log(error);
+          console.error(error);
           clearMainArea();
         });
     }
@@ -84,7 +93,7 @@ export default function MainPage() {
     userService
       .getData(slug, null, "allVersion")
       .then((res) => {
-        console.log(res);
+        
         let processedData = res.result?.data?.map((r) => {
           r.timeformat = getTimeInFormate(r.time);
           r.isCurrent = false;
@@ -99,7 +108,7 @@ export default function MainPage() {
         }
       })
       .catch((err) => {
-        console.log(err);
+        console.error(err);
       });
   };
 
@@ -107,9 +116,10 @@ export default function MainPage() {
     userService
       .getData(slug, time, "specific")
       .then((res) => {
-        console.log("specific : ", res);
+        
         if (res.success) {
-          mainTextArea.current.value = res.result.data.data;
+          if (mainTextArea && mainTextArea.current) { mainTextArea.current.value = res.result.data.data; }
+          latestVersion.data = res.result.data.data
           setAllVersionData((oldData) => {
             var x = oldData.map((m) => {
               m.isLoaded = false;
@@ -122,12 +132,14 @@ export default function MainPage() {
         }
       })
       .catch((err) => {
-        console.log(err);
+        console.error(err);
       });
   };
 
   function clearMainArea() {
-    mainTextArea.current.value = "";
+    if (mainTextArea && mainTextArea.current) {
+      mainTextArea.current.value = "";
+    }
     setFileList([]);
   }
 
@@ -147,9 +159,13 @@ export default function MainPage() {
   }
 
   const saveData = () => {
+    if (!mainTextArea) {
+      return;
+    }
+    var editorValue = mainTextArea.current.getContent()
     var body = {
       slug: slug,
-      data: mainTextArea.current.value,
+      data: editorValue,
     };
     var dataSavePromise = userService
       .saveData(body)
@@ -157,6 +173,7 @@ export default function MainPage() {
         if (res.newData) {
           var obj = structuredClone(latestVersion);
           obj.timeformate = getTimeInFormate(res.newData.time);
+          obj.data = editorValue;
           obj.time = res.newData.time;
           setLatestVersion(obj);
         }
@@ -203,7 +220,7 @@ export default function MainPage() {
         setFileList((list) => [...list, res.result]);
       })
       .catch((error) => {
-        console.log(error);
+        console.error(error);
         toast.error(error.toString());
       });
     toast.promise(
@@ -264,6 +281,9 @@ export default function MainPage() {
   };
 
   const copyToClipBoard = () => {
+    if (!mainTextArea) {
+      return
+    }
     navigator?.clipboard?.writeText(mainTextArea.current.value).then(
       () => {
         toast.success("Content copied to clipboard");
@@ -297,10 +317,6 @@ export default function MainPage() {
     }
   });
 
-  useEffect(() => {
-    console.log(allVersionData);
-  }, [allVersionData]);
-
   const confirmFileRemove = (file) => {
     toast.custom((t) => (
       <div className="z-[1000] bg-gray-100 border border-gray-2 p-4 rounded w-[300] h-[300] flex- flex-col justify-center items-center space-y-2 shadow-md rounded">
@@ -333,10 +349,6 @@ export default function MainPage() {
       </div>
     ));
   };
-
-  useEffect(() => {
-    console.log("dropdownVisibility changed : ", dropdownVisibility);
-  }, [dropdownVisibility]);
 
   return (
     <div className="MainPage">
@@ -443,7 +455,7 @@ export default function MainPage() {
         {/* app bar header */}
         <div className="flex flex-row justify-between gap-2 items-center text-xs">
           <div className="flex flex-row">
-            <div class="relative inline-block text-left">
+            <div className="relative inline-block text-left">
               <button
                 onClick={() => {
                   setDropdownVisibility(() => {
@@ -464,7 +476,7 @@ export default function MainPage() {
 
               {dropdownVisibility.file && (
                 <div
-                  class="absolute left-0 z-10 mt-2 min-w-[240px] max-w-96 max-h-96 overflow-auto p-1 px-3 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                  className="absolute left-0 z-10 mt-2 min-w-[240px] max-w-96 max-h-96 overflow-auto p-1 px-3 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
                   role="menu"
                   aria-orientation="vertical"
                   aria-labelledby="menu-button"
@@ -527,7 +539,7 @@ export default function MainPage() {
               Save
             </button>
 
-            <div class="relative inline-block text-left">
+            <div className="relative inline-block text-left">
               <button
                 onMouseOver={() => {
                   getAllversionData(false);
@@ -556,7 +568,7 @@ export default function MainPage() {
 
               {dropdownVisibility.history && allVersionData.length > 0 && (
                 <div
-                  class="absolute right-0 z-10 mt-2 min-w-[240px] max-w-96  max-h-96 overflow-auto p-1 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                  className="absolute right-0 z-10 mt-2 min-w-[240px] max-w-[300px]  max-h-96 overflow-auto p-1 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
                   role="menu"
                   aria-orientation="vertical"
                   aria-labelledby="menu-button"
@@ -571,7 +583,7 @@ export default function MainPage() {
                           key={index}
                           className="flex px-1 items-center justify-end "
                         >
-                          <div title="Current version">
+                          <div className="min-w-[20px] max-w-[30px]" title="Current version ">
                             {v.isCurrent && currentVersionIcon(v)}
                             {v.isLoaded && !v.isCurrent && versionIndicatorIcon}
                           </div>
@@ -580,7 +592,7 @@ export default function MainPage() {
                             onClick={() => {
                               loadSpecificVersion(v.time, index);
                             }}
-                            className="cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                            className="min-w-[230px] max-w-[350px] version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
                           >
                             Version - {v.timeformat}
                           </div>
@@ -606,14 +618,46 @@ export default function MainPage() {
               copy text
             </div>
           )}
-          <textarea
+          {/* <textarea
             ref={mainTextArea}
             onFocus={() => {
               setDropdownVisibility({ file: false, history: false });
             }}
             id="mainTextArea"
             className="text-sm z-10 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-          ></textarea>
+          ></textarea> */}
+
+          <Editor
+            onInit={(evt, editor) => mainTextArea.current = editor}
+            // ref={mainTextArea}
+            className="text-sm z-10 h-[100%] rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            apiKey={tinyApiKey}
+            init={{
+              ai_request: (request, respondWith) => respondWith.string(() => Promise.reject('See docs to implement AI Assistant')),
+              selector: "textarea",
+              plugins: [
+                // Core editing features
+                'fullscreen', 'save', 'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
+                'checklist', 'mediaembed', 'casechange', 'export', 'formatpainter', 'pageembed', 'a11ychecker', 'tinymcespellchecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'editimage', 'advtemplate', 'ai', 'mentions', 'tinycomments', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown',
+              ],
+              toolbar: 'fullscreen save undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+              tinycomments_mode: 'embedded',
+              tinycomments_author: 'Aarju Patel',
+
+              setup: (editor) => {
+                editor.on('Change', () => {
+                  setEditorValue(editor.getContent());
+                });
+              },
+              save_onsavecallback: (e) => {
+                saveData()
+              }
+            }}
+            onEditorChange={(e) => {
+              setEditorValue(e);
+            }}
+            initialValue={latestVersion.data}
+          />
         </div>
       </div>
     </div>
