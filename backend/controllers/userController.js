@@ -1,8 +1,8 @@
 const DataModel = require("../models/dataModel");
 const s3BucketService = require("../services/s3BucketService");
 
-var max_file_size = process.env.MAX_FILE_SIZE
-var allowed_for_slug = process.env.ALLOW_FILE_LIMIT
+var max_file_size = process.env.MAX_FILE_SIZE;
+var allowed_for_slug = process.env.ALLOW_FILE_LIMIT;
 
 exports.getData = async function (req, res) {
   try {
@@ -97,7 +97,10 @@ exports.validateFile = async (req, res, next) => {
         success: false,
         massege: "Slug is required",
       });
-    } else if ((!fileSize || fileSize > max_file_size) && !unique_name.includes(allowed_for_slug)) {
+    } else if (
+      (!fileSize || fileSize > max_file_size) &&
+      !unique_name.includes(allowed_for_slug)
+    ) {
       return res.status(400).json({
         success: false,
         massege: "File Size must be less then " + max_file_size + " bytes",
@@ -128,8 +131,8 @@ exports.saveFileNew = async (req, res, next) => {
         bucket: req.file.bucket,
         metadata: req.file.metadata,
         etag: req.file.etag,
-        acl: req.file.acl
-      }
+        acl: req.file.acl,
+      },
     };
     try {
       const data = await DataModel.updateOne(
@@ -312,12 +315,13 @@ async function _getRequiredDataVersion(slug, time) {
 async function _getAllVersion(slug) {
   const pipeline = [
     {
-      $match: { unique_name: slug } // Step 1: Match the document
-    }, {
+      $match: { unique_name: slug }, // Step 1: Match the document
+    },
+    {
       $project: {
         files: 0,
-        data: 0
-      }
+        data: 0,
+      },
     },
     {
       $project: {
@@ -330,15 +334,14 @@ async function _getAllVersion(slug) {
             in: {
               time: "$$version.time",
               // Exclude the data field from the dataVersion array
-            }
-          }
-        }
-      }
-    }
+            },
+          },
+        },
+      },
+    },
   ];
   // Execute the aggregation pipeline
   data_present = await DataModel.aggregate(pipeline);
   data_present = Array.isArray(data_present) ? data_present[0] : data_present;
   return data_present;
 }
- 
