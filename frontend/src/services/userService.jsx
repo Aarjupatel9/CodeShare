@@ -21,7 +21,6 @@ class UserService {
       };
       fetch(server_host + "/data/getData" , fetchPostOptions)
         .then((response) => {
-          console.log(response);
           return response.json();
         })
         .then((res) => {
@@ -32,7 +31,7 @@ class UserService {
           }
         })
         .catch((e) => {
-          console.log("error : ", e);
+          console.error("error : ", e);
           reject(e.toString());
         });
     });
@@ -66,7 +65,7 @@ class UserService {
           }
         })
         .catch((e) => {
-          console.log("error : ", e);
+          console.error("error : ", e);
           reject(e.toString());
         });
     });
@@ -97,7 +96,7 @@ class UserService {
           }
         })
         .catch((e) => {
-          console.log("error : ", e);
+          console.error("error : ", e);
           reject(e.toString());
         });
     });
@@ -130,7 +129,7 @@ class UserService {
           }
         })
         .catch((e) => {
-          console.log("error : ", e);
+          console.error("error : ", e);
           reject(e.toString());
         });
     });
@@ -146,3 +145,4 @@ class UserService {
 }
 
 export default new UserService();
+ 

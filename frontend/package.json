@@ -1,11 +1,12 @@
 {
-  "name": "Code_share",
+  "name": "code_share",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "@tinymce/tinymce-react": "^5.1.1",
     "dotenv": "^16.4.5",
     "file-saver": "^2.0.5",
     "flowbite": "^1.8.1",
@@ -15,10 +16,11 @@
     "react-hot-toast": "^2.4.1",
     "react-router-dom": "^6.22.3",
     "react-scripts": "5.0.1",
+    "socket.io-client": "^4.7.5",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "dev": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
