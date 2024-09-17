@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import userService from "../services/userService";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Editor, } from '@tinymce/tinymce-react';
+import { Editor } from '@tinymce/tinymce-react';
 import flobiteJS from "flowbite/dist/flowbite.min.js";
 import { io } from 'socket.io-client';
 
@@ -12,25 +12,28 @@ import {
   fileIcon,
   downloadIcon,
   removeIcon,
-  defaultFileIcon,
   fileAddIcon,
   downArrowIcon,
+  socketIcon,
 } from "../assets/svgs";
 
 var tinyApiKey = process.env.REACT_APP_TINYMCE_KEY;
+var SOCKET_ADDRESS = process.env.REACT_APP_SOCKET_ADDRESS;
 
 export default function MainPage() {
   var MAX_FILE_NAME_VISIBLE = 20;
-  const mainTextArea = useRef(null);
+  const editorRef = useRef(null);
   const navigate = useNavigate();
   const { slug } = useParams();
+
+  const [userSlug, setUserSlug] = useState(slug);
   const [isRedirectFocused, setIsRedirectFocused] = useState(true);
   const [latestVersion, setLatestVersion] = useState({
     time: "",
     data: "",
     _id: "",
   });
-  const [editorValue, setEditorValue] = useState("");
+  const [socketEnabled, setSocketEnabled] = useState(true);
   const [allVersionData, setAllVersionData] = useState([]);
   const [socket, setSocket] = useState(null);
   const [fileList, setFileList] = useState([]);
@@ -40,6 +43,7 @@ export default function MainPage() {
     history: false,
   });
 
+  const [incomingEditorValue, setIncomingEditorValue] = useState("");
 
   const isClipBoardAvailable = navigator?.clipboard ? true : false;
 
@@ -48,25 +52,26 @@ export default function MainPage() {
       const newSlug = generateRandomString(7);
       navigate("/" + newSlug);
       setTmpSlug(newSlug);
+      setUserSlug(slug)
     } else {
+
       setAllVersionData([]);
       setFileList([]);
       setLatestVersion({ time: "", data: "", _id: "" });
-      setEditorValue("");
       setTmpSlug(slug);
+      setUserSlug(slug)
+
       userService
         .getData(slug, null, "latest")
         .then((res) => {
           if (res.success) {
-            if (mainTextArea && mainTextArea.current) {
-              mainTextArea.current.value = res.result.data.data;
+            if (editorRef && editorRef.current) {
+              editorRef.current.value = res.result.data.data;
             }
             res.result.data.timeformate = getTimeInFormate(
               res.result.data.time
             );
             setLatestVersion(res.result.data);
-            setEditorValue(res.result.data.data);
-
 
             if (res.result.files && res.result.files.length > 0) {
               setFileList(res.result.files);
@@ -74,35 +79,45 @@ export default function MainPage() {
               setFileList([]);
             }
           } else {
-            clearMainArea();
+            clearEditorValue();
           }
         })
         .catch((error) => {
           console.error(error);
-          clearMainArea();
+          clearEditorValue();
         });
     }
+    setUserSlug(slug)
   }, [slug]);
 
   useEffect(() => {
-    const socket = new io('localhost:2000', {
-      query: "slug=" + slug
-    });
-    setSocket(socket);
-    socket.on('connect', () => {
-      console.log("connecttion")
-    });
-    socket.on('room_message', (room, content) => {
-      console.log(room)
-      setLatestVersion((pre) => {
-        return {
-          ...pre,
-          data: content
+    if (socketEnabled) {
+      if (slug) {
+        const socket = new io(SOCKET_ADDRESS, {
+          query: "slug=" + slug
+        });
+
+        socket.on('room_message', (room, content) => {
+          setIncomingEditorValue(content);
+        })
+        setSocket(socket);
+
+        return () => {
+          socket.disconnect();
         }
-      })
-      // setEditorValue(content);
-    })
-  }, [slug])
+      }
+    } else {
+      if (socket) {
+        socket.disconnect()
+      }
+    }
+  }, [slug, socketEnabled])
+
+  useEffect(() => {
+    if (editorRef && editorRef.current) {
+      editorRef.current.setContent(incomingEditorValue);
+    }
+  }, [incomingEditorValue])
 
   const getAllversionData = (isCliced) => {
     if (allVersionData.length > 0) {
@@ -113,7 +128,7 @@ export default function MainPage() {
       return;
     }
     userService
-      .getData(slug, null, "allVersion")
+      .getData(userSlug, null, "allVersion")
       .then((res) => {
 
         let processedData = res.result?.data?.map((r) => {
@@ -136,11 +151,11 @@ export default function MainPage() {
 
   const loadSpecificVersion = (time, index) => {
     userService
-      .getData(slug, time, "specific")
+      .getData(userSlug, time, "specific")
       .then((res) => {
 
         if (res.success) {
-          if (mainTextArea && mainTextArea.current) { mainTextArea.current.value = res.result.data.data; }
+          if (editorRef && editorRef.current) { editorRef.current.value = res.result.data.data; }
           latestVersion.data = res.result.data.data
           setAllVersionData((oldData) => {
             var x = oldData.map((m) => {
@@ -158,9 +173,9 @@ export default function MainPage() {
       });
   };
 
-  function clearMainArea() {
-    if (mainTextArea && mainTextArea.current) {
-      mainTextArea.current.value = "";
+  function clearEditorValue() {
+    if (editorRef && editorRef.current) {
+      editorRef.current.value = "";
     }
     setFileList([]);
   }
@@ -181,12 +196,12 @@ export default function MainPage() {
   }
 
   const saveData = () => {
-    if (!mainTextArea) {
+    if (!editorRef) {
       return;
     }
-    var editorValue = mainTextArea.current.getContent()
+    var editorValue = editorRef.current.getContent()
     var body = {
-      slug: slug,
+      slug: userSlug,
       data: editorValue,
     };
     var dataSavePromise = userService
@@ -226,14 +241,14 @@ export default function MainPage() {
 
   const onSelectFile = async (event) => {
     const file = event.target.files[0];
-    if (file.size > 10e6 && !slug.includes("aarju")) {
+    if (file.size > 10e6 && !userSlug.includes("aarju")) {
       window.alert("Please upload a file smaller than 10 MB");
       return false;
     }
     const formData = new FormData();
     formData.append("file", file);
     formData.append("fileName", file.name);
-    formData.append("slug", slug);
+    formData.append("slug", userSlug);
 
     const imageUploadPromise = userService
       .saveFile(formData)
@@ -287,7 +302,7 @@ export default function MainPage() {
   }
   const remvoeCurrentFile = (file) => {
     userService
-      .removeFile({ slug, file })
+      .removeFile({ userSlug, file })
       .then((res) => {
         toast.success(res.message);
         setFileList((list) => {
@@ -303,10 +318,10 @@ export default function MainPage() {
   };
 
   const copyToClipBoard = () => {
-    if (!mainTextArea) {
+    if (!editorRef) {
       return
     }
-    navigator?.clipboard?.writeText(mainTextArea.current.value).then(
+    navigator?.clipboard?.writeText(editorRef.current.value).then(
       () => {
         toast.success("Content copied to clipboard");
       },
@@ -314,14 +329,6 @@ export default function MainPage() {
         toast.error("Failed to copy");
       }
     );
-    // navigator?.permissions
-    //   ?.query({ name: "write-on-clipboard" })
-    //   .then((result) => {
-    //     if (result.state == "granted" || result.state == "prompt") {
-    //       navigator?.clipboard?.writeText(mainTextArea.current.value);
-    //       toast.success("Text copied!");
-    //     }
-    //   });
   };
 
   useKey("ctrl+s", (event) => {
@@ -640,18 +647,10 @@ export default function MainPage() {
               copy text
             </div>
           )}
-          {/* <textarea
-            ref={mainTextArea}
-            onFocus={() => {
-              setDropdownVisibility({ file: false, history: false });
-            }}
-            id="mainTextArea"
-            className="text-sm z-10 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-          ></textarea> */}
+
 
           <Editor
-            onInit={(evt, editor) => mainTextArea.current = editor}
-            // ref={mainTextArea}
+            onInit={(evt, editor) => editorRef.current = editor}
             className="text-sm z-10 h-[100%] rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
             apiKey={tinyApiKey}
             init={{
@@ -662,23 +661,30 @@ export default function MainPage() {
                 'fullscreen', 'save', 'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
                 'checklist', 'mediaembed', 'casechange', 'export', 'formatpainter', 'pageembed', 'a11ychecker', 'tinymcespellchecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'editimage', 'advtemplate', 'ai', 'mentions', 'tinycomments', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown',
               ],
-              toolbar: 'fullscreen save undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+              toolbar: 'socketTogglePlugin fullscreen save undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
               tinycomments_mode: 'embedded',
               tinycomments_author: 'Aarju Patel',
 
               setup: (editor) => {
-                editor.on('Change', () => {
-                  setEditorValue(editor.getContent());
+
+                editor.ui.registry.addIcon("socketIcon", socketIcon)
+                editor.ui.registry.addButton("socketTogglePlugin", {
+                  icon: "socketIcon",
+                  tooltip: "Toggle realtime socket update ",
+                  onAction: function () {
+                    setSocketEnabled((prev) => !prev);
+                  },
                 });
               },
+
               save_onsavecallback: (e) => {
                 saveData()
               }
             }}
             onEditorChange={(value) => {
-              setEditorValue(value);
-              console.log("changed");
-              socket.emit("room_message", slug, value);
+              if (value != incomingEditorValue) {
+                socket.emit("room_message", userSlug, value);
+              }
             }}
             initialValue={latestVersion.data}
           />

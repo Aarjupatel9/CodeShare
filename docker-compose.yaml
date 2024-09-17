@@ -24,10 +24,20 @@ services:
       - "80:80"
     env_file:
       - frontend/.env
-   
+    depends_on:
+      - backend
+
+  socketServer:
+    build:
+      context: ./socketServer
+      dockerfile: Dockerfile
+    container_name: code_share_socket_server
+    image: mhkdeveloper/code_share_socket_server:latest
+    ports:
+      - "8081:8081"
     depends_on:
       - backend
 
 # Volumes define
-volumes: 
+volumes:
   CodeShare:
