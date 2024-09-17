@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Editor, } from '@tinymce/tinymce-react';
 import flobiteJS from "flowbite/dist/flowbite.min.js";
+import { io } from 'socket.io-client';
 
 import {
   currentVersionIcon,
@@ -31,6 +32,7 @@ export default function MainPage() {
   });
   const [editorValue, setEditorValue] = useState("");
   const [allVersionData, setAllVersionData] = useState([]);
+  const [socket, setSocket] = useState(null);
   const [fileList, setFileList] = useState([]);
   const [tmpSlug, setTmpSlug] = useState("");
   const [dropdownVisibility, setDropdownVisibility] = useState({
@@ -82,6 +84,26 @@ export default function MainPage() {
     }
   }, [slug]);
 
+  useEffect(() => {
+    const socket = new io('localhost:2000', {
+      query: "slug=" + slug
+    });
+    setSocket(socket);
+    socket.on('connect', () => {
+      console.log("connecttion")
+    });
+    socket.on('room_message', (room, content) => {
+      console.log(room)
+      setLatestVersion((pre) => {
+        return {
+          ...pre,
+          data: content
+        }
+      })
+      // setEditorValue(content);
+    })
+  }, [slug])
+
   const getAllversionData = (isCliced) => {
     if (allVersionData.length > 0) {
       return;
@@ -93,7 +115,7 @@ export default function MainPage() {
     userService
       .getData(slug, null, "allVersion")
       .then((res) => {
-        
+
         let processedData = res.result?.data?.map((r) => {
           r.timeformat = getTimeInFormate(r.time);
           r.isCurrent = false;
@@ -116,7 +138,7 @@ export default function MainPage() {
     userService
       .getData(slug, time, "specific")
       .then((res) => {
-        
+
         if (res.success) {
           if (mainTextArea && mainTextArea.current) { mainTextArea.current.value = res.result.data.data; }
           latestVersion.data = res.result.data.data
@@ -653,8 +675,10 @@ export default function MainPage() {
                 saveData()
               }
             }}
-            onEditorChange={(e) => {
-              setEditorValue(e);
+            onEditorChange={(value) => {
+              setEditorValue(value);
+              console.log("changed");
+              socket.emit("room_message", slug, value);
             }}
             initialValue={latestVersion.data}
           />
