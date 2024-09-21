@@ -91,11 +91,11 @@ exports.saveData = async (req, res) => {
 exports.validateFile = async (req, res, next) => {
   try {
     const unique_name = req.headers.slug;
-    const fileSize = req.headers.fileSize;
+    const fileSize = req.headers.filesize;
     if (!unique_name) {
       return res.status(400).json({
         success: false,
-        massege: "Slug is required",
+        message: "Slug is required",
       });
     } else if (
       (!fileSize || fileSize > max_file_size) &&
@@ -103,7 +103,7 @@ exports.validateFile = async (req, res, next) => {
     ) {
       return res.status(400).json({
         success: false,
-        massege: "File Size must be less then " + max_file_size + " bytes",
+        message: "File Size must be less then " + max_file_size + " bytes",
       });
     } else {
       next();
@@ -161,6 +161,7 @@ exports.saveFileNew = async (req, res, next) => {
   }
 };
 
+//deprecated
 exports.saveFile = async (req, res) => {
   try {
     const base64File = req.body.file;
@@ -170,7 +171,7 @@ exports.saveFile = async (req, res) => {
     if (!unique_name) {
       return res.status(404).json({
         success: false,
-        massege: "Slug is required",
+        message: "Slug is required",
       });
     }
     const fileName = unique_name + "-" + req.body.fileName;
@@ -225,7 +226,7 @@ exports.removeFile = async (req, res) => {
     if (!unique_name) {
       return res.status(404).json({
         success: false,
-        massege: "Slug is required",
+        message: "Slug is required",
       });
     }
     let response;
@@ -266,8 +267,19 @@ exports.removeFile = async (req, res) => {
 
 async function _getLatestDataVersion(slug) {
   try {
-    const result = await DataModel.aggregate([
+    var result = await DataModel.aggregate([
       { $match: { unique_name: slug } },
+      {
+        $addFields: {
+          dataVersion: {
+            $cond: {
+              if: { $eq: [{ $size: "$dataVersion" }, 0] }, // Check if dataVersion is an empty array
+              then: [{ time: null, data: null }], // Default value when dataVersion is empty
+              else: "$dataVersion",
+            },
+          },
+        },
+      },
       { $unwind: "$dataVersion" },
       { $sort: { "dataVersion.time": -1 } },
       {
@@ -281,7 +293,14 @@ async function _getLatestDataVersion(slug) {
         },
       },
     ]);
-    return result.length > 0 ? result[0] : null;
+
+    result = result.length > 0 ? result[0] : null;
+
+    if (result && result.latestDataVersion && result.latestDataVersion.time == null) {
+      result.latestDataVersion = undefined;
+    }
+
+    return result;
   } catch (error) {
     console.error("Error fetching the latest data version:", error);
     return null;

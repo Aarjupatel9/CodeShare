@@ -126,7 +126,7 @@ const multerUpload = multer({
       cb(
         null,
         (
-          file.originalname.split(0, file.originalname.lastIndexOf(".")) +
+          file.originalname.substring(0, file.originalname.lastIndexOf(".")) +
           "_" +
           Date.now().toString() +
           path.extname(file.originalname)

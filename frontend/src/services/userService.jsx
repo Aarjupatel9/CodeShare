@@ -81,6 +81,7 @@ class UserService {
         headers: {
           "Access-Control-Allow-Origin": "*",        
           "slug" : formData.get("slug"),
+          "filesize":formData.get("fileSize")
         },
         body: formData,
       };

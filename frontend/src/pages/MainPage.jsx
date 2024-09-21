@@ -65,14 +65,15 @@ export default function MainPage() {
         .getData(slug, null, "latest")
         .then((res) => {
           if (res.success) {
-            if (editorRef && editorRef.current) {
-              editorRef.current.value = res.result.data.data;
+            if (res.result.data) {
+              if (editorRef && editorRef.current) {
+                editorRef.current.value = res.result.data.data;
+              }
+              res.result.data.timeformate = getTimeInFormate(
+                res.result.data.time
+              );
+              setLatestVersion(res.result.data);
             }
-            res.result.data.timeformate = getTimeInFormate(
-              res.result.data.time
-            );
-            setLatestVersion(res.result.data);
-
             if (res.result.files && res.result.files.length > 0) {
               setFileList(res.result.files);
             } else {
@@ -214,7 +215,7 @@ export default function MainPage() {
           obj.time = res.newData.time;
           setLatestVersion(obj);
         }
-        toast.success("data saved");
+        toast.success("Saved");
       })
       .catch((error) => {
         toast.error("error while saving data");
@@ -241,41 +242,32 @@ export default function MainPage() {
 
   const onSelectFile = async (event) => {
     const file = event.target.files[0];
-    if (file.size > 10e6 && !userSlug.includes("aarju")) {
-      window.alert("Please upload a file smaller than 10 MB");
+    if (file.size > 20e6 && !userSlug.includes("aarju")) {
+      toast.error("Please upload a file smaller than 10 MB");
       return false;
     }
     const formData = new FormData();
     formData.append("file", file);
     formData.append("fileName", file.name);
+    formData.append("fileSize", file.size * 8);
+    console.log("file : ", file)
+    console.log("file : ", file.size)
     formData.append("slug", userSlug);
 
-    const imageUploadPromise = userService
+    const toastId = toast.loading('Uploading file server...');
+    userService
       .saveFile(formData)
       .then((res) => {
-        toast.success(res.message);
+        toast.success(res.message, {
+          id: toastId,
+        });
         setFileList((list) => [...list, res.result]);
-      })
-      .catch((error) => {
+      }).catch((error) => {
         console.error(error);
-        toast.error(error.toString());
+        toast.error(error, {
+          id: toastId,
+        });
       });
-    toast.promise(
-      imageUploadPromise,
-      {
-        loading: "Uploading file server..",
-        success: (data) => `File saved successfully`,
-        error: (err) => `Something gone wrong}`,
-      },
-      {
-        success: {
-          duration: 1,
-        },
-        error: {
-          duration: 1,
-        },
-      }
-    );
   };
 
   const redirect = () => {
@@ -302,7 +294,7 @@ export default function MainPage() {
   }
   const remvoeCurrentFile = (file) => {
     userService
-      .removeFile({ userSlug, file })
+      .removeFile({ slug: userSlug, file })
       .then((res) => {
         toast.success(res.message);
         setFileList((list) => {
