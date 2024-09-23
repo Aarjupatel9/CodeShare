@@ -4,21 +4,30 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 require("dotenv").config();
 var bodyParser = require("body-parser");
+var rateLimit = require('express-rate-limit')
 
 // routes
 const userRoute = require('../routes/userRoute');
 
 const app = express();
 
+const limiter = rateLimit({
+    windowMs: 5000, // 15 minutes
+    limit: 25, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
+    standardHeaders: 'draft-7', // draft-6: `RateLimit-*` headers; draft-7: combined `RateLimit` header
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
+})
+app.use(limiter)
+
 app.use(cors({
-    origin: ['http://localhost:3000','http://localhost','http://43.205.203.95'],
+    origin: ['http://localhost:3000', 'http://localhost', 'http://43.205.203.95'],
     credentials: true
 }));
 
 app.use(logger("dev")); // for logs 
 app.use(cookieParser());
-app.use(express.urlencoded({ extended: true, limit:'2mb' }));
-app.use(express.json({limit:'2mb'}));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
+app.use(express.json({ limit: '2mb' }));
 
 
 // app.use(bodyParser.json({ limit: "2000kb" }));
@@ -41,7 +50,7 @@ app.get('/', (req, res) => {
 app.use("/data", userRoute);
 
 app.get('*', (req, res) => {
-    return res.status(404).json({ message: 'Conteng Not found, Check the URL properly !!!' });
+    return res.status(404).json({ message: 'Content Not found, Check the URL properly !!!' });
 })
 
 app.use((err, req, res, next) => {
