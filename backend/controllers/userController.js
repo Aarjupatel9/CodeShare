@@ -1,4 +1,4 @@
-const DataModel = require("../models/dataModel");
+const DataModel = require("../models/dataModels");
 const s3BucketService = require("../services/s3BucketService");
 
 var max_file_size = process.env.MAX_FILE_SIZE;

@@ -1,5 +1,5 @@
 const express = require("express");
-const DataModel = require("../models/dataModel");
+const DataModel = require("../models/dataModels");
 const router = express.Router();
 
 const {saveData, getData, saveFileNew, saveFile, removeFile,validateFile } = require("../controllers/userController");
