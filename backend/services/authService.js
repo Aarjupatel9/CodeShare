@@ -1,7 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-
-
+const nodemailer = require('nodemailer');
 
 exports.genJWTToken = (payload, type = null) => {
     try {
@@ -53,3 +52,38 @@ exports.compareHashPassword = async (password, userPassword) => {
 
     return isMatch;
 }
+
+exports.sendEmail = async ({ to, subject, text }) => {
+    try {
+      // Configure the transporter for sending emails
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST || "smtp.gmail.com", // SMTP host
+      port: process.env.SMTP_PORT || 587, // SMTP port (587 for TLS)
+      secure: process.env.SMTP_SECURE || false, 
+        requireTLS: true,
+        auth: {
+          user: process.env.APP_EMAIL,
+          pass: process.env.APP_PASS,
+        },
+        // tls: {
+        //   rejectUnauthorized: false,
+        // },
+      });
+  
+      // Define the email options
+      const mailOptions = {
+        from: process.env.APP_EMAIL,
+        to,
+        subject,
+        text,
+      };
+  
+      // Send the email
+      const info = await transporter.sendMail(mailOptions);
+      console.log(`Email sent: ${info.response}`);
+      return { success: true, message: "Email sent successfully" };
+    } catch (error) {
+      console.error("Failed to send email:", error);
+      return { success: false, message: "Failed to send email", error };
+    }
+  }
