@@ -1,10 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import userService from "../services/userService";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Editor } from '@tinymce/tinymce-react';
 import flobiteJS from "flowbite/dist/flowbite.min.js";
 import { io } from 'socket.io-client';
+
 
 import {
   currentVersionIcon,
@@ -17,15 +18,20 @@ import {
   socketIcon,
   addFileIcon
 } from "../assets/svgs";
+import { UserContext } from "../context/UserContext";
+
 
 var tinyApiKey = process.env.REACT_APP_TINYMCE_KEY;
 var SOCKET_ADDRESS = process.env.REACT_APP_SOCKET_ADDRESS;
 
-export default function MainPage() {
+
+export default function MainPage(props) {
+  const { currUser, setCurrUser } = useContext(UserContext)
   var MAX_FILE_NAME_VISIBLE = 20;
   const editorRef = useRef(null);
   const navigate = useNavigate();
   const { slug } = useParams();
+
 
   const [userSlug, setUserSlug] = useState(slug);
   const [isRedirectFocused, setIsRedirectFocused] = useState(true);
@@ -44,11 +50,14 @@ export default function MainPage() {
     history: false,
   });
 
+
   const [incomingEditorValue, setIncomingEditorValue] = useState("");
+
 
   const isClipBoardAvailable = navigator?.clipboard ? true : false;
 
-  useEffect(() => {
+
+  const checkSlug = () => {
     if (!slug) {
       const newSlug = generateRandomString(7);
       navigate("/" + newSlug);
@@ -56,11 +65,13 @@ export default function MainPage() {
       setUserSlug(slug)
     } else {
 
+
       setAllVersionData([]);
       setFileList([]);
       setLatestVersion({ time: "", data: "", _id: "" });
       setTmpSlug(slug);
       setUserSlug(slug)
+
 
       userService
         .getData(slug, null, "latest")
@@ -90,7 +101,17 @@ export default function MainPage() {
         });
     }
     setUserSlug(slug)
+  }
+
+
+  useEffect(() => {
+    if (props.isPersonal) {
+      checkSlug();
+    } else {
+      navigate('/login');
+    }
   }, [slug]);
+
 
   useEffect(() => {
     if (socketEnabled) {
@@ -99,10 +120,12 @@ export default function MainPage() {
           query: "slug=" + slug
         });
 
+
         socket.on('room_message', (room, content) => {
           setIncomingEditorValue(content);
         })
         setSocket(socket);
+
 
         return () => {
           socket.disconnect();
@@ -115,11 +138,13 @@ export default function MainPage() {
     }
   }, [slug, socketEnabled])
 
+
   useEffect(() => {
     if (editorRef && editorRef.current) {
       editorRef.current.setContent(incomingEditorValue);
     }
   }, [incomingEditorValue])
+
 
   const getAllversionData = (isCliced) => {
     if (allVersionData.length > 0) {
@@ -132,6 +157,7 @@ export default function MainPage() {
     userService
       .getData(userSlug, null, "allVersion")
       .then((res) => {
+
 
         let processedData = res.result?.data?.map((r) => {
           r.timeformat = getTimeInFormate(r.time);
@@ -151,10 +177,12 @@ export default function MainPage() {
       });
   };
 
+
   const loadSpecificVersion = (time, index) => {
     userService
       .getData(userSlug, time, "specific")
       .then((res) => {
+
 
         if (res.success) {
           if (editorRef && editorRef.current) { editorRef.current.value = res.result.data.data; }
@@ -164,6 +192,7 @@ export default function MainPage() {
               m.isLoaded = false;
               return m;
             });
+
 
             x[index].isLoaded = true;
             return x;
@@ -175,6 +204,7 @@ export default function MainPage() {
       });
   };
 
+
   function clearEditorValue() {
     if (editorRef && editorRef.current) {
       editorRef.current.value = "";
@@ -182,8 +212,10 @@ export default function MainPage() {
     setFileList([]);
   }
 
+
   function getTimeInFormate(time) {
     let t = new Date(time);
+
 
     // Pad each component with leading zeros if necessary
     const year = t.getFullYear();
@@ -193,9 +225,11 @@ export default function MainPage() {
     const minutes = t.getMinutes().toString().padStart(2, "0");
     const seconds = t.getSeconds().toString().padStart(2, "0");
 
+
     // Construct the formatted time string
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   }
+
 
   const saveData = () => {
     if (!editorRef) {
@@ -223,6 +257,7 @@ export default function MainPage() {
         console.error(error);
       });
 
+
     toast.promise(
       dataSavePromise,
       {
@@ -241,6 +276,7 @@ export default function MainPage() {
     );
   };
 
+
   const onSelectFile = async (event) => {
     const file = event.target.files[0];
     if (file.size > 20e6 && !userSlug.includes("aarju")) {
@@ -254,6 +290,7 @@ export default function MainPage() {
     console.log("file : ", file)
     console.log("file : ", file.size)
     formData.append("slug", userSlug);
+
 
     const toastId = toast.loading('Uploading file server...');
     userService
@@ -271,9 +308,11 @@ export default function MainPage() {
       });
   };
 
+
   const redirect = () => {
     navigate("/" + tmpSlug);
   };
+
 
   function getPresizeFileName(name) {
     if (name.length > MAX_FILE_NAME_VISIBLE) {
@@ -281,6 +320,7 @@ export default function MainPage() {
     }
     return name;
   }
+
 
   function generateRandomString(length) {
     const characters =
@@ -310,6 +350,7 @@ export default function MainPage() {
       });
   };
 
+
   const copyToClipBoard = () => {
     if (!editorRef) {
       return
@@ -324,6 +365,7 @@ export default function MainPage() {
     );
   };
 
+
   useKey("ctrl+s", (event) => {
     event.preventDefault();
     saveData();
@@ -334,6 +376,8 @@ export default function MainPage() {
     }
   });
 
+
+
   const confirmFileRemove = (file) => {
     toast.custom((t) => (
       <div className="z-[1000] bg-gray-100 border border-gray-2 p-4 rounded w-[300] h-[300] flex- flex-col justify-center items-center space-y-2 shadow-md rounded">
@@ -343,6 +387,7 @@ export default function MainPage() {
         >
           Are you sure to Delete file - {file.name} ?
         </div>
+
 
         <div className="flex flex-row gap-2 justify-center">
           <button
@@ -366,15 +411,28 @@ export default function MainPage() {
       </div>
     ));
   };
-
+  
   const inputFile = useRef(null);
+  
+  const handleLogin = () => {
+    console.log("In login");
+    navigate('/login');
+  }
+
+  const handleLogout = () => {
+    const slug = generateRandomString(7);
+    navigate('/' + slug);
+    setCurrUser(null);
+  }
+
+
   return (
     <div className="MainPage">
       <input type="file" accept="*" onChange={onSelectFile} ref={inputFile} style={{display: 'none'}} />
       <script src={flobiteJS}></script>
       <aside
         id="separator-sidebar"
-        className="hidden md:block lg:block SideBar z-40  h-screen "
+        className="hidden md:block lg:block SideBar z-40  h-screen "
         aria-label="Sidebar"
       >
         <div className="h-full px-2 py-4 overflow-y-auto bg-gray-50 dark:bg-gray-800">
@@ -389,7 +447,7 @@ export default function MainPage() {
             className="flex flex-col space-y-2 text-sm justify-center items-center gap-2 "
           >
             <input
-              className=" font-bold px-4 border-b border-blue-700 hover:border-blue-500  "
+              className=" font-bold px-4 border-b border-blue-700 hover:border-blue-500  "
               onChange={(e) => {
                 setTmpSlug(e.target.value);
               }}
@@ -397,19 +455,18 @@ export default function MainPage() {
             />
             <button
               onClick={redirect}
-              className="bg-blue-500 hover:bg-blue-400 text-white  buttons border-b-1 border-blue-700 hover:border-blue-500 rounded"
+              className="bg-blue-500 hover:bg-blue-400 text-white  buttons border-b-1 border-blue-700 hover:border-blue-500 rounded"
             >
               Redirect
             </button>
           </div>
-
           {/* File List functionality */}
           <div className="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
             {fileList.map((file, index) => {
               return (
                 <li
                   key={index}
-                  className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between  border-blue-300  hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
+                  className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between  border-blue-300  hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
                 >
                   <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg group flex-1">
                     {fileIcon(file.type)}
@@ -436,7 +493,8 @@ export default function MainPage() {
         </div>
       </aside>
 
-      <div className="MainArea sm:size-full  text-xs md:text:sm p-1 md:p-4 gap-2">
+
+      <div className="MainArea sm:size-full  text-xs md:text:sm p-1 md:p-4 gap-2">
         <div
           onFocus={() => {
             setIsRedirectFocused(true);
@@ -447,7 +505,7 @@ export default function MainPage() {
           className="md:hidden flex flex-row space-x-2 py-2 text-sm justify-center items-center gap-2 "
         >
           <input
-            className="font-bold px-4 border-b border-blue-700 hover:border-blue-500  "
+            className="font-bold px-4 border-b border-blue-700 hover:border-blue-500  "
             onChange={(e) => {
               setTmpSlug(e.target.value);
             }}
@@ -455,7 +513,7 @@ export default function MainPage() {
           />
           <button
             onClick={redirect}
-            className="bg-blue-500 hover:bg-blue-400 text-white  buttons border-b-1 border-blue-700 hover:border-blue-500 rounded"
+            className="bg-blue-500 hover:bg-blue-400 text-white  buttons border-b-1 border-blue-700 hover:border-blue-500 rounded"
           >
             Redirect
           </button>
@@ -474,13 +532,14 @@ export default function MainPage() {
                   });
                 }}
                 type="button"
-                className="inline-flex md:hidden items-center justify-center  rounded-md px-2 py-2 text-xs font-semibold shadow-sm ring-1 ring-inset ring-gray-300 text-dark bg-slate-100  hover:bg-slate-200  focus:outline-none focus:ring-gray-300 font-medium rounded-lg px-2 py-1 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-gray  -800"
+                className="inline-flex md:hidden items-center justify-center  rounded-md px-2 py-2 text-xs font-semibold shadow-sm ring-1 ring-inset ring-gray-300 text-dark bg-slate-100  hover:bg-slate-200  focus:outline-none focus:ring-gray-300 font-medium rounded-lg px-2 py-1 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-gray  -800"
                 aria-expanded="true"
                 aria-haspopup="true"
               >
                 Files
                 {downArrowIcon}
               </button>
+
 
               {dropdownVisibility.file && (
                 <div
@@ -506,7 +565,7 @@ export default function MainPage() {
                           return (
                             <li
                               key={index}
-                              className="Image-content flex flex-row items-center gap-1 justify-between  border-blue-300"
+                              className="Image-content flex flex-row items-center gap-1 justify-between  border-blue-300"
                             >
                               <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group flex-1">
                                 {fileIcon(file.type)}
@@ -539,7 +598,23 @@ export default function MainPage() {
               )}
             </div>
           </div>
-          <div className="flex flex-row gap-1   ">
+
+          <div className="flex flex-row gap-1   ">
+            <button
+              onClick={currUser ? handleLogout : handleLogin}
+              className="bg-red-500 hover:bg-red-400 text-white buttons  font-bold border-b-1 border-blue-700 hover:border-red-500 rounded"
+            >
+              {currUser ?
+                <>
+                  Logout
+                </>
+                :
+                <>
+                  Login</>
+              }
+            </button>
+            
+            
             <div className="relative inline-block text-left">
               <button
                 onMouseOver={() => {
@@ -547,6 +622,7 @@ export default function MainPage() {
                 }}
                 onClick={() => {
                   getAllversionData(true);
+
 
                   setDropdownVisibility(() => {
                     var val = structuredClone(dropdownVisibility);
@@ -556,7 +632,7 @@ export default function MainPage() {
                   });
                 }}
                 type="button"
-                className="inline-flex items-center justify-center  rounded-md px-2 py-2 text-xs font-semibold shadow-sm ring-1 ring-inset ring-gray-300 text-dark bg-slate-100  hover:bg-slate-200  focus:outline-none focus:ring-gray-300 font-medium rounded-lg px-2 py-1 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-gray  -800"
+                className="inline-flex items-center justify-center  rounded-md px-2 py-2 text-xs font-semibold shadow-sm ring-1 ring-inset ring-gray-300 text-dark bg-slate-100  hover:bg-slate-200  focus:outline-none focus:ring-gray-300 font-medium rounded-lg px-2 py-1 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-gray  -800"
                 id="menu-button"
                 aria-expanded="true"
                 aria-haspopup="true"
@@ -567,9 +643,10 @@ export default function MainPage() {
                 {downArrowIcon}
               </button>
 
+
               {dropdownVisibility.history && allVersionData.length > 0 && (
                 <div
-                  className="absolute right-0 z-10 mt-2 min-w-[240px] max-w-[300px]  max-h-96 overflow-auto p-1 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                  className="absolute right-0 z-10 mt-2 min-w-[240px] max-w-[300px]  max-h-96 overflow-auto p-1 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
                   role="menu"
                   aria-orientation="vertical"
                   aria-labelledby="menu-button"
@@ -607,6 +684,7 @@ export default function MainPage() {
           </div>
         </div>
 
+
         {/* code area */}
         <div className="MainTextArea text-sm relative">
           {isClipBoardAvailable && (
@@ -614,11 +692,12 @@ export default function MainPage() {
               onClick={() => {
                 copyToClipBoard();
               }}
-              className="absolute top-1 right-1 cursor-pointer text-dark bg-slate-100  hover:bg-slate-200  focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-2 py-0.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+              className="absolute top-1 right-1 cursor-pointer text-dark bg-slate-100  hover:bg-slate-200  focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-2 py-0.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
             >
               copy text
             </div>
           )}
+
 
 
           <Editor
@@ -649,6 +728,7 @@ export default function MainPage() {
 
               setup: (editor) => {
 
+
                 editor.ui.registry.addIcon("socketIcon", socketIcon)
                 editor.ui.registry.addButton("socketTogglePlugin", {
                   icon: "socketIcon",
@@ -670,6 +750,7 @@ export default function MainPage() {
                 });
               },
 
+
               save_onsavecallback: (e) => {
                 saveData()
               }
@@ -687,12 +768,15 @@ export default function MainPage() {
   );
 }
 
+
 function useKey(key, cb) {
   const callback = useRef(cb);
+
 
   useEffect(() => {
     callback.current = cb;
   });
+
 
   useEffect(() => {
     function handle(event) {
@@ -704,6 +788,7 @@ function useKey(key, cb) {
         callback.current(event);
       }
     }
+
 
     document.addEventListener("keydown", handle);
     return () => document.removeEventListener("keydown", handle);
