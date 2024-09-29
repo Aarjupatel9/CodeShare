@@ -369,11 +369,6 @@ export default function MainPage(props) {
     event.preventDefault();
     saveData();
   });
-  useKey("ctrl+c", (event) => {
-    if (isClipBoardAvailable) {
-      copyToClipBoard();
-    }
-  });
   useKey("Enter", (event) => {
     if (isRedirectFocused) {
       redirect();
@@ -495,7 +490,7 @@ export default function MainPage(props) {
                     </span>
                   </div>
                   <div className="flex flex-row min-w-[50px]">
-                    <a href={file.url} target="_blank" download={file.name}>
+                    <a href={file.url} target="_blank" download={file.name} rel="noreferrer">
                       {downloadIcon}
                     </a>
                     <div onClick={() => confirmFileRemove(file)}>
@@ -596,6 +591,7 @@ export default function MainPage(props) {
                                   href={file.url}
                                   target="_blank"
                                   download={file.name}
+                                  rel="noreferrer"
                                 >
                                   {downloadIcon}
                                 </a>
@@ -727,14 +723,23 @@ export default function MainPage(props) {
             className="text-sm z-10 h-[100%] rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
             apiKey={tinyApiKey}
             init={{
-              ai_request: (request, respondWith) => respondWith.string(() => Promise.reject('See docs to implement AI Assistant')),
               selector: "textarea",
-              plugins: [
-                // Core editing features
-                'fullscreen', 'save', 'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'image', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
-                'checklist', 'mediaembed', 'casechange', 'export', 'formatpainter', 'pageembed', 'a11ychecker', 'tinymcespellchecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'editimage', 'advtemplate', 'ai', 'mentions', 'tinycomments', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown',
-              ],
-              toolbar: 'socketTogglePlugin fullscreen save undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
+              plugins: 'socketTogglePlugin preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons accordion',
+              editimage_cors_hosts: ['picsum.photos'],
+              menubar: 'file edit view insert format tools table help',
+              toolbar: "undo redo | accordion accordionremove | blocks fontfamily fontsize | bold italic underline strikethrough | align numlist bullist | link image | table media | lineheight outdent indent| forecolor backcolor removeformat | charmap emoticons | code fullscreen preview | save print | pagebreak anchor codesample | ltr rtl",
+
+              image_caption: true,
+              quickbars_selection_toolbar: 'bold italic | quicklink h2 h3 blockquote quickimage quicktable',
+              noneditable_class: 'mceNonEditable',
+              toolbar_mode: 'sliding',
+              contextmenu: 'link image table',
+              // skin: useDarkMode ? 'oxide-dark' : 'oxide',
+              // content_css: useDarkMode ? 'dark' : 'default',
+              skin: 'oxide',
+              content_css: 'default',
+              content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:16px }',
+
               tinycomments_mode: 'embedded',
               tinycomments_author: 'Aarju Patel',
 
@@ -787,10 +792,6 @@ function useKey(key, cb) {
       } else if (key === "ctrl+s" && event.key === "s" && event.ctrlKey) {
         callback.current(event);
       } else if (key === "ctrl+s" && event.key === "s" && event.metaKey) {
-        callback.current(event);
-      } else if (key === "ctrl+c" && event.key === "c" && event.ctrlKey) {
-        callback.current(event);
-      } else if (key === "ctrl+c" && event.key === "c" && event.metaKey) {
         callback.current(event);
       }
     }
