@@ -15,6 +15,7 @@ import {
   fileAddIcon,
   downArrowIcon,
   socketIcon,
+  addFileIcon
 } from "../assets/svgs";
 
 var tinyApiKey = process.env.REACT_APP_TINYMCE_KEY;
@@ -366,8 +367,10 @@ export default function MainPage() {
     ));
   };
 
+  const inputFile = useRef(null);
   return (
     <div className="MainPage">
+      <input type="file" accept="*" onChange={onSelectFile} ref={inputFile} style={{display: 'none'}} />
       <script src={flobiteJS}></script>
       <aside
         id="separator-sidebar"
@@ -398,17 +401,6 @@ export default function MainPage() {
             >
               Redirect
             </button>
-          </div>
-
-          {/* File upload functionality */}
-          <div className="pt-4 mt-4 space-y-2 font-medium text-sm border-t border-gray-200 dark:border-gray-700">
-            <div>
-              <label className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group">
-                <input type="file" accept="*" onChange={onSelectFile} />
-                {fileAddIcon}
-                Select to Upload Files
-              </label>
-            </div>
           </div>
 
           {/* File List functionality */}
@@ -469,7 +461,7 @@ export default function MainPage() {
           </button>
         </div>
         {/* app bar header */}
-        <div className="flex flex-row justify-between gap-2 items-center text-xs">
+        <div className="flex flex-row gap-2 items-center">
           <div className="flex flex-row">
             <div className="relative inline-block text-left">
               <button
@@ -548,14 +540,6 @@ export default function MainPage() {
             </div>
           </div>
           <div className="flex flex-row gap-1   ">
-            <button
-              onClick={saveData}
-              title="Ctr + S also worked!"
-              className="bg-blue-500 hover:bg-blue-400 text-white buttons  font-bold border-b-1 border-blue-700 hover:border-blue-500 rounded"
-            >
-              Save
-            </button>
-
             <div className="relative inline-block text-left">
               <button
                 onMouseOver={() => {
@@ -579,7 +563,7 @@ export default function MainPage() {
               >
                 {latestVersion.timeformate
                   ? "Last save on - " + latestVersion.timeformate
-                  : "History "}
+                  : "page title"}
                 {downArrowIcon}
               </button>
 
@@ -646,7 +630,7 @@ export default function MainPage() {
               plugins: 'socketTogglePlugin preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons accordion',
               editimage_cors_hosts: ['picsum.photos'],
               menubar: 'file edit view insert format tools table help',
-              toolbar: "undo redo | accordion accordionremove | blocks fontfamily fontsize | bold italic underline strikethrough | align numlist bullist | link image | table media | lineheight outdent indent| forecolor backcolor removeformat | charmap emoticons | code fullscreen preview | save print | pagebreak anchor codesample | ltr rtl",
+              toolbar: "addFileButton | undo redo | accordion accordionremove | blocks fontfamily fontsize | bold italic underline strikethrough | align numlist bullist | link image | table media | lineheight outdent indent| forecolor backcolor removeformat | charmap emoticons | code fullscreen preview | save print | pagebreak anchor codesample | ltr rtl",
 
               image_caption: true,
               quickbars_selection_toolbar: 'bold italic | quicklink h2 h3 blockquote quickimage quicktable',
@@ -672,6 +656,17 @@ export default function MainPage() {
                   onAction: function () {
                     setSocketEnabled((prev) => !prev);
                   },
+                });
+
+                // add file button
+                editor.ui.registry.addIcon("addFileIcon",addFileIcon)
+                editor.ui.registry.addButton("addFileButton", {
+                  icon: "addFileIcon",
+                  tooltip: "Upload a file",
+                  onAction: function(){
+                    inputFile.current.click();
+                  },
+                  
                 });
               },
 
