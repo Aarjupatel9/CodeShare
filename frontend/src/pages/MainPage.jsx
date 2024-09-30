@@ -426,6 +426,20 @@ export default function MainPage(props) {
   }
 
 
+
+  const handleLogin = () => {
+    console.log("In login");
+    navigate('/login');
+  }
+
+  const handleLogout = () => {
+    const slug = generateRandomString(7);
+    navigate('/' + slug);
+    setCurrUser(null);
+    localStorage.removeItem('currUser');
+  }
+
+
   return (
     <div className="MainPage">
       <input type="file" accept="*" onChange={onSelectFile} ref={inputFile} style={{display: 'none'}} />
@@ -598,7 +612,6 @@ export default function MainPage(props) {
               )}
             </div>
           </div>
-
           <div className="flex flex-row gap-1   ">
             <button
               onClick={currUser ? handleLogout : handleLogin}
@@ -613,8 +626,6 @@ export default function MainPage(props) {
                   Login</>
               }
             </button>
-            
-            
             <div className="relative inline-block text-left">
               <button
                 onMouseOver={() => {
