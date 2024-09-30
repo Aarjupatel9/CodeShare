@@ -5,8 +5,6 @@ import toast from "react-hot-toast";
 import { Editor } from '@tinymce/tinymce-react';
 import flobiteJS from "flowbite/dist/flowbite.min.js";
 import { io } from 'socket.io-client';
-
-
 import {
   currentVersionIcon,
   versionIndicatorIcon,
@@ -21,10 +19,8 @@ import {
 import { UserContext } from "../context/UserContext";
 import authService from "../services/authService";
 
-
 var tinyApiKey = process.env.REACT_APP_TINYMCE_KEY;
 var SOCKET_ADDRESS = process.env.REACT_APP_SOCKET_ADDRESS;
-
 
 export default function MainPage(props) {
   const { currUser, setCurrUser } = useContext(UserContext)
@@ -68,7 +64,6 @@ export default function MainPage(props) {
       setTmpSlug(newSlug);
       setUserSlug(slug)
     } else {
-
 
       setAllVersionData([]);
       setFileList([]);
@@ -119,8 +114,9 @@ export default function MainPage(props) {
         console.log("navigate to login")
         navigate('/login');
       }
+    }else{
+      checkSlug();
     }
-    checkSlug();
   }, [slug]);
 
 
@@ -424,18 +420,17 @@ export default function MainPage(props) {
   };
   
   const inputFile = useRef(null);
-  
+
   const handleLogin = () => {
     console.log("In login");
     navigate('/login');
   }
 
   const handleLogout = () => {
-    const slug = generateRandomString(7);
-    navigate('/' + slug);
+    navigate('/');
     setCurrUser(null);
+    localStorage.removeItem('currentUser');
   }
-
 
   return (
     <div className="MainPage">
@@ -609,7 +604,6 @@ export default function MainPage(props) {
               )}
             </div>
           </div>
-
           <div className="flex flex-row gap-1   ">
             <button
               onClick={currUser ? handleLogout : handleLogin}
@@ -624,8 +618,6 @@ export default function MainPage(props) {
                   Login</>
               }
             </button>
-            
-            
             <div className="relative inline-block text-left">
               <button
                 onMouseOver={() => {

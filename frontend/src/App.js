@@ -5,7 +5,7 @@ import toast, { Toaster } from "react-hot-toast";
 import LoginComponent from "./pages/LoginComponent";
 import RegisterComponent from "./pages/RegisterComponent";
 import { UserProvider } from "./context/UserContext";
-
+import ForgetPasswordComponent from "./pages/ForgetPasswordComponent";
 
 function App() {
   return (
@@ -15,6 +15,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginComponent />} />
           <Route path="/register" element={<RegisterComponent />} />
+          <Route path='forgetpassword' element={<ForgetPasswordComponent/>}/>
           <Route path="/:slug" element={<MainPage isPersonal={false} />} />
           <Route path="/:username/:slug" element={<MainPage isPersonal={true} />} />
           <Route path="/" element={<MainPage isPersonal={false} />} />
