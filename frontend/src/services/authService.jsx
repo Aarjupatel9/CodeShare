@@ -1,12 +1,8 @@
+const server_host = process.env.REACT_APP_SERVER_PATH;
+
 class AuthService {
 
-
     login(requestPayload) {
-
-
-        const server_host = process.env.REACT_APP_SERVER_PATH;
-
-
         return new Promise(function (resolve, reject) {
             const fetchPostOptions = {
                 method: "POST",
@@ -26,6 +22,7 @@ class AuthService {
                 .then((res) => {
                     if (res.success) {
                         resolve(res);
+                        localStorage.setItem("currentUser", JSON.stringify(res.user))
                     } else {
                         reject(res.message);
                     }
@@ -35,15 +32,9 @@ class AuthService {
                     reject(e.toString());
                 });
         });
-
-
     }
+
     register(requestPayload) {
-
-
-        const server_host = process.env.REACT_APP_SERVER_PATH;
-
-
         return new Promise(function (resolve, reject) {
             const fetchPostOptions = {
                 method: "POST",
@@ -72,10 +63,17 @@ class AuthService {
                     reject(e.toString());
                 });
         });
-
-
     }
-}
 
+    checkLoggedInUser() {
+        const currentUser = localStorage.getItem("currentUser") ? JSON.parse(localStorage.getItem("currentUser")) : null;
+        if (currentUser) {
+            return currentUser;
+        } else {
+            return false;
+        }
+    }
+
+}
 
 export default new AuthService();

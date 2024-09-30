@@ -19,7 +19,7 @@ class UserService {
         },
         body: JSON.stringify(requestPayload)
       };
-      fetch(server_host + "/data/getData" , fetchPostOptions)
+      fetch(server_host + "/api/data/getData" , fetchPostOptions)
         .then((response) => {
           return response.json();
         })
@@ -53,7 +53,7 @@ class UserService {
         },
         body: JSON.stringify(data),
       };
-      fetch(server_host + "/data/saveData/", fetchPostOptions)
+      fetch(server_host + "/api/data/saveData/", fetchPostOptions)
         .then((response) => {
           return response.json();
         })
@@ -85,7 +85,7 @@ class UserService {
         },
         body: formData,
       };
-      fetch(server_host + "/data/saveFile/", fetchPostOptions)
+      fetch(server_host + "/api/data/saveFile/", fetchPostOptions)
         .then((response) => {
           return response.json();
         })
@@ -118,7 +118,7 @@ class UserService {
         },
         body: JSON.stringify(data),
       };
-      fetch(server_host + "/data/removeFile/", fetchPostOptions)
+      fetch(server_host + "/api/data/removeFile/", fetchPostOptions)
         .then((response) => {
           return response.json();
         })

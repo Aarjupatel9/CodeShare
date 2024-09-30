@@ -19,6 +19,7 @@ import {
   addFileIcon
 } from "../assets/svgs";
 import { UserContext } from "../context/UserContext";
+import authService from "../services/authService";
 
 
 var tinyApiKey = process.env.REACT_APP_TINYMCE_KEY;
@@ -56,6 +57,9 @@ export default function MainPage(props) {
 
   const isClipBoardAvailable = navigator?.clipboard ? true : false;
 
+  useEffect(()=>{
+    console.log("first render "+ JSON.stringify(props))
+  },[])
 
   const checkSlug = () => {
     if (!slug) {
@@ -105,11 +109,18 @@ export default function MainPage(props) {
 
 
   useEffect(() => {
+    console.log("in slug effect ",JSON.stringify(props))
     if (props.isPersonal) {
-      checkSlug();
-    } else {
-      navigate('/login');
+      const loggedInUSser = authService.checkLoggedInUser();
+      if(loggedInUSser){
+        setCurrUser(loggedInUSser)
+        console.log("user is logged in ",JSON.stringify(loggedInUSser));
+      }else{
+        console.log("navigate to login")
+        navigate('/login');
+      }
     }
+    checkSlug();
   }, [slug]);
 
 

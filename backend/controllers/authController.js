@@ -64,8 +64,6 @@ exports.login = async function (req, res) {
         else {
             res.status(400).json({ error: 'Email or Password is wrong.', success: false });
         }
-
-
     } catch (e) {
         res.status(500).json({ error: 'An error occurred during registration', success: false });
     }
