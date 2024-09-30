@@ -44,7 +44,6 @@ exports.register = async function (req, res) {
 };
 
 
-
 exports.login = async function (req, res) {
     const { email, password } = req.body;
     const user = await DataModel.findOne({ email });

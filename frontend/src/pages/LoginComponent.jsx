@@ -6,7 +6,6 @@ import authService from '../services/authService';
 import { UserContext } from '../context/UserContext';
 import toast from 'react-hot-toast';
 
-
 const LoginComponent = () => {
     const { currUser, setCurrUser } = useContext(UserContext);
     const navigate = useNavigate();

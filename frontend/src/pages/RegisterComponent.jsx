@@ -50,7 +50,7 @@ const RegisterComponent = () => {
         <div className='auth-container'>
             <form className='auth-form' onSubmit={e => HandleSubmit(e)} >
                 <h2>Register</h2>
-                
+
                 <input type="text" placeholder="Username" value={registerUser.userName} onChange={(e) => setRegisterUser({ ...registerUser, userName: e.target.value })} required />
                 <input type="email" placeholder="Email" value={registerUser.userEmail} onChange={(e) => setRegisterUser({ ...registerUser, userEmail: e.target.value })} required />
                 <input type="password" placeholder="Password" value={registerUser.userPassword} onChange={(e) => setRegisterUser({ ...registerUser, userPassword: e.target.value })} />

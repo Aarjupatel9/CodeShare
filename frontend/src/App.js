@@ -7,7 +7,6 @@ import RegisterComponent from "./pages/RegisterComponent";
 import { UserProvider } from "./context/UserContext";
 import ForgetPasswordComponent from "./pages/ForgetPasswordComponent";
 
-
 function App() {
   return (
     <div className="App">
