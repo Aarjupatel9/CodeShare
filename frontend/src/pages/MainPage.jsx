@@ -426,6 +426,7 @@ export default function MainPage(props) {
     const slug = generateRandomString(7);
     navigate('/' + slug);
     setCurrUser(null);
+    localStorage.removeItem('currUser');
   }
 
 
