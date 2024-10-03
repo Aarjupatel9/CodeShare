@@ -2,9 +2,9 @@ import React, { useContext, useEffect, useRef, useState } from "react";
 import userService from "../services/userService";
 import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Editor } from '@tinymce/tinymce-react';
 import flobiteJS from "flowbite/dist/flowbite.min.js";
 import { io } from 'socket.io-client';
+import useKeys from "../hooks/keyKeys";
 import {
   currentVersionIcon,
   versionIndicatorIcon,
@@ -13,22 +13,19 @@ import {
   removeIcon,
   fileAddIcon,
   downArrowIcon,
-  socketIcon,
-  addFileIcon
 } from "../assets/svgs";
 import { UserContext } from "../context/UserContext";
-import authService from "../services/authService";
+import TmceEditor from "./TmceEditor";
+import { generateRandomString, getPresizeFileName, getTimeInFormate } from "../common/functions";
 
-var tinyApiKey = process.env.REACT_APP_TINYMCE_KEY;
 var SOCKET_ADDRESS = process.env.REACT_APP_SOCKET_ADDRESS;
 
 export default function MainPage(props) {
   const { currUser, setCurrUser } = useContext(UserContext)
-  var MAX_FILE_NAME_VISIBLE = 20;
+
   const editorRef = useRef(null);
   const navigate = useNavigate();
   const { slug } = useParams();
-
 
   const [userSlug, setUserSlug] = useState(slug);
   const [isRedirectFocused, setIsRedirectFocused] = useState(true);
@@ -47,15 +44,12 @@ export default function MainPage(props) {
     history: false,
   });
 
-
   const [incomingEditorValue, setIncomingEditorValue] = useState("");
 
 
-  const isClipBoardAvailable = navigator?.clipboard ? true : false;
-
-  useEffect(()=>{
-    console.log("first render "+ JSON.stringify(props))
-  },[])
+  useEffect(() => {
+    console.log("first render " + JSON.stringify(props))
+  }, [])
 
   const checkSlug = () => {
     if (!slug) {
@@ -104,19 +98,7 @@ export default function MainPage(props) {
 
 
   useEffect(() => {
-    console.log("in slug effect ",JSON.stringify(props))
-    if (props.isPersonal) {
-      const loggedInUSser = authService.checkLoggedInUser();
-      if(loggedInUSser){
-        setCurrUser(loggedInUSser)
-        console.log("user is logged in ",JSON.stringify(loggedInUSser));
-      }else{
-        console.log("navigate to login")
-        navigate('/login');
-      }
-    }else{
-      checkSlug();
-    }
+    checkSlug();
   }, [slug]);
 
 
@@ -127,12 +109,10 @@ export default function MainPage(props) {
           query: "slug=" + slug
         });
 
-
         socket.on('room_message', (room, content) => {
           setIncomingEditorValue(content);
         })
         setSocket(socket);
-
 
         return () => {
           socket.disconnect();
@@ -164,8 +144,6 @@ export default function MainPage(props) {
     userService
       .getData(userSlug, null, "allVersion")
       .then((res) => {
-
-
         let processedData = res.result?.data?.map((r) => {
           r.timeformat = getTimeInFormate(r.time);
           r.isCurrent = false;
@@ -189,8 +167,6 @@ export default function MainPage(props) {
     userService
       .getData(userSlug, time, "specific")
       .then((res) => {
-
-
         if (res.success) {
           if (editorRef && editorRef.current) { editorRef.current.value = res.result.data.data; }
           latestVersion.data = res.result.data.data
@@ -199,8 +175,6 @@ export default function MainPage(props) {
               m.isLoaded = false;
               return m;
             });
-
-
             x[index].isLoaded = true;
             return x;
           });
@@ -211,32 +185,12 @@ export default function MainPage(props) {
       });
   };
 
-
   function clearEditorValue() {
     if (editorRef && editorRef.current) {
       editorRef.current.value = "";
     }
     setFileList([]);
   }
-
-
-  function getTimeInFormate(time) {
-    let t = new Date(time);
-
-
-    // Pad each component with leading zeros if necessary
-    const year = t.getFullYear();
-    const month = (t.getMonth() + 1).toString().padStart(2, "0"); // Months are 0-based, so add 1
-    const day = t.getDate().toString().padStart(2, "0");
-    const hours = t.getHours().toString().padStart(2, "0");
-    const minutes = t.getMinutes().toString().padStart(2, "0");
-    const seconds = t.getSeconds().toString().padStart(2, "0");
-
-
-    // Construct the formatted time string
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-  }
-
 
   const saveData = () => {
     if (!editorRef) {
@@ -264,7 +218,6 @@ export default function MainPage(props) {
         console.error(error);
       });
 
-
     toast.promise(
       dataSavePromise,
       {
@@ -283,7 +236,6 @@ export default function MainPage(props) {
     );
   };
 
-
   const onSelectFile = async (event) => {
     const file = event.target.files[0];
     if (file.size > 20e6 && !userSlug.includes("aarju")) {
@@ -297,7 +249,6 @@ export default function MainPage(props) {
     console.log("file : ", file)
     console.log("file : ", file.size)
     formData.append("slug", userSlug);
-
 
     const toastId = toast.loading('Uploading file server...');
     userService
@@ -315,31 +266,10 @@ export default function MainPage(props) {
       });
   };
 
-
   const redirect = () => {
     navigate("/" + tmpSlug);
   };
 
-
-  function getPresizeFileName(name) {
-    if (name.length > MAX_FILE_NAME_VISIBLE) {
-      return name.slice(0, MAX_FILE_NAME_VISIBLE) + "...";
-    }
-    return name;
-  }
-
-
-  function generateRandomString(length) {
-    const characters =
-      "abcdefghijklmnopqrstuvwxyz0123456789";
-    let result = "";
-    for (let i = 0; i < length; i++) {
-      result += characters.charAt(
-        Math.floor(Math.random() * characters.length)
-      );
-    }
-    return result;
-  }
   const remvoeCurrentFile = (file) => {
     userService
       .removeFile({ slug: userSlug, file })
@@ -357,33 +287,15 @@ export default function MainPage(props) {
       });
   };
 
-
-  const copyToClipBoard = () => {
-    if (!editorRef) {
-      return
-    }
-    navigator?.clipboard?.writeText(editorRef.current.value).then(
-      () => {
-        toast.success("Content copied to clipboard");
-      },
-      () => {
-        toast.error("Failed to copy");
-      }
-    );
-  };
-
-
-  useKey("ctrl+s", (event) => {
+  useKeys("ctrl+s", (event) => {
     event.preventDefault();
     saveData();
   });
-  useKey("Enter", (event) => {
+  useKeys("Enter", (event) => {
     if (isRedirectFocused) {
       redirect();
     }
   });
-
-
 
   const confirmFileRemove = (file) => {
     toast.custom((t) => (
@@ -394,8 +306,6 @@ export default function MainPage(props) {
         >
           Are you sure to Delete file - {file.name} ?
         </div>
-
-
         <div className="flex flex-row gap-2 justify-center">
           <button
             onClick={() => {
@@ -418,7 +328,7 @@ export default function MainPage(props) {
       </div>
     ));
   };
-  
+
   const inputFile = useRef(null);
 
   const handleLogin = () => {
@@ -432,9 +342,15 @@ export default function MainPage(props) {
     localStorage.removeItem('currentUser');
   }
 
+  const handleOnEditorChange = (value) => {
+    if (value != incomingEditorValue) {
+      socket.emit("room_message", userSlug, value);
+    }
+  }
+
   return (
     <div className="MainPage">
-      <input type="file" accept="*" onChange={onSelectFile} ref={inputFile} style={{display: 'none'}} />
+      <input type="file" accept="*" onChange={onSelectFile} ref={inputFile} style={{ display: 'none' }} />
       <script src={flobiteJS}></script>
       <aside
         id="separator-sidebar"
@@ -625,8 +541,6 @@ export default function MainPage(props) {
                 }}
                 onClick={() => {
                   getAllversionData(true);
-
-
                   setDropdownVisibility(() => {
                     var val = structuredClone(dropdownVisibility);
                     val.history = !val.history;
@@ -645,7 +559,6 @@ export default function MainPage(props) {
                   : "page title"}
                 {downArrowIcon}
               </button>
-
 
               {dropdownVisibility.history && allVersionData.length > 0 && (
                 <div
@@ -687,113 +600,11 @@ export default function MainPage(props) {
           </div>
         </div>
 
-
         {/* code area */}
         <div className="MainTextArea text-sm relative">
-          {isClipBoardAvailable && (
-            <div
-              onClick={() => {
-                copyToClipBoard();
-              }}
-              className="absolute top-1 right-1 cursor-pointer text-dark bg-slate-100  hover:bg-slate-200  focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-2 py-0.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-            >
-              copy text
-            </div>
-          )}
-
-
-
-          <Editor
-            onInit={(evt, editor) => editorRef.current = editor}
-            className="text-sm z-10 h-[100%] rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-            apiKey={tinyApiKey}
-            init={{
-              selector: "textarea",
-              plugins: 'socketTogglePlugin preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons accordion',
-              editimage_cors_hosts: ['picsum.photos'],
-              menubar: 'file edit view insert format tools table help',
-              toolbar: "addFileButton | undo redo | accordion accordionremove | blocks fontfamily fontsize | bold italic underline strikethrough | align numlist bullist | link image | table media | lineheight outdent indent| forecolor backcolor removeformat | charmap emoticons | code fullscreen preview | save print | pagebreak anchor codesample | ltr rtl",
-
-              image_caption: true,
-              quickbars_selection_toolbar: 'bold italic | quicklink h2 h3 blockquote quickimage quicktable',
-              noneditable_class: 'mceNonEditable',
-              toolbar_mode: 'sliding',
-              contextmenu: 'link image table',
-              // skin: useDarkMode ? 'oxide-dark' : 'oxide',
-              // content_css: useDarkMode ? 'dark' : 'default',
-              skin: 'oxide',
-              content_css: 'default',
-              content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:16px }',
-
-              tinycomments_mode: 'embedded',
-              tinycomments_author: 'Aarju Patel',
-
-
-              setup: (editor) => {
-
-
-                editor.ui.registry.addIcon("socketIcon", socketIcon)
-                editor.ui.registry.addButton("socketTogglePlugin", {
-                  icon: "socketIcon",
-                  tooltip: "Toggle realtime socket update ",
-                  onAction: function () {
-                    setSocketEnabled((prev) => !prev);
-                  },
-                });
-
-                // add file button
-                editor.ui.registry.addIcon("addFileIcon",addFileIcon)
-                editor.ui.registry.addButton("addFileButton", {
-                  icon: "addFileIcon",
-                  tooltip: "Upload a file",
-                  onAction: function(){
-                    inputFile.current.click();
-                  },
-                  
-                });
-              },
-
-
-              save_onsavecallback: (e) => {
-                saveData()
-              }
-            }}
-            onEditorChange={(value) => {
-              if (value != incomingEditorValue) {
-                socket.emit("room_message", userSlug, value);
-              }
-            }}
-            initialValue={latestVersion.data}
-          />
+          <TmceEditor props={{ inputFile, editorRef, latestVersion, setSocketEnabled, saveData, handleOnEditorChange }} />
         </div>
       </div>
     </div>
   );
-}
-
-
-function useKey(key, cb) {
-  const callback = useRef(cb);
-
-
-  useEffect(() => {
-    callback.current = cb;
-  });
-
-
-  useEffect(() => {
-    function handle(event) {
-      if (event.code === key) {
-        callback.current(event);
-      } else if (key === "ctrl+s" && event.key === "s" && event.ctrlKey) {
-        callback.current(event);
-      } else if (key === "ctrl+s" && event.key === "s" && event.metaKey) {
-        callback.current(event);
-      }
-    }
-
-
-    document.addEventListener("keydown", handle);
-    return () => document.removeEventListener("keydown", handle);
-  }, [key]);
 }
