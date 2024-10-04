@@ -11,6 +11,9 @@ const userRoute = require('../routes/userRoute');
 
 const app = express();
 
+// Trust the reverse proxy (Nginx, etc.)
+app.set('trust proxy', 'loopback, 43.205.203.95');
+
 const limiter = rateLimit({
     windowMs: 5000, // 15 minutes
     limit: 25, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
@@ -47,7 +50,7 @@ app.get('/', (req, res) => {
     })
 });
 
-app.use("/data", userRoute);
+app.use("/api/data", userRoute);
 
 app.get('*', (req, res) => {
     return res.status(404).json({ message: 'Content Not found, Check the URL properly !!!' });

@@ -95,7 +95,8 @@ export default function MainPage() {
     if (socketEnabled) {
       if (slug) {
         const socket = new io(SOCKET_ADDRESS, {
-          query: "slug=" + slug
+          query: { slug: slug },
+          path: '/socket/',  // Custom path for Socket.IO
         });
 
         socket.on('room_message', (room, content) => {
