@@ -8,23 +8,28 @@ import userService from '../services/userService';
 
 export default function PrivatePages() {
     const navigate = useNavigate();
-    const { slug } = useParams();
+    const { slug,username } = useParams();
     const { currUser, setCurrUser } = useContext(UserContext)
 
 
     useEffect(() => {
-
+        if(!username){
+            navigate('/auth/login');
+        }
         const loggedInUSser = authService.checkLoggedInUser();
         if (loggedInUSser) {
             setCurrUser(loggedInUSser)
             console.log("user is logged in ", JSON.stringify(loggedInUSser));
+            if(!slug){
+                navigate('/p'+username+'/new');
+            }
         } else {
             console.log("navigate to login")
-            navigate('/login');
+            navigate('/auth/login');
         }
 
-    }, [slug]);
+    }, [slug,username]);
 
 
-    return <MainPage isPersonal={true} />
+    return <MainPage user={currUser} />
 }

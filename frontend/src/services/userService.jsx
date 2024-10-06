@@ -1,8 +1,10 @@
 class UserService {
-  getData(slug, time, flag) {
+  getData(slug, time, flag,user) {
     const server_host =process.env.REACT_APP_SERVER_PATH ;
-
-    var requestPayload = {slug:slug , flag:flag}
+    var requestPayload = {slug:slug , flag:flag, }
+    if(!user){
+      requestPayload.isPublic=true;
+    }
     if(time){
       requestPayload.time = time;
     }

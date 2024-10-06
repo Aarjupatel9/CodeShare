@@ -27,7 +27,7 @@ const LoginComponent = () => {
                     toast.success(res.message);
                     setCurrUser(res.user);
                     localStorage.setItem('currUser', JSON.stringify(res.user));
-                    navigate('/' + res.user.username + '/new');
+                    navigate('/p/' + res.user.username + '/new');
                    
                 }
                 else {

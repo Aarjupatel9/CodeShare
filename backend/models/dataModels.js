@@ -19,6 +19,10 @@ const dataModelsSchema = mongoose.Schema({
                 type: String,
                 required: true,
             },
+            user:{
+                type:mongoose.SchemaTypes.ObjectId,
+                required:true,
+            }
         },
     ],
     files: [
@@ -87,7 +91,7 @@ const dataModelsSchema = mongoose.Schema({
     owner: {
         type: mongoose.SchemaTypes.ObjectId,
         ref: 'userModels',
-        required: true,
+        required: false,
     },
 });
 

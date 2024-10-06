@@ -18,9 +18,10 @@ function App() {
           <Route path="/auth/login" element={<LoginComponent />} />
           <Route path="/auth/register" element={<RegisterComponent />} />
           <Route path='/auth/forgetpassword' element={<ForgetPasswordComponent/>}/>
-          <Route path="/:slug" element={<PublicPages/>} />
+          <Route path="/p/" element={<PrivatePages />} />
           <Route path="/p/:username/" element={<PrivatePages />} />
           <Route path="/p/:username/:slug" element={<PrivatePages />} />
+          <Route path="/:slug" element={<PublicPages/>} />
           <Route path="/" element={<PublicPages />} />
           <Route path="*" element={<PublicPages />} />
         </Routes>

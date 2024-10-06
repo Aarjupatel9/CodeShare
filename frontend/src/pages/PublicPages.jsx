@@ -4,5 +4,5 @@ import MainPage from './MainPage';
 export default function PublicPages() {
 
 
-    return <MainPage isPersonal={false} />
+    return <MainPage user={null} />
 }

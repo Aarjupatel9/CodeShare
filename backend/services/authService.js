@@ -28,7 +28,7 @@ exports.genJWTToken = (payload, type = null) => {
 
 exports.verifyJWTToken = (token) => {
   try {
-    const payload = jwt.verify(token, JWT_SEC);
+    const payload = jwt.verify(token, process.env.JWT_SEC);
     return payload;
   } catch (error) {
     throw error;

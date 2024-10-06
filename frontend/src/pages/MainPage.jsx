@@ -25,7 +25,7 @@ export default function MainPage(props) {
 
   const editorRef = useRef(null);
   const navigate = useNavigate();
-  const { slug } = useParams();
+  const { slug,username } = useParams();
 
   const [userSlug, setUserSlug] = useState(slug);
   const [isRedirectFocused, setIsRedirectFocused] = useState(true);
@@ -67,7 +67,7 @@ export default function MainPage(props) {
 
 
       userService
-        .getData(slug, null, "latest")
+        .getData(slug, null, "latest",props.user)
         .then((res) => {
           if (res.success) {
             if (res.result.data) {
@@ -193,13 +193,73 @@ export default function MainPage(props) {
   }
 
   const saveData = () => {
+    if(props.user){
+      if(userSlug=='new'){
+        let newTitle='';
+        toast.custom((t) => (
+          <div className="z-[1000] bg-gray-100 border border-gray-200 p-6 rounded w-[350px] h-auto flex flex-col justify-center items-center space-y-4 shadow-md">
+            <div
+              className={`text-gray-800 text-lg font-semibold ${t.visible ? 'animate-enter' : 'animate-leave'
+                }`}
+            >
+              Rename Page
+            </div>
+            <div className="flex flex-col items-start w-full space-y-2">
+              <label htmlFor="newTitle" className="text-gray-700">
+                Enter New Page Title
+              </label>
+              <input
+                id="newTitle"
+                type="text"
+                placeholder={userSlug}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(e) => (newTitle = e.target.value)}
+              />
+            </div>
+            <div className="flex flex-row gap-4 justify-center w-full">
+              <button
+                onClick={() => {
+                  toast.dismiss(t.id);
+                }}
+                className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (newTitle.trim()) {
+                    // Perform your rename action here, e.g., update the page title state
+                    console.log(`Renamed page to: ${newTitle}`);
+
+                    toast.dismiss(t.id);
+                    saveDataMain(newTitle);
+                  }
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        ));
+      }
+      
+    }
+    else{
+      saveDataMain(userSlug);
+    }
+    
+  };
+
+  const saveDataMain=(pageTitle)=>{
     if (!editorRef) {
       return;
     }
     var editorValue = editorRef.current.getContent()
     var body = {
-      slug: userSlug,
+      slug: pageTitle,
       data: editorValue,
+      owner:props.user,
     };
     var dataSavePromise = userService
       .saveData(body)
@@ -212,6 +272,9 @@ export default function MainPage(props) {
           setLatestVersion(obj);
         }
         toast.success("Saved");
+        if(userSlug=='new'){
+          navigate('/p/'+username+'/'+pageTitle);
+        }
       })
       .catch((error) => {
         toast.error("error while saving data");
@@ -234,7 +297,7 @@ export default function MainPage(props) {
         },
       }
     );
-  };
+  }
 
   const onSelectFile = async (event) => {
     const file = event.target.files[0];
@@ -333,7 +396,7 @@ export default function MainPage(props) {
 
   const handleLogin = () => {
     console.log("In login");
-    navigate('/login');
+    navigate('/auth/login');
   }
 
   const handleLogout = () => {

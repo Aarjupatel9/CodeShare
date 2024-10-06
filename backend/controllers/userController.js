@@ -7,6 +7,7 @@ var allowed_for_slug = process.env.ALLOW_FILE_LIMIT;
 exports.getData = async function (req, res) {
   try {
     const { slug, flag, time } = req.body;
+
     let data_present;
     if (time) {
       data_present = await _getRequiredDataVersion(slug, time);
@@ -56,7 +57,7 @@ exports.getData = async function (req, res) {
 
 exports.saveData = async (req, res) => {
   try {
-    const { slug, data } = req.body;
+    const { slug, data, owner } = req.body;
     const latestVersion = await _getLatestDataVersion(slug);
     if (latestVersion?.latestDataVersion?.data == data) {
       return res.status(201).json({
@@ -67,10 +68,11 @@ exports.saveData = async (req, res) => {
     var newData = {
       time: new Date().getTime(),
       data: data,
+      user: req.user?req.user._id:null,
     };
     const data_present = await DataModel.updateOne(
       { unique_name: slug },
-      { $push: { dataVersion: newData } },
+      { $push: { dataVersion: newData},owner: req.user?req.user._id:null },
       { upsert: true }
     );
     if (data_present) {

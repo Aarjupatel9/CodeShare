@@ -42,6 +42,7 @@ exports.login = async function (req, res) {
     try {
         const match = await compareHashPassword(password, user.password);
         const payload = {
+            _id:user._id,
             username: user.username,
             email: user.email,
             password: user.password,
