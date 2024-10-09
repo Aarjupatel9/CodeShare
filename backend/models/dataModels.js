@@ -21,7 +21,7 @@ const dataModelsSchema = mongoose.Schema({
             },
             user:{
                 type:mongoose.SchemaTypes.ObjectId,
-                required:true,
+                required:false,
             }
         },
     ],

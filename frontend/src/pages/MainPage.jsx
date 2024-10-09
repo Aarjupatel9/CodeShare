@@ -25,7 +25,7 @@ export default function MainPage(props) {
 
   const editorRef = useRef(null);
   const navigate = useNavigate();
-  const { slug,username } = useParams();
+  const { slug, username } = useParams();
 
   const [userSlug, setUserSlug] = useState(slug);
   const [isRedirectFocused, setIsRedirectFocused] = useState(true);
@@ -67,7 +67,7 @@ export default function MainPage(props) {
 
 
       userService
-        .getData(slug, null, "latest",props.user)
+        .getData(slug, null, "latest", props.user)
         .then((res) => {
           if (res.success) {
             if (res.result.data) {
@@ -85,6 +85,9 @@ export default function MainPage(props) {
               setFileList([]);
             }
           } else {
+            if (props.user) {
+              navigate('/p/' + props.user.username + '/new');
+            }
             clearEditorValue();
           }
         })
@@ -193,9 +196,9 @@ export default function MainPage(props) {
   }
 
   const saveData = () => {
-    if(props.user){
-      if(userSlug=='new'){
-        let newTitle='';
+    if (props.user) {
+      if (userSlug == 'new') {
+        let newTitle = '';
         toast.custom((t) => (
           <div className="z-[1000] bg-gray-100 border border-gray-200 p-6 rounded w-[350px] h-auto flex flex-col justify-center items-center space-y-4 shadow-md">
             <div
@@ -243,15 +246,15 @@ export default function MainPage(props) {
           </div>
         ));
       }
-      
+
     }
-    else{
+    else {
       saveDataMain(userSlug);
     }
-    
+
   };
 
-  const saveDataMain=(pageTitle)=>{
+  const saveDataMain = (pageTitle) => {
     if (!editorRef) {
       return;
     }
@@ -259,7 +262,7 @@ export default function MainPage(props) {
     var body = {
       slug: pageTitle,
       data: editorValue,
-      owner:props.user,
+      owner: props.user,
     };
     var dataSavePromise = userService
       .saveData(body)
@@ -272,8 +275,8 @@ export default function MainPage(props) {
           setLatestVersion(obj);
         }
         toast.success("Saved");
-        if(userSlug=='new'){
-          navigate('/p/'+username+'/'+pageTitle);
+        if (userSlug == 'new') {
+          navigate('/p/' + username + '/' + pageTitle);
         }
       })
       .catch((error) => {

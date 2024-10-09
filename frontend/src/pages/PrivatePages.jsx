@@ -31,5 +31,5 @@ export default function PrivatePages() {
     }, [slug,username]);
 
 
-    return <MainPage user={currUser} />
+    return currUser && <MainPage user={currUser} />
 }
