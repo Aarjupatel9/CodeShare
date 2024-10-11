@@ -11,6 +11,17 @@ const authRoute = require('../routes/authRoute');
 
 const app = express();
 
+// Trust the reverse proxy (Nginx, etc.)
+app.set('trust proxy', 'loopback, 43.205.203.95');
+
+const limiter = rateLimit({
+    windowMs: 5000, // 15 minutes
+    limit: 25, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
+    standardHeaders: 'draft-7', // draft-6: `RateLimit-*` headers; draft-7: combined `RateLimit` header
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
+})
+app.use(limiter)
+
 app.use(cors({
     origin: ['http://localhost:3000', 'http://localhost', 'http://43.205.203.95'],
     credentials: true

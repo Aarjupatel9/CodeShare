@@ -10,12 +10,13 @@ const io = new Server(server, {
             "http://localhost",
             "http://43.205.203.95"
         ],
-    }
+    },
+    path: '/socket/'
 });
 
 const port = 8081
 server.listen(port, () => {
-    console.log("Server started at port ",port);
+    console.log("Server started at port ", port);
 })
 
 io.on('connection', (socket) => {
