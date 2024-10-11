@@ -10,8 +10,6 @@ class UserService {
       requestPayload.time = time;
     }
 
-
-
     return new Promise(function (resolve, reject) {
       const fetchPostOptions = {
         method: "POST",

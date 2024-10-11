@@ -57,7 +57,7 @@ const RegisterComponent = () => {
 
 
                 <button type="submit">Register</button>
-                <Link to='/login'>Already have an Account?</Link>
+                <Link to='/auth/login'>Already have an Account?</Link>
 
 
             </form>

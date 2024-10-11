@@ -14,7 +14,8 @@ import {
   fileAddIcon,
   downArrowIcon,
   pageIcon,
-  pageListIcon
+  pageListIcon,
+  menuIcon
 } from "../assets/svgs";
 import { UserContext } from "../context/UserContext";
 import TmceEditor from "./TmceEditor";
@@ -27,11 +28,9 @@ var SOCKET_ADDRESS = process.env.REACT_APP_SOCKET_ADDRESS;
 export default function MainPage(props) {
   const { currUser, setCurrUser } = useContext(UserContext)
 
-
   const editorRef = useRef(null);
   const navigate = useNavigate();
   const { slug, username } = useParams();
-
 
   const [userSlug, setUserSlug] = useState(slug);
   const [isRedirectFocused, setIsRedirectFocused] = useState(true);
@@ -40,10 +39,10 @@ export default function MainPage(props) {
     data: "",
     _id: "",
   });
-  const [tabs, setPrivateTabs] = useState([
-    { tabId: 1, tabName: "Pages", selected: true },
-    { tabId: 2, tabName: "Files", selected: false },
-  ])
+  const [privateTabs, setPrivateTabs] = useState([[
+    { tabId: 1, tabName: "Pages", selected: false },
+    { tabId: 2, tabName: "Files", selected: true },
+  ]])
   const [socketEnabled, setSocketEnabled] = useState(true);
   const [allVersionData, setAllVersionData] = useState([]);
   const [socket, setSocket] = useState(null);
@@ -54,13 +53,16 @@ export default function MainPage(props) {
     history: false,
   });
 
-
   const [incomingEditorValue, setIncomingEditorValue] = useState("");
-
-
 
   useEffect(() => {
     console.log("first render " + JSON.stringify(props))
+    if (props.user) {
+      setPrivateTabs([
+        { tabId: 1, tabName: "Pages", selected: true },
+        { tabId: 2, tabName: "Files", selected: false },
+      ])
+    }
   }, [])
 
 
@@ -72,14 +74,11 @@ export default function MainPage(props) {
       setUserSlug(newSlug)
     } else {
 
-
       setAllVersionData([]);
       setFileList([]);
       setLatestVersion({ time: "", data: "", _id: "" });
       setTmpSlug(slug);
       setUserSlug(slug)
-
-
 
       userService
         .getData(slug, null, "latest", props.user)
@@ -114,8 +113,6 @@ export default function MainPage(props) {
     setUserSlug(slug)
   }
 
-
-
   useEffect(() => {
     checkSlug();
   }, [slug]);
@@ -125,7 +122,6 @@ export default function MainPage(props) {
     console.log("Userslug :" + userSlug);
   }, [slug, userSlug]);
 
-
   useEffect(() => {
     if (socketEnabled) {
       if (slug) {
@@ -133,12 +129,10 @@ export default function MainPage(props) {
           query: "slug=" + slug
         });
 
-
         socket.on('room_message', (room, content) => {
           setIncomingEditorValue(content);
         })
         setSocket(socket);
-
 
         return () => {
           socket.disconnect();
@@ -159,8 +153,6 @@ export default function MainPage(props) {
     }
   }, [incomingEditorValue])
 
-
-
   const getAllversionData = (isCliced) => {
     if (allVersionData.length > 0) {
       return;
@@ -170,7 +162,7 @@ export default function MainPage(props) {
       return;
     }
     userService
-      .getData(userSlug, null, "allVersion")
+      .getData(userSlug, null, "allVersion", props.user)
       .then((res) => {
         let processedData = res.result?.data?.map((r) => {
           r.timeformat = getTimeInFormate(r.time);
@@ -178,7 +170,7 @@ export default function MainPage(props) {
           r.isLoaded = false;
           return r;
         });
-        processedData.reverse();
+        processedData?.reverse();
         if (processedData?.length > 0) {
           processedData[0].isCurrent = true;
           processedData[0].isLoaded = true;
@@ -190,11 +182,9 @@ export default function MainPage(props) {
       });
   };
 
-
-
   const loadSpecificVersion = (time, index) => {
     userService
-      .getData(userSlug, time, "specific")
+      .getData(userSlug, time, "specific", props.user)
       .then((res) => {
         if (res.success) {
           if (editorRef && editorRef.current) { editorRef.current.value = res.result.data.data; }
@@ -214,19 +204,12 @@ export default function MainPage(props) {
       });
   };
 
-
   function clearEditorValue() {
     if (editorRef && editorRef.current) {
       editorRef.current.value = "";
     }
     setFileList([]);
   }
-
-
-  const tinyMceSaveHandler = () => {
-    saveData()
-  }
-
 
   const saveData = () => {
     if (props.user) {
@@ -292,7 +275,6 @@ export default function MainPage(props) {
     }
   };
 
-
   const saveDataMain = (pageTitle) => {
     if (!editorRef) {
       return;
@@ -330,7 +312,6 @@ export default function MainPage(props) {
         toast.error("error while saving data");
         console.error(error);
       });
-
 
     toast.promise(
       dataSavePromise,
@@ -382,11 +363,9 @@ export default function MainPage(props) {
       });
   };
 
-
   const redirect = () => {
     navigate("/" + tmpSlug);
   };
-
 
   const remvoeCurrentFile = (file) => {
     userService
@@ -405,7 +384,6 @@ export default function MainPage(props) {
       });
   };
 
-
   useKeys("ctrl+s", (event) => {
     event.preventDefault();
     saveData();
@@ -415,7 +393,6 @@ export default function MainPage(props) {
       redirect();
     }
   });
-
 
   const confirmFileRemove = (file) => {
     toast.custom((t) => (
@@ -452,19 +429,16 @@ export default function MainPage(props) {
 
   const inputFile = useRef(null);
 
-
   const handleLogin = () => {
     console.log("In login");
     navigate('/auth/login');
   }
-
 
   const handleLogout = () => {
     navigate('/');
     setCurrUser(null);
     localStorage.removeItem('currentUser');
   }
-
 
   const handleOnEditorChange = (value) => {
     if (value != incomingEditorValue) {
@@ -499,7 +473,7 @@ export default function MainPage(props) {
       <script src={flobiteJS}></script>
       <aside
         id="separator-sidebar"
-        className="hidden md:block lg:block SideBar z-40  h-screen "
+        className="hidden md:block lg:block SideBar z-40 h-screen "
         aria-label="Sidebar"
       >
         <div className="h-full px-2 py-4 overflow-y-auto bg-gray-50 dark:bg-gray-800">
@@ -514,7 +488,7 @@ export default function MainPage(props) {
             className="flex flex-col space-y-2 text-sm justify-center items-center gap-2 "
           >
             <input
-              className=" font-bold px-4 border-b border-blue-700 hover:border-blue-500  "
+              className=" font-bold px-4 border-b border-blue-700 hover:border-blue-500 "
               onChange={(e) => {
                 setTmpSlug(e.target.value);
               }}
@@ -522,26 +496,23 @@ export default function MainPage(props) {
             />
             <button
               onClick={redirect}
-              className="bg-blue-500 hover:bg-blue-400 text-white  buttons border-b-1 border-blue-700 hover:border-blue-500 rounded"
+              className="bg-blue-500 hover:bg-blue-400 text-white buttons border-b-1 border-blue-700 hover:border-blue-500 rounded"
             >
               Redirect
             </button>
           </div> : <div
-
-
-            className="flex flex-row h-[30px]  w-full text-sm justify-center gap-2 "
+            className="flex flex-row h-[30px] w-full text-sm justify-center gap-2 "
           >
-            {tabs.map((tab) => {
-              return <div key={tab.tabId} className={`${tab.selected ? 'bg-slate-300' : 'bg-slate-100'
-                } h-full flex items-center justify-center w-full hover:bg-slate-400 text-black  rounded`} onClick={e => onSelectTab(tab.tabId, e)}>
+            {privateTabs.map((tab, index) => {
+              return <div key={tab.tabId + generateRandomString(10)} className={`${tab.selected ? 'bg-slate-300' : 'bg-slate-100'
+                } h-full flex items-center justify-center w-full hover:bg-slate-400 text-black rounded`} onClick={e => onSelectTab(tab.tabId, e)}>
                 {tab.tabName}
               </div>
             })}
           </div>}
 
-
-          {/* File upload functionality */}
-          {tabs[0].selected ?
+          {/* Tabs content */}
+          {privateTabs[0].selected ?
             <>
               <div className="pt-4 mt-4 space-y-2 font-medium text-sm border-t border-gray-200 dark:border-gray-700">
                 <div>
@@ -559,12 +530,12 @@ export default function MainPage(props) {
                   return (
                     <li
                       key={page.pageId._id}
-                      className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between  border-blue-300  hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
+                      className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between border-blue-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
                     >
                       <div className="flex items-center cursor-pointer p-2 text-gray-900 transition duration-75 rounded-lg group flex-1" onClick={e => handlePageNavigate(page.pageId.unique_name)}>
                         {pageIcon}
                         <span
-                          className="ms-3 w-full  line-clamp-1"
+                          className="ms-3 w-full line-clamp-1"
                           title={page.pageId.unique_name}
                         >
                           {page.pageId.unique_name ? getPresizeFileName(page.pageId.unique_name) : "page"}{" "}
@@ -593,7 +564,7 @@ export default function MainPage(props) {
                   return (
                     <li
                       key={index}
-                      className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between  border-blue-300  hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
+                      className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between border-blue-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
                     >
                       <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg group flex-1">
                         {fileIcon(file.type)}
@@ -619,12 +590,8 @@ export default function MainPage(props) {
               </div>
             </>}
 
-
-
         </div>
       </aside>
-
-
 
       <div className="MainArea sm:size-full text-xs md:text:sm p-1 md:p-4 gap-2">
         {!currUser && <div
@@ -637,7 +604,7 @@ export default function MainPage(props) {
           className="md:hidden flex flex-row space-x-2 py-2 text-sm justify-center items-center gap-2 "
         >
           <input
-            className="font-bold px-4 border-b border-blue-700 hover:border-blue-500  "
+            className="font-bold px-4 border-b border-blue-700 hover:border-blue-500 "
             onChange={(e) => {
               setTmpSlug(e.target.value);
             }}
@@ -645,7 +612,7 @@ export default function MainPage(props) {
           />
           <button
             onClick={redirect}
-            className="bg-blue-500 hover:bg-blue-400 text-white  buttons border-b-1 border-blue-700 hover:border-blue-500 rounded"
+            className="bg-blue-500 hover:bg-blue-400 text-white buttons border-b-1 border-blue-700 hover:border-blue-500 rounded"
           >
             Redirect
           </button>
@@ -653,41 +620,78 @@ export default function MainPage(props) {
 
 
         {/* app bar header */}
-        <div className="flex flex-row justify-between p-y-2 ">
-          <div className="flex flex-row">
-            {/* file handling */}
-            <div className="relative inline-block text-left">
-              <button
-                onClick={() => {
-                  setDropdownVisibility(() => {
-                    var val = structuredClone(dropdownVisibility);
-                    val.file = !val.file;
-                    val.history = false;
-                    return val;
-                  });
-                }}
-                type="button"
-                className="inline-flex md:hidden items-center justify-center  rounded-md px-2 py-2 text-xs font-semibold shadow-sm ring-1 ring-inset ring-gray-300 text-dark bg-slate-100  hover:bg-slate-200  focus:outline-none focus:ring-gray-300 font-medium rounded-lg px-2 py-1 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-gray  -800"
-                aria-expanded="true"
-                aria-haspopup="true"
+        <div className="flex flex-row justify-between items-center p-y-2 ">
+          {/* Tabs handling for smal screen */}
+          <div className="md:hidden inline-block text-left">
+            <button
+              onClick={() => {
+                setDropdownVisibility(() => {
+                  var val = structuredClone(dropdownVisibility);
+                  val.file = !val.file;
+                  val.history = false;
+                  return val;
+                });
+              }}
+              type="button"
+              className="inline-flex md:hidden items-center justify-center rounded-md px-2 py-2 text-xs font-semibold shadow-sm ring-1 ring-inset ring-gray-300 text-dark bg-slate-100 hover:bg-slate-200 focus:outline-none focus:ring-gray-300 font-medium rounded-lg px-2 py-1 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-gray-800"
+              aria-expanded="true"
+              aria-haspopup="true"
+            >
+              {menuIcon}
+            </button>
+
+            {dropdownVisibility.file && (
+              <div
+                className="absolute left-0 z-10 mt-2 min-w-[240px] max-w-96 max-h-96 overflow-auto p-1 px-3 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                role="menu"
+                aria-orientation="vertical"
+                aria-labelledby="menu-button"
               >
-                Files
-                {downArrowIcon}
-              </button>
-
-
-              {dropdownVisibility.file && (
-                <div
-                  className="absolute left-0 z-10 mt-2 min-w-[240px] max-w-96 max-h-96 overflow-auto p-1 px-3 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-                  role="menu"
-                  aria-orientation="vertical"
-                  aria-labelledby="menu-button"
+                <ul
+                  className=" text-sm text-gray-700 dark:text-gray-200 "
+                  aria-labelledby="fileDropdownDefaultButton"
                 >
-                  <ul
-                    className=" text-sm text-gray-700 dark:text-gray-200 "
-                    aria-labelledby="fileDropdownDefaultButton"
+                  {currUser && <div
+                    className="flex flex-row h-[30px] w-full text-sm justify-center gap-2 "
                   >
-                    <div className="space-y-2 font-medium text-sm border-gray-200 dark:border-gray-700">
+                    {privateTabs.map((tab) => {
+                      return <div key={tab.tabId + generateRandomString(10)} className={`${tab.selected ? 'bg-slate-300' : 'bg-slate-100'} h-full flex items-center justify-center w-full hover:bg-slate-400 text-black rounded`} onClick={e => onSelectTab(tab.tabId, e)}>
+                        {tab.tabName}
+                      </div>
+                    })}
+                  </div>}
+                  {privateTabs[0].selected ? <>
+                    <div className="pt-2 mt-4 font-medium text-sm border-t border-gray-200 dark:border-gray-700">
+                      <div>
+                        <label onClick={e => handleCreateNewPage()} className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-1 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group">
+                          {pageListIcon}
+                          Create new page
+                        </label>
+                      </div>
+                    </div>
+                    {/* File List functionality */}
+                    <div className="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
+                      {currUser && currUser.pages && currUser.pages.map((page) => {
+                        return (
+                          <li
+                            key={page.pageId._id}
+                            className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between border-blue-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
+                          >
+                            <div className="flex items-center cursor-pointer p-2 text-gray-900 transition duration-75 rounded-lg group flex-1" onClick={e => handlePageNavigate(page.pageId.unique_name)}>
+                              {pageIcon}
+                              <span
+                                className="ms-3 w-full line-clamp-1"
+                                title={page.pageId.unique_name}
+                              >
+                                {page.pageId.unique_name ? getPresizeFileName(page.pageId.unique_name) : "page"}{" "}
+                              </span>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </div>
+                  </> : <>
+                    <div className="pt-2 mt-4 font-medium text-sm border-gray-200 dark:border-gray-700">
                       <label className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group">
                         <input type="file" accept="*" onChange={onSelectFile} />
                         {fileAddIcon}
@@ -700,7 +704,7 @@ export default function MainPage(props) {
                           return (
                             <li
                               key={index}
-                              className="Image-content flex flex-row items-center gap-1 justify-between  border-blue-300"
+                              className="Image-content flex flex-row items-center gap-1 justify-between border-blue-300"
                             >
                               <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group flex-1">
                                 {fileIcon(file.type)}
@@ -728,34 +732,30 @@ export default function MainPage(props) {
                         })}
                       </div>
                     )}
-                  </ul>
-                </div>
-              )}
-            </div>
+                  </>}
+                </ul>
+              </div>
+            )}
           </div>
 
-
+          {/* login logout */}
           <div
             onClick={currUser ? handleLogout : handleLogin}
-            className="bg-red-500 hover:bg-red-400 text-white px-4  py-1  text-sm font-bold border-b-1 border-blue-700 hover:border-red-500 rounded"
+            className="bg-red-500 hover:bg-red-400 text-white px-4 py-1 ml-auto text-sm font-bold hover:border-red-500 rounded"
           >
             {currUser ? "Logout" : "Login"}
           </div>
         </div>
 
-
+        {/* page title and version */}
         <div className="flex flex-row gap-2 items-center">
-
-
-          {/* page title and version */}
-          <div className="flex flex-row gap-3 items-center justify-between  ">
-            <p className="text-xl px-2 capitalize ">{userSlug}</p>
+          <div className="flex flex-row gap-3 items-center justify-between ">
             {/* version */}
-            <div className="relative inline-block text-left">
-              <button
-                onMouseOver={() => {
-                  getAllversionData(false);
-                }}
+            <div className="relative inline-block text-left cursor-pointer">
+              <div
+                // onMouseOver={() => {
+                //   getAllversionData(false);
+                // }}
                 onClick={() => {
                   getAllversionData(true);
                   setDropdownVisibility(() => {
@@ -766,21 +766,29 @@ export default function MainPage(props) {
                   });
                 }}
                 type="button"
-                className="inline-flex items-center justify-center rounded-md px-2 py-2 text-xs font-semibold shadow-sm ring-1 ring-inset ring-gray-300 text-dark bg-slate-100  hover:bg-slate-200  focus:outline-none focus:ring-gray-300 font-medium rounded-lg px-2 py-1 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-gray  -800"
+                className="gap-2 flex items-center justify-between rounded-md  text-xs font-semibold shadow-sm   text-dark bg-slate-100 focus:outline-none focus:ring-gray-300 font-medium rounded-lg px-2 py-1 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-gray-800"
                 id="menu-button"
                 aria-expanded="true"
                 aria-haspopup="true"
               >
-                {latestVersion.timeformate
-                  ? "Last save on - " + latestVersion.timeformate
-                  : "page title"}
-                {downArrowIcon}
-              </button>
+                <div className="px-2 py-2 capitalize">
+                  {latestVersion.timeformate
+                    ? userSlug
+                    : "New Page"}
+
+                </div>
+                <div
+                  title="Click to show page versions"
+                  className="flex items-center justify-between px-2 py-2 cursor-pointer hover:bg-slate-200 "
+                >
+                  {downArrowIcon}
+                </div>
+              </div>
 
 
               {dropdownVisibility.history && allVersionData.length > 0 && (
                 <div
-                  className="absolute right-0 z-10 mt-2 min-w-[240px] max-w-[300px]  max-h-96 overflow-auto p-1 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                  className="absolute left-0 z-10 mt-2 min-w-[240px] max-w-[300px] max-h-96 overflow-auto p-1 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
                   role="menu"
                   aria-orientation="vertical"
                   aria-labelledby="menu-button"
@@ -793,9 +801,9 @@ export default function MainPage(props) {
                       return (
                         <li
                           key={index}
-                          className="flex px-1 items-center justify-end "
+                          className="flex px-1 items-center justify-end min-w-[250px] max-w-[380px]"
                         >
-                          <div className="min-w-[20px] max-w-[30px]" title="Current version ">
+                          <div className="min-w-[20px] max-w-[30px]" title="Current version">
                             {v.isCurrent && currentVersionIcon(v)}
                             {v.isLoaded && !v.isCurrent && versionIndicatorIcon}
                           </div>
@@ -818,12 +826,18 @@ export default function MainPage(props) {
 
 
           </div>
+          <div
+            onClick={e => saveData()}
+            className="cursor-pointer px-2 py-2 text-sm bg-blue-100 hover:bg-blue-300 rounded"
+          >
+            Save
+          </div>
         </div>
 
 
         {/* code area */}
         <div className="MainTextArea text-sm relative">
-          <TmceEditor props={{ inputFile, editorRef, latestVersion, setSocketEnabled, tinyMceSaveHandler: tinyMceSaveHandler, handleOnEditorChange }} />
+          <TmceEditor props={{ inputFile, editorRef, latestVersion, setSocketEnabled, saveData, handleOnEditorChange }} />
         </div>
       </div>
     </div>

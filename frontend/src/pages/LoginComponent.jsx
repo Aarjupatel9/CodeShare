@@ -54,8 +54,8 @@ const LoginComponent = () => {
                 <input type="password" placeholder="Password" onChange={(e) => setLoginUser({ ...loginUser, userPassword: e.target.value })} required />
                 <button type="submit">Login</button>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Link to='/register'>Register</Link>
-                    <Link to='/forgetpassword'>Forget Password?</Link>
+                    <Link to='/auth/register'>Register</Link>
+                    <Link to='/auth/forgetpassword'>Forget Password?</Link>
                 </div>
             </form>
         </div>

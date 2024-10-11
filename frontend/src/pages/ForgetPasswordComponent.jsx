@@ -40,8 +40,8 @@ const ForgetPasswordComponent = () => {
 
 
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Link to='/register'>Register</Link>
-                    <Link to='/login'>Back to Login</Link>
+                    <Link to='/auth/register'>Register</Link>
+                    <Link to='/auth/login'>Back to Login</Link>
                 </div>
             </form>
         </div>

@@ -380,7 +380,7 @@ async function _getRequiredDataVersion(slug, time, userId) {
       unique_name: slug,
     };
     if (userId) {
-      matchCondition.owner = mongoose.Types.ObjectId(userId);
+      matchCondition.owner = new mongoose.Types.ObjectId(userId);
     }
     const result = await DataModel.aggregate([
       {
@@ -410,7 +410,7 @@ async function _getAllVersion(slug, userId) {
     unique_name: slug,
   };
   if (userId) {
-    matchCondition.owner = mongoose.Types.ObjectId(userId);
+    matchCondition.owner = new mongoose.Types.ObjectId(userId);
   }
   const pipeline = [
     {
