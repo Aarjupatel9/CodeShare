@@ -1,6 +1,8 @@
 const server_host = process.env.REACT_APP_SERVER_PATH;
 
+
 class AuthService {
+
 
     login(requestPayload) {
         return new Promise(function (resolve, reject) {
@@ -34,6 +36,7 @@ class AuthService {
         });
     }
 
+
     register(requestPayload) {
         return new Promise(function (resolve, reject) {
             const fetchPostOptions = {
@@ -65,6 +68,7 @@ class AuthService {
         });
     }
 
+
     forgetPassword(email) {
         return new Promise(function (resolve, reject) {
             const fetchPostOptions = {
@@ -78,7 +82,7 @@ class AuthService {
                 },
                 body: JSON.stringify({ email }) // Send the email in the body
             };
-    
+
             fetch(server_host + "/api/auth/forgetpassword", fetchPostOptions)
                 .then((response) => response.json())
                 .then((res) => {
@@ -95,6 +99,7 @@ class AuthService {
         });
     }
 
+
     checkLoggedInUser() {
         const currentUser = localStorage.getItem("currentUser") ? JSON.parse(localStorage.getItem("currentUser")) : null;
         if (currentUser) {
@@ -103,8 +108,14 @@ class AuthService {
             return false;
         }
     }
-    
+
+
+    logout() {
+        localStorage.removeItem("currentUser")
+    }
+
 }
+
 
 
 

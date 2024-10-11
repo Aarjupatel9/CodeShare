@@ -1,3 +1,6 @@
+import { handleRejectResponse } from "./systemService";
+
+
 class UserService {
   getData(slug, time, flag, user) {
     const server_host = process.env.REACT_APP_SERVER_PATH;
@@ -6,6 +9,7 @@ class UserService {
     if (time) {
       requestPayload.time = time;
     }
+
 
 
     return new Promise(function (resolve, reject) {
@@ -43,6 +47,9 @@ class UserService {
             return response.json();
           })
           .then((res) => {
+            if (!res.success) {
+              handleRejectResponse(res.message);
+            }
             if (res) {
               resolve(res);
             } else {
@@ -51,15 +58,18 @@ class UserService {
           })
           .catch((e) => {
             console.error("error : ", e);
+            handleRejectResponse(e.toString());
             reject(e.toString());
           });
       }
     });
   }
 
+
   saveData(data) {
     // const host = process.env.REACT_APP_SERVER_PATH;
     const server_host = process.env.REACT_APP_SERVER_PATH;
+
 
 
     return new Promise(function (resolve, reject) {
@@ -100,11 +110,13 @@ class UserService {
             if (res.success) {
               resolve(res);
             } else {
+              handleRejectResponse(res.message);
               reject(res.message);
             }
           })
           .catch((e) => {
             console.error("error : ", e);
+            handleRejectResponse(e.toString());
             reject(e.toString());
           });
       }
@@ -113,6 +125,7 @@ class UserService {
   saveFile(formData) {
     // const host = process.env.REACT_APP_SERVER_PATH;
     const server_host = process.env.REACT_APP_SERVER_PATH;
+
 
 
     return new Promise(function (resolve, reject) {
@@ -148,6 +161,7 @@ class UserService {
     const server_host = process.env.REACT_APP_SERVER_PATH;
 
 
+
     return new Promise(function (resolve, reject) {
       const fetchPostOptions = {
         method: "POST",
@@ -168,15 +182,18 @@ class UserService {
           if (res.success) {
             resolve(res);
           } else {
+            handleRejectResponse(res.message);
             reject(res.message);
           }
         })
         .catch((e) => {
           console.error("error : ", e);
+          handleRejectResponse(e.toString());
           reject(e.toString());
         });
     });
   }
+
 
 
   getUserPreferTheme() {
@@ -187,6 +204,7 @@ class UserService {
     return JSON.parse(localData);
   }
 }
+
 
 
 export default new UserService();

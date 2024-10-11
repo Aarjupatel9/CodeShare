@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs")
 const { genJWTToken, compareHashPassword, verifyJWTToken, generateHashPassword, sendEmail } = require('../services/authService');
 const jwt = require('jsonwebtoken');
 
+
 exports.register = async function (req, res) {
     const { username, email, password } = req.body;
     const user = await DataModel.findOne({ email });
@@ -24,8 +25,10 @@ exports.register = async function (req, res) {
             email: email,
         };
 
+
         const token = genJWTToken(data, 'register');
         res.status(200).json({ message: 'Successfully Registered ', success: true });
+
 
     } catch (e) {
         res.status(500).json({ message: 'An error occurred during registration ' + e, success: false });
@@ -33,16 +36,20 @@ exports.register = async function (req, res) {
 };
 
 
+
 exports.login = async function (req, res) {
     const { email, password } = req.body;
-    const user = await DataModel.findOne({ email });
+    const user = await DataModel.findOne({ email }).populate({
+        path: 'pages.pageId', // Populate the pageId field
+        select: 'unique_name'        // Select only the name field
+    });
     if (!user) {
         return res.status(400).json({ message: 'Email or Password is wrong.', success: false });
     }
     try {
         const match = await compareHashPassword(password, user.password);
         const payload = {
-            _id:user._id,
+            _id: user._id,
             username: user.username,
             email: user.email,
             password: user.password,
@@ -63,10 +70,12 @@ exports.login = async function (req, res) {
 
 
 
+
     } catch (e) {
         res.status(500).json({ message: 'An error occurred during registration', success: false });
     }
 };
+
 
 
 exports.forgetpassword = async (req, res) => {
@@ -78,11 +87,13 @@ exports.forgetpassword = async (req, res) => {
         }
 
 
+
         const secret = process.env.TOKEN_SECRET + user.password;
         const token = jwt.sign({ email: user.email, _id: user._id }, secret, { expiresIn: '5m' });
         const url = process.env.RESET_PASSWORD_LINK;
         const link = `${url}/${user._id}/${token}`;
         console.log("lisk is : ", link)
+
 
         // Setting up nodemailer transport
         console.log("Before SendEmail");
@@ -90,14 +101,16 @@ exports.forgetpassword = async (req, res) => {
             to: email,
             subject: 'Password Reset for Notes App',
             text: `Please use the following link to reset your password: ${link}`,
-        }).then((eRes)=>{
-            console.log("Email rsponse : ",eRes);
+        }).then((eRes) => {
+            console.log("Email rsponse : ", eRes);
             return res.status(200).json({ message: "Password reset link sent successfully to the registered email.", success: true });
 
-        }).catch((err)=>{
-            console.log("Email rsponse error: ",err);
+
+        }).catch((err) => {
+            console.log("Email rsponse error: ", err);
             return res.status(411).json({ message: "Error while sending the recovery email, please try again later", success: false });
         });
+
 
     } catch (error) {
         console.error('Email sending error:', error);
@@ -112,6 +125,7 @@ exports.resetpassword = async (req, res) => {
     const { id, token } = req.params;
 
 
+
     // Handle GET request
     if (req.method === "GET") {
         try {
@@ -122,9 +136,11 @@ exports.resetpassword = async (req, res) => {
             }
 
 
+
             // Verify the token to confirm it's valid
             const secret = process.env.TOKEN_SECRET + oldUser.password;
             const verify = jwt.verify(token, secret);
+
 
 
             res.render('resetPassword', { email: verify.email, id, token, status: "notverified" });
@@ -135,9 +151,11 @@ exports.resetpassword = async (req, res) => {
     }
 
 
+
     // Handle POST request
     else if (req.method === "POST") {
         const { password, confirmPassword } = req.body;
+
 
 
         try {
@@ -147,6 +165,7 @@ exports.resetpassword = async (req, res) => {
             }
 
 
+
             // Find the user by ID
             const oldUser = await DataModel.findOne({ _id: id });
             if (!oldUser) {
@@ -154,14 +173,17 @@ exports.resetpassword = async (req, res) => {
             }
 
 
+
             // Verify the token again
             const secret = process.env.TOKEN_SECRET + oldUser.password;
             const verify = jwt.verify(token, secret);
 
 
+
             // Encrypt and update the new password
             const salt = await bcrypt.genSalt(10);
             const encryptedPassword = await bcrypt.hash(password, salt);
+
 
             await DataModel.findByIdAndUpdate(id, { $set: { password: encryptedPassword } });
             res.render('resetPassword', { email: verify.email, id, token, status: "verified" });

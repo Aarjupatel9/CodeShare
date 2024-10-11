@@ -1,14 +1,18 @@
 
+
 import { Editor } from '@tinymce/tinymce-react';
 import {
     socketIcon,
     addFileIcon
 } from "../assets/svgs";
+import { useEffect } from 'react';
+
 
 var tinyApiKey = process.env.REACT_APP_TINYMCE_KEY;
 
+
 export default function TmceEditor({ props }) {
-    const { editorRef, inputFile, latestVersion, setSocketEnabled, saveData, handleOnEditorChange } = props;
+    const { editorRef, inputFile, latestVersion, setSocketEnabled, tinyMceSaveHandler, handleOnEditorChange } = props;
     return (
         <Editor
             onInit={(evt, editor) => editorRef.current = editor}
@@ -16,10 +20,11 @@ export default function TmceEditor({ props }) {
             apiKey={tinyApiKey}
             init={{
                 selector: "textarea",
-                plugins: 'socketTogglePlugin preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons accordion',
+                plugins: 'socketTogglePlugin preview importcss searchreplace autolink   directionality code visualblocks visualchars fullscreen image link media codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons accordion',
                 editimage_cors_hosts: ['picsum.photos'],
                 menubar: 'file edit view insert format tools table help',
-                toolbar: "addFileButton save | undo redo | accordion accordionremove | blocks fontfamily fontsize | bold italic underline strikethrough | align numlist bullist | link image | table media | lineheight outdent indent| forecolor backcolor removeformat | charmap emoticons | code fullscreen preview | save print | pagebreak anchor codesample | ltr rtl",
+                toolbar: "addFileButton  | undo redo | accordion accordionremove | blocks fontfamily fontsize | bold italic underline strikethrough | align numlist bullist | link image | table media | lineheight outdent indent| forecolor backcolor removeformat | charmap emoticons | code fullscreen preview |  print | pagebreak anchor codesample | ltr rtl",
+
 
                 image_caption: true,
                 quickbars_selection_toolbar: 'bold italic | quicklink h2 h3 blockquote quickimage quicktable',
@@ -32,8 +37,10 @@ export default function TmceEditor({ props }) {
                 content_css: 'default',
                 content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:16px }',
 
+
                 tinycomments_mode: 'embedded',
                 tinycomments_author: 'Aarju Patel',
+
 
                 setup: (editor) => {
                     editor.ui.registry.addIcon("socketIcon", socketIcon)
@@ -45,6 +52,7 @@ export default function TmceEditor({ props }) {
                         },
                     });
 
+
                     // add file button
                     editor.ui.registry.addIcon("addFileIcon", addFileIcon)
                     editor.ui.registry.addButton("addFileButton", {
@@ -55,9 +63,9 @@ export default function TmceEditor({ props }) {
                         },
                     });
                 },
-                save_onsavecallback: (e) => {
-                    saveData()
-                }
+                // save_onsavecallback: (e) => {
+                //     tinyMceSaveHandler()
+                // }
             }}
             onEditorChange={handleOnEditorChange}
             initialValue={latestVersion.data}

@@ -1,4 +1,7 @@
 const DataModel = require("../models/dataModels");
+const UserModel = require("../models/userModels");
+
+
 const s3BucketService = require("../services/s3BucketService");
 const mongoose = require("mongoose");
 
@@ -66,7 +69,7 @@ exports.getData = async function (req, res) {
 exports.saveData = async (req, res) => {
   try {
     const { slug, data } = req.body;
-    const latestVersion = await _getLatestDataVersion(slug,);
+    const latestVersion = await _getLatestDataVersion(slug);
     if (latestVersion?.latestDataVersion?.data == data) {
       return res.status(201).json({
         success: true,
@@ -83,14 +86,14 @@ exports.saveData = async (req, res) => {
     };
     if (owner) {
       matchCondition.owner = owner._id;
-      newData.owner = owner._id;
+      newData.user = owner._id;
     }
     const existingData = await DataModel.findOne(matchCondition);
+    var data_present;
     if (existingData) {
-      const data_present = await DataModel.updateOne(
-        { unique_name: slug },
-        { $push: { dataVersion: newData } },
-        { $upset: true },
+      data_present = await DataModel.updateOne(
+        { _id: existingData._id },
+        { $push: { dataVersion: newData } }
       );
       if (data_present) {
         res.status(200).json({
@@ -99,23 +102,28 @@ exports.saveData = async (req, res) => {
           newData: newData,
         });
       }
-    }
-    else {
-      const data_present = await DataModel.updateOne(
-        { unique_name: slug },
-        { $push: { dataVersion: newData }, $set: { owner: owner ? owner._id : null } },
-        { upsert: true }
-      );
+    } else {
+      var newPage = new DataModel({
+        unique_name: slug,
+        dataVersion: [newData],
+        owner: owner ? owner._id : null,
+        access: "private"
+      });
+      data_present = await newPage.save();
+      if (owner) {
+        await UserModel.updateOne({ _id: owner._id }, {
+          $push: { pages: { pageId: data_present._id, rights: "owner" } },
+        });
+      }
       if (data_present) {
         res.status(200).json({
           success: true,
           message: "data save successfully",
-          newData: newData,
+          newData: data_present,
+          isInserted: true
         });
       }
     }
-
-
   } catch (e) {
     res.status(500).json({
       success: false,
@@ -316,7 +324,7 @@ async function _getLatestDataVersion(slug, userId) {
   try {
     const matchCondition = {
       unique_name: slug,
-    }
+    };
     if (userId) {
       matchCondition.owner = new mongoose.Types.ObjectId(userId);
     }
@@ -351,7 +359,11 @@ async function _getLatestDataVersion(slug, userId) {
     result = result.length > 0 ? result[0] : null;
 
 
-    if (result && result.latestDataVersion && result.latestDataVersion.time == null) {
+    if (
+      result &&
+      result.latestDataVersion &&
+      result.latestDataVersion.time == null
+    ) {
       result.latestDataVersion = undefined;
     }
 
@@ -366,7 +378,7 @@ async function _getRequiredDataVersion(slug, time, userId) {
   try {
     const matchCondition = {
       unique_name: slug,
-    }
+    };
     if (userId) {
       matchCondition.owner = mongoose.Types.ObjectId(userId);
     }
@@ -396,7 +408,7 @@ async function _getRequiredDataVersion(slug, time, userId) {
 async function _getAllVersion(slug, userId) {
   const matchCondition = {
     unique_name: slug,
-  }
+  };
   if (userId) {
     matchCondition.owner = mongoose.Types.ObjectId(userId);
   }

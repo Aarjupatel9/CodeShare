@@ -13,19 +13,25 @@ import {
   removeIcon,
   fileAddIcon,
   downArrowIcon,
+  pageIcon,
+  pageListIcon
 } from "../assets/svgs";
 import { UserContext } from "../context/UserContext";
 import TmceEditor from "./TmceEditor";
 import { generateRandomString, getPresizeFileName, getTimeInFormate } from "../common/functions";
 
+
 var SOCKET_ADDRESS = process.env.REACT_APP_SOCKET_ADDRESS;
+
 
 export default function MainPage(props) {
   const { currUser, setCurrUser } = useContext(UserContext)
 
+
   const editorRef = useRef(null);
   const navigate = useNavigate();
   const { slug, username } = useParams();
+
 
   const [userSlug, setUserSlug] = useState(slug);
   const [isRedirectFocused, setIsRedirectFocused] = useState(true);
@@ -34,6 +40,10 @@ export default function MainPage(props) {
     data: "",
     _id: "",
   });
+  const [tabs, setPrivateTabs] = useState([
+    { tabId: 1, tabName: "Pages", selected: true },
+    { tabId: 2, tabName: "Files", selected: false },
+  ])
   const [socketEnabled, setSocketEnabled] = useState(true);
   const [allVersionData, setAllVersionData] = useState([]);
   const [socket, setSocket] = useState(null);
@@ -44,26 +54,31 @@ export default function MainPage(props) {
     history: false,
   });
 
+
   const [incomingEditorValue, setIncomingEditorValue] = useState("");
+
 
 
   useEffect(() => {
     console.log("first render " + JSON.stringify(props))
   }, [])
 
+
   const checkSlug = () => {
     if (!slug) {
       const newSlug = generateRandomString(7);
       navigate("/" + newSlug);
       setTmpSlug(newSlug);
-      setUserSlug(slug)
+      setUserSlug(newSlug)
     } else {
+
 
       setAllVersionData([]);
       setFileList([]);
       setLatestVersion({ time: "", data: "", _id: "" });
       setTmpSlug(slug);
       setUserSlug(slug)
+
 
 
       userService
@@ -100,9 +115,15 @@ export default function MainPage(props) {
   }
 
 
+
   useEffect(() => {
     checkSlug();
   }, [slug]);
+  useEffect(() => {
+    // checkSlug();
+    console.log("Slug: " + slug);
+    console.log("Userslug :" + userSlug);
+  }, [slug, userSlug]);
 
 
   useEffect(() => {
@@ -112,10 +133,12 @@ export default function MainPage(props) {
           query: "slug=" + slug
         });
 
+
         socket.on('room_message', (room, content) => {
           setIncomingEditorValue(content);
         })
         setSocket(socket);
+
 
         return () => {
           socket.disconnect();
@@ -129,11 +152,13 @@ export default function MainPage(props) {
   }, [slug, socketEnabled])
 
 
+
   useEffect(() => {
     if (editorRef && editorRef.current) {
       editorRef.current.setContent(incomingEditorValue);
     }
   }, [incomingEditorValue])
+
 
 
   const getAllversionData = (isCliced) => {
@@ -166,6 +191,7 @@ export default function MainPage(props) {
   };
 
 
+
   const loadSpecificVersion = (time, index) => {
     userService
       .getData(userSlug, time, "specific")
@@ -188,6 +214,7 @@ export default function MainPage(props) {
       });
   };
 
+
   function clearEditorValue() {
     if (editorRef && editorRef.current) {
       editorRef.current.value = "";
@@ -195,9 +222,18 @@ export default function MainPage(props) {
     setFileList([]);
   }
 
+
+  const tinyMceSaveHandler = () => {
+    saveData()
+  }
+
+
   const saveData = () => {
     if (props.user) {
+      console.log("UserSlug " + userSlug + " : " + slug);
       if (userSlug == 'new') {
+
+
         let newTitle = '';
         toast.custom((t) => (
           <div className="z-[1000] bg-gray-100 border border-gray-200 p-6 rounded w-[350px] h-auto flex flex-col justify-center items-center space-y-4 shadow-md">
@@ -234,6 +270,7 @@ export default function MainPage(props) {
                     // Perform your rename action here, e.g., update the page title state
                     console.log(`Renamed page to: ${newTitle}`);
 
+
                     toast.dismiss(t.id);
                     saveDataMain(newTitle);
                   }
@@ -246,13 +283,15 @@ export default function MainPage(props) {
           </div>
         ));
       }
-
+      else {
+        saveDataMain(userSlug);
+      }
     }
     else {
       saveDataMain(userSlug);
     }
-
   };
+
 
   const saveDataMain = (pageTitle) => {
     if (!editorRef) {
@@ -264,6 +303,7 @@ export default function MainPage(props) {
       data: editorValue,
       owner: props.user,
     };
+    console.log("savedata body:" + JSON.stringify(body));
     var dataSavePromise = userService
       .saveData(body)
       .then((res) => {
@@ -275,6 +315,13 @@ export default function MainPage(props) {
           setLatestVersion(obj);
         }
         toast.success("Saved");
+        if (res.isInserted) {
+          setCurrUser((user) => {
+            user.pages.push({ pageId: { _id: res.newData._id, unique_name: res.newData.unique_name } })
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            return user;
+          });
+        }
         if (userSlug == 'new') {
           navigate('/p/' + username + '/' + pageTitle);
         }
@@ -283,6 +330,7 @@ export default function MainPage(props) {
         toast.error("error while saving data");
         console.error(error);
       });
+
 
     toast.promise(
       dataSavePromise,
@@ -302,6 +350,7 @@ export default function MainPage(props) {
     );
   }
 
+
   const onSelectFile = async (event) => {
     const file = event.target.files[0];
     if (file.size > 20e6 && !userSlug.includes("aarju")) {
@@ -315,6 +364,7 @@ export default function MainPage(props) {
     console.log("file : ", file)
     console.log("file : ", file.size)
     formData.append("slug", userSlug);
+
 
     const toastId = toast.loading('Uploading file server...');
     userService
@@ -332,9 +382,11 @@ export default function MainPage(props) {
       });
   };
 
+
   const redirect = () => {
     navigate("/" + tmpSlug);
   };
+
 
   const remvoeCurrentFile = (file) => {
     userService
@@ -353,6 +405,7 @@ export default function MainPage(props) {
       });
   };
 
+
   useKeys("ctrl+s", (event) => {
     event.preventDefault();
     saveData();
@@ -362,6 +415,7 @@ export default function MainPage(props) {
       redirect();
     }
   });
+
 
   const confirmFileRemove = (file) => {
     toast.custom((t) => (
@@ -395,12 +449,15 @@ export default function MainPage(props) {
     ));
   };
 
+
   const inputFile = useRef(null);
+
 
   const handleLogin = () => {
     console.log("In login");
     navigate('/auth/login');
   }
+
 
   const handleLogout = () => {
     navigate('/');
@@ -408,12 +465,34 @@ export default function MainPage(props) {
     localStorage.removeItem('currentUser');
   }
 
+
   const handleOnEditorChange = (value) => {
     if (value != incomingEditorValue) {
       socket.emit("room_message", userSlug, value);
     }
   }
+  const onSelectTab = (tabId, e) => {
+    e.preventDefault();
+    setPrivateTabs((old) => {
+      return old.map((o) => {
+        if (o.tabId == tabId) {
+          o.selected = true;
+        }
+        else {
+          o.selected = false;
+        }
+        return o;
+      })
+    });
+  }
+  const handleCreateNewPage = () => {
+    navigate('/p/' + username + '/new');
+  }
 
+
+  const handlePageNavigate = (slugName) => {
+    navigate('/p/' + username + '/' + slugName);
+  }
   return (
     <div className="MainPage">
       <input type="file" accept="*" onChange={onSelectFile} ref={inputFile} style={{ display: 'none' }} />
@@ -425,7 +504,7 @@ export default function MainPage(props) {
       >
         <div className="h-full px-2 py-4 overflow-y-auto bg-gray-50 dark:bg-gray-800">
           {/* redirect */}
-          <div
+          {!currUser ? <div
             onFocus={() => {
               setIsRedirectFocused(true);
             }}
@@ -447,43 +526,108 @@ export default function MainPage(props) {
             >
               Redirect
             </button>
-          </div>
-          {/* File List functionality */}
-          <div className="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
-            {fileList.map((file, index) => {
-              return (
-                <li
-                  key={index}
-                  className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between  border-blue-300  hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
-                >
-                  <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg group flex-1">
-                    {fileIcon(file.type)}
-                    <span
-                      className="ms-3 cursor-pointer line-clamp-1"
-                      title={file.name}
-                    >
-                      {file.name ? getPresizeFileName(file.name) : "file"}{" "}
-                      {/* {file.name ? file.name : "file"}{" "} */}
-                    </span>
-                  </div>
-                  <div className="flex flex-row min-w-[50px]">
-                    <a href={file.url} target="_blank" download={file.name} rel="noreferrer">
-                      {downloadIcon}
-                    </a>
-                    <div onClick={() => confirmFileRemove(file)}>
-                      {removeIcon}
-                    </div>
-                  </div>
-                </li>
-              );
+          </div> : <div
+
+
+            className="flex flex-row h-[30px]  w-full text-sm justify-center gap-2 "
+          >
+            {tabs.map((tab) => {
+              return <div key={tab.tabId} className={`${tab.selected ? 'bg-slate-300' : 'bg-slate-100'
+                } h-full flex items-center justify-center w-full hover:bg-slate-400 text-black  rounded`} onClick={e => onSelectTab(tab.tabId, e)}>
+                {tab.tabName}
+              </div>
             })}
-          </div>
+          </div>}
+
+
+          {/* File upload functionality */}
+          {tabs[0].selected ?
+            <>
+              <div className="pt-4 mt-4 space-y-2 font-medium text-sm border-t border-gray-200 dark:border-gray-700">
+                <div>
+                  <label onClick={e => handleCreateNewPage()} className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group">
+                    {pageListIcon}
+                    Create new page
+                  </label>
+                </div>
+              </div>
+
+
+              {/* File List functionality */}
+              <div className="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
+                {currUser && currUser.pages && currUser.pages.map((page) => {
+                  return (
+                    <li
+                      key={page.pageId._id}
+                      className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between  border-blue-300  hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
+                    >
+                      <div className="flex items-center cursor-pointer p-2 text-gray-900 transition duration-75 rounded-lg group flex-1" onClick={e => handlePageNavigate(page.pageId.unique_name)}>
+                        {pageIcon}
+                        <span
+                          className="ms-3 w-full  line-clamp-1"
+                          title={page.pageId.unique_name}
+                        >
+                          {page.pageId.unique_name ? getPresizeFileName(page.pageId.unique_name) : "page"}{" "}
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </div>
+            </> :
+            <>
+              <div className="pt-4 mt-4 space-y-2 font-medium text-sm border-t border-gray-200 dark:border-gray-700">
+                <div>
+                  <label className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group">
+                    <input type="file" accept="*" onChange={onSelectFile} />
+                    {fileAddIcon}
+                    Select to Upload Files
+                  </label>
+                </div>
+              </div>
+
+
+              {/* File List functionality */}
+              <div className="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
+                {fileList.map((file, index) => {
+                  return (
+                    <li
+                      key={index}
+                      className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between  border-blue-300  hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
+                    >
+                      <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg group flex-1">
+                        {fileIcon(file.type)}
+                        <span
+                          className="ms-3 cursor-pointer line-clamp-1"
+                          title={file.name}
+                        >
+                          {file.name ? getPresizeFileName(file.name) : "file"}{" "}
+                          {/* {file.name ? file.name : "file"}{" "} */}
+                        </span>
+                      </div>
+                      <div className="flex flex-row min-w-[50px]">
+                        <a href={file.url} target="_blank" download={file.name} rel="noreferrer">
+                          {downloadIcon}
+                        </a>
+                        <div onClick={() => confirmFileRemove(file)}>
+                          {removeIcon}
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </div>
+            </>}
+
+
+
         </div>
       </aside>
 
 
-      <div className="MainArea sm:size-full  text-xs md:text:sm p-1 md:p-4 gap-2">
-        <div
+
+      <div className="MainArea sm:size-full text-xs md:text:sm p-1 md:p-4 gap-2">
+        {!currUser && <div
           onFocus={() => {
             setIsRedirectFocused(true);
           }}
@@ -505,10 +649,13 @@ export default function MainPage(props) {
           >
             Redirect
           </button>
-        </div>
+        </div>}
+
+
         {/* app bar header */}
-        <div className="flex flex-row gap-2 items-center">
+        <div className="flex flex-row justify-between p-y-2 ">
           <div className="flex flex-row">
+            {/* file handling */}
             <div className="relative inline-block text-left">
               <button
                 onClick={() => {
@@ -586,20 +733,24 @@ export default function MainPage(props) {
               )}
             </div>
           </div>
-          <div className="flex flex-row gap-1   ">
-            <button
-              onClick={currUser ? handleLogout : handleLogin}
-              className="bg-red-500 hover:bg-red-400 text-white buttons  font-bold border-b-1 border-blue-700 hover:border-red-500 rounded"
-            >
-              {currUser ?
-                <>
-                  Logout
-                </>
-                :
-                <>
-                  Login</>
-              }
-            </button>
+
+
+          <div
+            onClick={currUser ? handleLogout : handleLogin}
+            className="bg-red-500 hover:bg-red-400 text-white px-4  py-1  text-sm font-bold border-b-1 border-blue-700 hover:border-red-500 rounded"
+          >
+            {currUser ? "Logout" : "Login"}
+          </div>
+        </div>
+
+
+        <div className="flex flex-row gap-2 items-center">
+
+
+          {/* page title and version */}
+          <div className="flex flex-row gap-3 items-center justify-between  ">
+            <p className="text-xl px-2 capitalize ">{userSlug}</p>
+            {/* version */}
             <div className="relative inline-block text-left">
               <button
                 onMouseOver={() => {
@@ -615,7 +766,7 @@ export default function MainPage(props) {
                   });
                 }}
                 type="button"
-                className="inline-flex items-center justify-center  rounded-md px-2 py-2 text-xs font-semibold shadow-sm ring-1 ring-inset ring-gray-300 text-dark bg-slate-100  hover:bg-slate-200  focus:outline-none focus:ring-gray-300 font-medium rounded-lg px-2 py-1 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-gray  -800"
+                className="inline-flex items-center justify-center rounded-md px-2 py-2 text-xs font-semibold shadow-sm ring-1 ring-inset ring-gray-300 text-dark bg-slate-100  hover:bg-slate-200  focus:outline-none focus:ring-gray-300 font-medium rounded-lg px-2 py-1 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-gray  -800"
                 id="menu-button"
                 aria-expanded="true"
                 aria-haspopup="true"
@@ -625,6 +776,7 @@ export default function MainPage(props) {
                   : "page title"}
                 {downArrowIcon}
               </button>
+
 
               {dropdownVisibility.history && allVersionData.length > 0 && (
                 <div
@@ -663,12 +815,15 @@ export default function MainPage(props) {
                 </div>
               )}
             </div>
+
+
           </div>
         </div>
 
+
         {/* code area */}
         <div className="MainTextArea text-sm relative">
-          <TmceEditor props={{ inputFile, editorRef, latestVersion, setSocketEnabled, saveData, handleOnEditorChange }} />
+          <TmceEditor props={{ inputFile, editorRef, latestVersion, setSocketEnabled, tinyMceSaveHandler: tinyMceSaveHandler, handleOnEditorChange }} />
         </div>
       </div>
     </div>
