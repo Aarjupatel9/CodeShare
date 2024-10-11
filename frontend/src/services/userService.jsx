@@ -1,9 +1,12 @@
-class UserService {
-  getData(slug, time, flag) {
-    const server_host =process.env.REACT_APP_SERVER_PATH ;
+import { handleRejectResponse } from "./systemService";
 
-    var requestPayload = {slug:slug , flag:flag}
-    if(time){
+
+class UserService {
+  getData(slug, time, flag, user) {
+    const server_host = process.env.REACT_APP_SERVER_PATH;
+    var requestPayload = { slug: slug, flag: flag, }
+    requestPayload.userId = user ? user._id : null;
+    if (time) {
       requestPayload.time = time;
     }
 
@@ -19,27 +22,53 @@ class UserService {
         },
         body: JSON.stringify(requestPayload)
       };
-      fetch(server_host + "/data/getData" , fetchPostOptions)
-        .then((response) => {
-          return response.json();
-        })
-        .then((res) => {
-          if (res) {
-            resolve(res);
-          } else {
-            reject(res.message);
-          }
-        })
-        .catch((e) => {
-          console.error("error : ", e);
-          reject(e.toString());
-        });
+      if (!user) {
+        fetch(server_host + "/api/data/getData", fetchPostOptions)
+          .then((response) => {
+            return response.json();
+          })
+          .then((res) => {
+            if (res) {
+              resolve(res);
+            } else {
+              reject(res.message);
+            }
+          })
+          .catch((e) => {
+            console.error("error : ", e);
+            reject(e.toString());
+          });
+      }
+      else {
+        fetch(server_host + "/api/data/p/getData", fetchPostOptions)
+          .then((response) => {
+            return response.json();
+          })
+          .then((res) => {
+            if (!res.success) {
+              handleRejectResponse(res.message);
+            }
+            if (res) {
+              resolve(res);
+            } else {
+              reject(res.message);
+            }
+          })
+          .catch((e) => {
+            console.error("error : ", e);
+            handleRejectResponse(e.toString());
+            reject(e.toString());
+          });
+      }
     });
   }
-  
+
+
   saveData(data) {
     // const host = process.env.REACT_APP_SERVER_PATH;
-    const server_host =process.env.REACT_APP_SERVER_PATH ;
+    const server_host = process.env.REACT_APP_SERVER_PATH;
+
+
 
     return new Promise(function (resolve, reject) {
       const fetchPostOptions = {
@@ -53,39 +82,62 @@ class UserService {
         },
         body: JSON.stringify(data),
       };
-      fetch(server_host + "/data/saveData/", fetchPostOptions)
-        .then((response) => {
-          return response.json();
-        })
-        .then((res) => {
-          if (res.success) {
-            resolve(res);
-          } else {
-            reject(res.message);
-          }
-        })
-        .catch((e) => {
-          console.error("error : ", e);
-          reject(e.toString());
-        });
+      if (!data.owner) {
+        fetch(server_host + "/api/data/saveData/", fetchPostOptions)
+          .then((response) => {
+            return response.json();
+          })
+          .then((res) => {
+            if (res.success) {
+              resolve(res);
+            } else {
+              reject(res.message);
+            }
+          })
+          .catch((e) => {
+            console.error("error : ", e);
+            reject(e.toString());
+          });
+      }
+      else {
+        fetch(server_host + "/api/data/p/saveData/", fetchPostOptions)
+          .then((response) => {
+            return response.json();
+          })
+          .then((res) => {
+            if (res.success) {
+              resolve(res);
+            } else {
+              handleRejectResponse(res.message);
+              reject(res.message);
+            }
+          })
+          .catch((e) => {
+            console.error("error : ", e);
+            handleRejectResponse(e.toString());
+            reject(e.toString());
+          });
+      }
     });
-  } 
+  }
   saveFile(formData) {
     // const host = process.env.REACT_APP_SERVER_PATH;
-    const server_host =process.env.REACT_APP_SERVER_PATH ;
+    const server_host = process.env.REACT_APP_SERVER_PATH;
+
+
 
     return new Promise(function (resolve, reject) {
       const fetchPostOptions = {
         method: "POST",
         credentials: "include",
         headers: {
-          "Access-Control-Allow-Origin": "*",        
-          "slug" : formData.get("slug"),
-          "filesize":formData.get("fileSize")
+          "Access-Control-Allow-Origin": "*",
+          "slug": formData.get("slug"),
+          "filesize": formData.get("fileSize")
         },
         body: formData,
       };
-      fetch(server_host + "/data/saveFile/", fetchPostOptions)
+      fetch(server_host + "/api/data/saveFile/", fetchPostOptions)
         .then((response) => {
           return response.json();
         })
@@ -104,7 +156,9 @@ class UserService {
   }
   removeFile(data) {
     // const host = process.env.REACT_APP_SERVER_PATH;
-    const server_host =process.env.REACT_APP_SERVER_PATH ;
+    const server_host = process.env.REACT_APP_SERVER_PATH;
+
+
 
     return new Promise(function (resolve, reject) {
       const fetchPostOptions = {
@@ -118,7 +172,7 @@ class UserService {
         },
         body: JSON.stringify(data),
       };
-      fetch(server_host + "/data/removeFile/", fetchPostOptions)
+      fetch(server_host + "/api/data/removeFile/", fetchPostOptions)
         .then((response) => {
           return response.json();
         })
@@ -126,15 +180,19 @@ class UserService {
           if (res.success) {
             resolve(res);
           } else {
+            handleRejectResponse(res.message);
             reject(res.message);
           }
         })
         .catch((e) => {
           console.error("error : ", e);
+          handleRejectResponse(e.toString());
           reject(e.toString());
         });
     });
   }
+
+
 
   getUserPreferTheme() {
     const localData = localStorage.getItem("getUserPreferTheme");
@@ -145,5 +203,6 @@ class UserService {
   }
 }
 
+
+
 export default new UserService();
- 
