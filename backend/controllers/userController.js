@@ -1,20 +1,29 @@
-const DataModel = require("../models/dataModel");
+const DataModel = require("../models/dataModels");
+const UserModel = require("../models/userModels");
+
+
 const s3BucketService = require("../services/s3BucketService");
+const mongoose = require("mongoose");
+
 
 var max_file_size = process.env.MAX_FILE_SIZE;
 var allowed_for_slug = process.env.ALLOW_FILE_LIMIT;
 
+
 exports.getData = async function (req, res) {
   try {
-    const { slug, flag, time } = req.body;
+    const { slug, flag, time, userId } = req.body;
+
+
     let data_present;
     if (time) {
-      data_present = await _getRequiredDataVersion(slug, time);
+      data_present = await _getRequiredDataVersion(slug, time, userId);
     } else if (flag == "allVersion") {
-      data_present = await _getAllVersion(slug);
+      data_present = await _getAllVersion(slug, userId);
     } else {
-      data_present = await _getLatestDataVersion(slug);
+      data_present = await _getLatestDataVersion(slug, userId);
     }
+
 
     if (data_present) {
       const requiredPayload = {
@@ -25,6 +34,7 @@ exports.getData = async function (req, res) {
         files: data_present.files,
       };
 
+
       if (flag != "allVersion" && data_present.latestDataVersion) {
         requiredPayload.data = data_present.latestDataVersion;
       }
@@ -34,6 +44,7 @@ exports.getData = async function (req, res) {
       if (flag == "allVersion") {
         requiredPayload.data = data_present.dataVersion;
       }
+
 
       res.status(200).json({
         success: true,
@@ -54,6 +65,7 @@ exports.getData = async function (req, res) {
   }
 };
 
+
 exports.saveData = async (req, res) => {
   try {
     const { slug, data } = req.body;
@@ -64,21 +76,53 @@ exports.saveData = async (req, res) => {
         message: "data save successfully",
       });
     }
+    const owner = req.body.owner;
     var newData = {
       time: new Date().getTime(),
       data: data,
     };
-    const data_present = await DataModel.updateOne(
-      { unique_name: slug },
-      { $push: { dataVersion: newData } },
-      { upsert: true }
-    );
-    if (data_present) {
-      res.status(200).json({
-        success: true,
-        message: "data save successfully",
-        newData: newData,
+    const matchCondition = {
+      unique_name: slug,
+    };
+    if (owner) {
+      matchCondition.owner = owner._id;
+      newData.user = owner._id;
+    }
+    const existingData = await DataModel.findOne(matchCondition);
+    var data_present;
+    if (existingData) {
+      data_present = await DataModel.updateOne(
+        { _id: existingData._id },
+        { $push: { dataVersion: newData } }
+      );
+      if (data_present) {
+        res.status(200).json({
+          success: true,
+          message: "data save successfully",
+          newData: newData,
+        });
+      }
+    } else {
+      var newPage = new DataModel({
+        unique_name: slug,
+        dataVersion: [newData],
+        owner: owner ? owner._id : null,
+        access: "private"
       });
+      data_present = await newPage.save();
+      if (owner) {
+        await UserModel.updateOne({ _id: owner._id }, {
+          $push: { pages: { pageId: data_present._id, rights: "owner" } },
+        });
+      }
+      if (data_present) {
+        res.status(200).json({
+          success: true,
+          message: "data save successfully",
+          newData: data_present,
+          isInserted: true
+        });
+      }
     }
   } catch (e) {
     res.status(500).json({
@@ -87,6 +131,7 @@ exports.saveData = async (req, res) => {
     });
   }
 };
+
 
 exports.validateFile = async (req, res, next) => {
   try {
@@ -116,6 +161,7 @@ exports.validateFile = async (req, res, next) => {
     });
   }
 };
+
 
 exports.saveFileNew = async (req, res, next) => {
   try {
@@ -147,6 +193,7 @@ exports.saveFileNew = async (req, res, next) => {
       });
     }
 
+
     res.status(200).json({
       success: true,
       message: "File successfully saved",
@@ -161,12 +208,14 @@ exports.saveFileNew = async (req, res, next) => {
   }
 };
 
+
 //deprecated
 exports.saveFile = async (req, res) => {
   try {
     const base64File = req.body.file;
     const unique_name = req.body.slug;
     const type = req.body.type;
+
 
     if (!unique_name) {
       return res.status(404).json({
@@ -178,6 +227,7 @@ exports.saveFile = async (req, res) => {
     let response;
     try {
       response = await s3BucketService.upload(fileName, base64File, type);
+
 
       var fileObject = {
         name: fileName,
@@ -198,6 +248,7 @@ exports.saveFile = async (req, res) => {
         });
       }
 
+
       res.status(200).json({
         success: true,
         message: "File successfully saved",
@@ -217,6 +268,7 @@ exports.saveFile = async (req, res) => {
     });
   }
 };
+
 
 exports.removeFile = async (req, res) => {
   try {
@@ -240,6 +292,7 @@ exports.removeFile = async (req, res) => {
       });
     }
 
+
     try {
       const data = await DataModel.updateOne(
         { unique_name: unique_name },
@@ -251,6 +304,7 @@ exports.removeFile = async (req, res) => {
         message: `Error uploading file: ${e}`,
       });
     }
+
 
     res.status(200).json({
       success: true,
@@ -265,10 +319,17 @@ exports.removeFile = async (req, res) => {
   }
 };
 
-async function _getLatestDataVersion(slug) {
+
+async function _getLatestDataVersion(slug, userId) {
   try {
+    const matchCondition = {
+      unique_name: slug,
+    };
+    if (userId) {
+      matchCondition.owner = new mongoose.Types.ObjectId(userId);
+    }
     var result = await DataModel.aggregate([
-      { $match: { unique_name: slug } },
+      { $match: matchCondition },
       {
         $addFields: {
           dataVersion: {
@@ -294,11 +355,18 @@ async function _getLatestDataVersion(slug) {
       },
     ]);
 
+
     result = result.length > 0 ? result[0] : null;
 
-    if (result && result.latestDataVersion && result.latestDataVersion.time == null) {
+
+    if (
+      result &&
+      result.latestDataVersion &&
+      result.latestDataVersion.time == null
+    ) {
       result.latestDataVersion = undefined;
     }
+
 
     return result;
   } catch (error) {
@@ -306,13 +374,17 @@ async function _getLatestDataVersion(slug) {
     return null;
   }
 }
-async function _getRequiredDataVersion(slug, time) {
+async function _getRequiredDataVersion(slug, time, userId) {
   try {
+    const matchCondition = {
+      unique_name: slug,
+    };
+    if (userId) {
+      matchCondition.owner = new mongoose.Types.ObjectId(userId);
+    }
     const result = await DataModel.aggregate([
       {
-        $match: {
-          unique_name: slug,
-        },
+        $match: matchCondition,
       },
       {
         $unwind: "$dataVersion",
@@ -324,6 +396,7 @@ async function _getRequiredDataVersion(slug, time) {
       },
     ]);
 
+
     return result && result.length > 0 ? result[0] : null;
   } catch (error) {
     console.error("Error fetching the latest data version:", error);
@@ -331,10 +404,17 @@ async function _getRequiredDataVersion(slug, time) {
   }
 }
 
-async function _getAllVersion(slug) {
+
+async function _getAllVersion(slug, userId) {
+  const matchCondition = {
+    unique_name: slug,
+  };
+  if (userId) {
+    matchCondition.owner = new mongoose.Types.ObjectId(userId);
+  }
   const pipeline = [
     {
-      $match: { unique_name: slug }, // Step 1: Match the document
+      $match: matchCondition, // Step 1: Match the document
     },
     {
       $project: {

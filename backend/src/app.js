@@ -4,10 +4,10 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 require("dotenv").config();
 var bodyParser = require("body-parser");
-var rateLimit = require('express-rate-limit')
 
 // routes
 const userRoute = require('../routes/userRoute');
+const authRoute = require('../routes/authRoute');
 
 const app = express();
 
@@ -27,14 +27,16 @@ app.use(cors({
     credentials: true
 }));
 
-app.use(logger("dev")); // for logs 
+app.use(logger("dev")); // for logs
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 app.use(express.json({ limit: '2mb' }));
 
-
+app.set('view engine', 'ejs');
+app.set('views', './views');
 // app.use(bodyParser.json({ limit: "2000kb" }));
 // app.use(bodyParser.urlencoded({ limit: "2000kb", extended: true }));
+
 
 app.get('/', (req, res) => {
     res.status(200).json({
@@ -50,11 +52,15 @@ app.get('/', (req, res) => {
     })
 });
 
+
 app.use("/api/data", userRoute);
+app.use("/api/auth", authRoute);
+
 
 app.get('*', (req, res) => {
-    return res.status(404).json({ message: 'Content Not found, Check the URL properly !!!' });
+    return res.status(404).json({ message: 'Conteng Not found, Check the URL properly !!!' });
 })
+
 
 app.use((err, req, res, next) => {
     console.log(err);
