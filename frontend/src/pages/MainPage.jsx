@@ -298,7 +298,7 @@ export default function MainPage(props) {
           setLatestVersion(obj);
         }
         toast.success("Saved");
-        if (res.isInserted) {
+        if (currUser && res.isInserted) {
           setCurrUser((user) => {
             user.pages.push({ pageId: { _id: res.newData._id, unique_name: res.newData.unique_name } })
             localStorage.setItem('currentUser', JSON.stringify(user));
@@ -742,7 +742,7 @@ export default function MainPage(props) {
           {/* login logout */}
           <div
             onClick={currUser ? handleLogout : handleLogin}
-            className="bg-red-500 hover:bg-red-400 text-white px-4 py-1 ml-auto text-sm font-bold hover:border-red-500 rounded"
+            className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 ml-auto text-sm font-bold hover:border-red-500 rounded cursor-pointer"
           >
             {currUser ? "Logout" : "Login"}
           </div>
