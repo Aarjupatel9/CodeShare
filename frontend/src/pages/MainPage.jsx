@@ -15,7 +15,8 @@ import {
   downArrowIcon,
   pageIcon,
   pageListIcon,
-  menuIcon
+  menuIcon,
+  userProfileIcon
 } from "../assets/svgs";
 import { UserContext } from "../context/UserContext";
 import TmceEditor from "./TmceEditor";
@@ -51,6 +52,7 @@ export default function MainPage(props) {
   const [dropdownVisibility, setDropdownVisibility] = useState({
     file: false,
     history: false,
+    profile: false,
   });
 
   const [incomingEditorValue, setIncomingEditorValue] = useState("");
@@ -216,14 +218,11 @@ export default function MainPage(props) {
     if (props.user) {
       console.log("UserSlug " + userSlug + " : " + slug);
       if (userSlug == 'new') {
-
-
         let newTitle = '';
         toast.custom((t) => (
           <div className="z-[1000] bg-gray-100 border border-gray-200 p-6 rounded w-[350px] h-auto flex flex-col justify-center items-center space-y-4 shadow-md">
             <div
-              className={`text-gray-800 text-lg font-semibold ${t.visible ? 'animate-enter' : 'animate-leave'
-                }`}
+              className={`text-gray-800 text-lg font-semibold ${t.visible ? 'animate-enter' : 'animate-leave'}`}
             >
               Rename Page
             </div>
@@ -234,7 +233,7 @@ export default function MainPage(props) {
               <input
                 id="newTitle"
                 type="text"
-                placeholder={userSlug}
+                placeholder="Page name"
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 onChange={(e) => (newTitle = e.target.value)}
               />
@@ -251,10 +250,7 @@ export default function MainPage(props) {
               <button
                 onClick={() => {
                   if (newTitle.trim()) {
-                    // Perform your rename action here, e.g., update the page title state
                     console.log(`Renamed page to: ${newTitle}`);
-
-
                     toast.dismiss(t.id);
                     saveDataMain(newTitle);
                   }
@@ -474,43 +470,45 @@ export default function MainPage(props) {
       <script src={flobiteJS}></script>
       <aside
         id="separator-sidebar"
-        className="hidden md:block lg:block SideBar z-40 h-screen "
+        className="hidden md:block lg:block SideBar z-40 h-screen h-full "
         aria-label="Sidebar"
       >
-        <div className="h-full px-2 py-4 overflow-y-auto bg-gray-50 dark:bg-gray-800">
+        <div className="flex flex-col h-full px-2 py-4 overflow-y-auto ">
           {/* redirect */}
-          {!currUser ? <div
-            onFocus={() => {
-              setIsRedirectFocused(true);
-            }}
-            onBlur={() => {
-              setIsRedirectFocused(false);
-            }}
-            className="flex flex-col space-y-2 text-sm justify-center items-center gap-2 "
-          >
-            <input
-              className=" font-bold px-4 border-b border-blue-700 hover:border-blue-500 "
-              onChange={(e) => {
-                setTmpSlug(e.target.value);
+          {!currUser ?
+            <div
+              onFocus={() => {
+                setIsRedirectFocused(true);
               }}
-              value={tmpSlug}
-            />
-            <button
-              onClick={redirect}
-              className="bg-blue-500 hover:bg-blue-400 text-white buttons border-b-1 border-blue-700 hover:border-blue-500 rounded"
+              onBlur={() => {
+                setIsRedirectFocused(false);
+              }}
+              className="flex flex-col space-x-2 py-1 text-sm justify-center items-center gap-2 "
             >
-              Redirect
-            </button>
-          </div> : <div
-            className="flex flex-row h-[30px] w-full text-sm justify-center gap-2 "
-          >
-            {privateTabs.map((tab, index) => {
-              return <div key={tab.tabId + generateRandomString(10)} className={`${tab.selected ? 'bg-slate-300' : 'bg-slate-100'
-                } h-full flex items-center justify-center w-full hover:bg-slate-400 text-black rounded`} onClick={e => onSelectTab(tab.tabId, e)}>
-                {tab.tabName}
-              </div>
-            })}
-          </div>}
+              <input
+                className="font-bold w-full mx-2 px-2 border-b border-blue-700 "
+                onChange={(e) => {
+                  setTmpSlug(e.target.value);
+                }}
+                value={tmpSlug}
+              />
+              <button
+                onClick={redirect}
+                className="px-4 py-1 text-sm font-bold bg-blue-500 hover:bg-blue-400 text-white border-b-1 border-blue-700 hover:border-blue-500 rounded"
+              >
+                Redirect
+              </button>
+            </div>
+            : <div
+              className="flex flex-row h-[30px] w-full text-sm justify-center gap-2 "
+            >
+              {privateTabs.map((tab, index) => {
+                return <div key={tab.tabId + generateRandomString(10)} className={`${tab.selected ? 'bg-slate-300' : 'bg-slate-100'
+                  } h-full flex items-center justify-center w-full hover:bg-slate-400 text-black rounded`} onClick={e => onSelectTab(tab.tabId, e)}>
+                  {tab.tabName}
+                </div>
+              })}
+            </div>}
 
           {/* Tabs content */}
           {privateTabs[0].selected ?
@@ -558,7 +556,6 @@ export default function MainPage(props) {
                 </div>
               </div>
 
-
               {/* File List functionality */}
               <div className="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
                 {fileList.map((file, index) => {
@@ -590,7 +587,6 @@ export default function MainPage(props) {
                 })}
               </div>
             </>}
-
         </div>
       </aside>
 
@@ -602,10 +598,10 @@ export default function MainPage(props) {
           onBlur={() => {
             setIsRedirectFocused(false);
           }}
-          className="md:hidden flex flex-row space-x-2 py-2 text-sm justify-center items-center gap-2 "
+          className="md:hidden flex flex-row space-x-2 py-1 text-sm justify-center items-center gap-2 "
         >
           <input
-            className="font-bold px-4 border-b border-blue-700 hover:border-blue-500 "
+            className="font-bold w-full mx-2 px-2 border-b border-blue-700 "
             onChange={(e) => {
               setTmpSlug(e.target.value);
             }}
@@ -613,7 +609,7 @@ export default function MainPage(props) {
           />
           <button
             onClick={redirect}
-            className="bg-blue-500 hover:bg-blue-400 text-white buttons border-b-1 border-blue-700 hover:border-blue-500 rounded"
+            className="px-4 py-1 text-sm font-bold bg-blue-500 hover:bg-blue-400 text-white border-b-1 border-blue-700 hover:border-blue-500 rounded"
           >
             Redirect
           </button>
@@ -630,6 +626,7 @@ export default function MainPage(props) {
                   var val = structuredClone(dropdownVisibility);
                   val.file = !val.file;
                   val.history = false;
+                  val.profile = false;
                   return val;
                 });
               }}
@@ -740,11 +737,53 @@ export default function MainPage(props) {
           </div>
 
           {/* login logout */}
-          <div
-            onClick={currUser ? handleLogout : handleLogin}
-            className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 ml-auto text-sm font-bold hover:border-red-500 rounded cursor-pointer"
-          >
-            {currUser ? "Logout" : "Login"}
+          <div className="relative inline-block ml-auto">
+
+            <div
+              onClick={currUser ? () => {
+                setDropdownVisibility(() => {
+                  var val = structuredClone(dropdownVisibility);
+                  val.file = false;
+                  val.history = false;
+                  val.profile = !val.profile;
+                  return val;
+                });
+              } : handleLogin}
+              className={`${currUser ? "px-1" : "bg-slate-500 hover:bg-slate-600 text-white px-4"} py-1 ml-auto text-sm font-bold rounded cursor-pointer`}
+              id="profile-menu-button"
+              aria-expanded="true"
+              aria-haspopup="true"
+            >
+              {currUser ? userProfileIcon : "Login"}
+            </div>
+            {dropdownVisibility.profile && (
+              <div
+                className="absolute right-0 z-10 mt-2 p-1 min-w-48 max-h-96 overflow-auto  origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                role="menu"
+                aria-orientation="vertical"
+                aria-labelledby="profile-menu-button"
+              >
+                <ul
+                  className="py-2 text-sm text-gray-700 dark:text-gray-200 "
+                  aria-labelledby="dropdownDefaultButton"
+                >
+                  <li
+                    key="logout"
+                    className="flex px-1 items-center justify-end w-full"
+                  >
+                    <div
+                      title="Click to logout"
+                      onClick={() => {
+                        handleLogout();
+                      }}
+                      className="w-full version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                    >
+                      Logout
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            )}
           </div>
         </div>
 
@@ -763,6 +802,7 @@ export default function MainPage(props) {
                     var val = structuredClone(dropdownVisibility);
                     val.history = !val.history;
                     val.file = false;
+                    val.profile = false;
                     return val;
                   });
                 }}
