@@ -1,12 +1,9 @@
-
-
 import { Editor } from '@tinymce/tinymce-react';
 import {
     socketIcon,
     addFileIcon
 } from "../assets/svgs";
 import { useEffect } from 'react';
-
 
 var tinyApiKey = process.env.REACT_APP_TINYMCE_KEY;
 
@@ -15,12 +12,14 @@ export default function TmceEditor({ props }) {
     const { editorRef, inputFile, latestVersion, setSocketEnabled, saveData, handleOnEditorChange } = props;
     return (
         <Editor
+            tinymceScriptSrc='/tinymce/tinymce.min.js'
             onInit={(evt, editor) => editorRef.current = editor}
             className="text-sm z-10 h-[100%] rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
             apiKey={tinyApiKey}
+            licenseKey={"gpl"}
             init={{
                 selector: "textarea",
-                plugins: 'socketTogglePlugin preview importcss searchreplace autolink  directionality code visualblocks visualchars fullscreen image link media codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons accordion',
+                plugins: 'preview importcss searchreplace autolink  directionality code visualblocks visualchars fullscreen image link media codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons accordion',
                 editimage_cors_hosts: ['picsum.photos'],
                 menubar: 'file edit view insert format tools table help',
                 toolbar: "socketTogglePlugin | undo redo | bold italic underline strikethrough | align numlist bullist |  blocks fontfamily fontsize | link image | table media | lineheight outdent indent| forecolor backcolor removeformat | charmap emoticons | code fullscreen preview | print | pagebreak anchor codesample | ltr rtl | accordion accordionremove",
