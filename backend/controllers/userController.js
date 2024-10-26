@@ -13,8 +13,6 @@ var allowed_for_slug = process.env.ALLOW_FILE_LIMIT;
 exports.getData = async function (req, res) {
   try {
     const { slug, flag, time, userId } = req.body;
-
-
     let data_present;
     if (time) {
       data_present = await _getRequiredDataVersion(slug, time, userId);
@@ -23,7 +21,6 @@ exports.getData = async function (req, res) {
     } else {
       data_present = await _getLatestDataVersion(slug, userId);
     }
-
 
     if (data_present) {
       const requiredPayload = {
@@ -34,7 +31,6 @@ exports.getData = async function (req, res) {
         files: data_present.files,
       };
 
-
       if (flag != "allVersion" && data_present.latestDataVersion) {
         requiredPayload.data = data_present.latestDataVersion;
       }
@@ -44,7 +40,6 @@ exports.getData = async function (req, res) {
       if (flag == "allVersion") {
         requiredPayload.data = data_present.dataVersion;
       }
-
 
       res.status(200).json({
         success: true,
@@ -281,14 +276,21 @@ exports.removeFile = async (req, res) => {
         message: "Slug is required",
       });
     }
+    const data = await DataModel.findOne({ unique_name: unique_name });
+    if (!data) {
+      return res.status(200).json({
+        success: false,
+        message: `Page does not exist.`,
+      })
+    }
     let response;
     try {
       response = await s3BucketService.remove(fileKey);
     } catch (err) {
       console.error(`Error removing file : ${err.message}`);
       return res.status(200).json({
-        success: true,
-        message: `Error removing file in bucket : ${fileKey}`,
+        success: false,
+        message: `Error removing file in bucket2 : ${fileKey}`,
       });
     }
 
@@ -301,7 +303,7 @@ exports.removeFile = async (req, res) => {
     } catch (e) {
       return res.status(200).json({
         success: true,
-        message: `Error uploading file: ${e}`,
+        message: `Error uploading file1: ${e}`,
       });
     }
 
@@ -354,11 +356,7 @@ async function _getLatestDataVersion(slug, userId) {
         },
       },
     ]);
-
-
     result = result.length > 0 ? result[0] : null;
-
-
     if (
       result &&
       result.latestDataVersion &&
@@ -366,7 +364,6 @@ async function _getLatestDataVersion(slug, userId) {
     ) {
       result.latestDataVersion = undefined;
     }
-
 
     return result;
   } catch (error) {

@@ -16,7 +16,8 @@ import {
   pageIcon,
   pageListIcon,
   menuIcon,
-  userProfileIcon
+  userProfileIcon,
+  profilePicture
 } from "../assets/svgs";
 import { UserContext } from "../context/UserContext";
 import TmceEditor from "./TmceEditor";
@@ -27,7 +28,12 @@ var SOCKET_ADDRESS = process.env.REACT_APP_SOCKET_ADDRESS;
 
 
 export default function MainPage(props) {
-  const { currUser, setCurrUser } = useContext(UserContext)
+  const { currUser, setCurrUser } = useContext(UserContext);
+  let userprofilePicture;
+  if (currUser) {
+    userprofilePicture = currUser.profilePic || profilePicture;
+  }
+
 
   const editorRef = useRef(null);
   const navigate = useNavigate();
@@ -48,6 +54,7 @@ export default function MainPage(props) {
   const [allVersionData, setAllVersionData] = useState([]);
   const [socket, setSocket] = useState(null);
   const [fileList, setFileList] = useState([]);
+  const [privateFileList, setPrivateFileList] = useState([]);
   const [tmpSlug, setTmpSlug] = useState("");
   const [dropdownVisibility, setDropdownVisibility] = useState({
     file: false,
@@ -56,6 +63,21 @@ export default function MainPage(props) {
   });
 
   const [incomingEditorValue, setIncomingEditorValue] = useState("");
+  const [showHelpModal, setShowHelpModal] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleOpenModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
+
+  const handleHelp = () => {
+    setShowHelpModal(true);
+  };
+
 
   useEffect(() => {
     console.log("first render " + JSON.stringify(props))
@@ -68,6 +90,70 @@ export default function MainPage(props) {
   }, [])
 
 
+  useEffect(() => {
+    if (currUser) {
+      let results = [];
+      Object.values(props.user.pages).forEach(page => {
+        const { _id, unique_name, files = [] } = page.pageId;
+
+
+        files.forEach(file => {
+          results.push({
+            ...file,
+            pageName: unique_name,
+          });
+        })
+      });
+      setPrivateFileList(results);
+      console.log(privateFileList);
+    }
+    console.log("Private List:");
+    console.log(privateFileList);
+  }, [slug]);
+
+  const UserProfileModal = ({ isOpen, onClose, currUser }) => {
+    return (
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <div className="flex p-6 max-w-3xl w-full">
+          {/* Profile Image */}
+          <div className="w-1/3 flex items-center justify-center">
+            {profilePicture}
+          </div>
+
+          {/* Profile Info */}
+          <div className="w-2/3 pl-6">
+            <h2 className="text-lg font-semibold">{currUser.username}</h2>
+            <p className="text-gray-600">{currUser.email}</p>
+            <p className="text-gray-600">{currUser.bio}</p>
+
+            {/* Links */}
+            <div className="mt-4">
+              <button className="text-blue-500 hover:underline" onClick={() => { navigate('/auth/forgetpassword') }}>
+                Forgot Password?
+              </button>
+            </div>
+          </div>
+        </div>
+      </Modal>
+    );
+  };
+
+  const Modal = ({ onClose, children }) => {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="bg-white rounded shadow-lg max-w-lg w-full p-6 relative">
+          <button
+            onClick={onClose}
+            className="absolute top-2 right-2 text-lg"
+          // aria-label="Close"
+          >
+            &times;
+          </button>
+          {children}
+        </div>
+      </div>
+    );
+  };
   const checkSlug = () => {
     if (!slug) {
       const newSlug = generateRandomString(7);
@@ -96,7 +182,13 @@ export default function MainPage(props) {
               setLatestVersion(res.result.data);
             }
             if (res.result.files && res.result.files.length > 0) {
-              setFileList(res.result.files);
+              if (!currUser) {
+                var publicFile = res.result.files;
+                publicFile.forEach(function (file) {
+                  file.pageName = slug;
+                });
+                setFileList(publicFile);
+              }
             } else {
               setFileList([]);
             }
@@ -129,7 +221,7 @@ export default function MainPage(props) {
       if (slug) {
         const socket = new io(SOCKET_ADDRESS, {
           query: { slug: slug },
-          path: '/socket/',  // Custom path for Socket.IO
+          path: '/socket/', // Custom path for Socket.IO
         });
 
         socket.on('room_message', (room, content) => {
@@ -190,7 +282,9 @@ export default function MainPage(props) {
       .getData(userSlug, time, "specific", props.user)
       .then((res) => {
         if (res.success) {
-          if (editorRef && editorRef.current) { editorRef.current.value = res.result.data.data; }
+          if (editorRef && editorRef.current) {
+            editorRef.current.value = res.result.data.data;
+          }
           latestVersion.data = res.result.data.data
           setAllVersionData((oldData) => {
             var x = oldData.map((m) => {
@@ -214,6 +308,13 @@ export default function MainPage(props) {
     setFileList([]);
   }
 
+  const validateNewPageTitle=(newTitle)=>{
+    let reservedPageTitle=['new','auth','p','api','socket'];
+    if(reservedPageTitle.includes(newTitle.toLowerCase())){
+      return false;
+    }
+    return true;
+  }
   const saveData = () => {
     if (props.user) {
       console.log("UserSlug " + userSlug + " : " + slug);
@@ -251,8 +352,10 @@ export default function MainPage(props) {
                 onClick={() => {
                   if (newTitle.trim()) {
                     console.log(`Renamed page to: ${newTitle}`);
-                    toast.dismiss(t.id);
-                    saveDataMain(newTitle);
+                    if(validateNewPageTitle(newTitle)){
+                      saveDataMain(newTitle);
+                      toast.dismiss(t.id);
+                    }
                   }
                 }}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
@@ -276,7 +379,7 @@ export default function MainPage(props) {
     if (!editorRef) {
       return;
     }
-    var editorValue = editorRef.current.getContent()
+    var editorValue = editorRef.current.getContent();
     var body = {
       slug: pageTitle,
       data: editorValue,
@@ -330,6 +433,14 @@ export default function MainPage(props) {
 
 
   const onSelectFile = async (event) => {
+    let fileSlug = userSlug;
+    if (fileSlug == 'new') {
+      if (props.user.pages.length == 0) {
+        toast.error("Please create a page first to save a file.");
+      } else {
+        fileSlug = props.user.pages[0].pageId.unique_name;
+      }
+    }
     const file = event.target.files[0];
     if (file.size > 20e6 && !userSlug.includes("aarju")) {
       toast.error("Please upload a file smaller than 10 MB");
@@ -341,9 +452,7 @@ export default function MainPage(props) {
     formData.append("fileSize", file.size * 8);
     console.log("file : ", file)
     console.log("file : ", file.size)
-    formData.append("slug", userSlug);
-
-
+    formData.append("slug", fileSlug);
     const toastId = toast.loading('Uploading file server...');
     userService
       .saveFile(formData)
@@ -351,7 +460,21 @@ export default function MainPage(props) {
         toast.success(res.message, {
           id: toastId,
         });
-        setFileList((list) => [...list, res.result]);
+        res.result.pageName = fileSlug;
+        if (currUser) {
+          setPrivateFileList((file) => [...file, res.result]);
+          var localUser = JSON.parse(localStorage.getItem("currentUser"));
+          localUser.pages.map((page) => {
+            if (page.pageId.unique_name == fileSlug) {
+              page.pageId.files.push(res.result);
+            }
+            return page;
+          });
+          localStorage.setItem("currentUser", JSON.stringify(localUser));
+        }
+        else {
+          setFileList((list) => [...list, res.result]);
+        }
       }).catch((error) => {
         console.error(error);
         toast.error(error, {
@@ -366,18 +489,45 @@ export default function MainPage(props) {
 
   const remvoeCurrentFile = (file) => {
     userService
-      .removeFile({ slug: userSlug, file })
+      .removeFile({ slug: file.pageName, file, currUser })
       .then((res) => {
         toast.success(res.message);
-        setFileList((list) => {
-          const t = list.filter((l) => {
-            return l.key != file.key;
+        if (currUser) {
+          var currentUser = JSON.parse(localStorage.getItem('currentUser'));
+          const updatedPages = currentUser.pages.map((page) => {
+            const updatedFiles = page.pageId.files.filter((fo) => fo._id !== file._id);
+            return {
+              ...page,
+              pageId: {
+                ...page.pageId,
+                files: updatedFiles,
+              },
+            }
           });
-          return t;
-        });
+          const updatedUser = {
+            ...currentUser,
+            pages: updatedPages,
+          };
+          localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+          setPrivateFileList((f) => {
+            const t = f.filter((l) => {
+              return l.key != file.key;
+            });
+            return t;
+          })
+        }
+        else {
+          setFileList((list) => {
+            const t = list.filter((l) => {
+              return l.key != file.key;
+            });
+            return t;
+          });
+        }
       })
       .catch((e) => {
-        toast.error("Error while removing file : ", e);
+        console.log(e)
+        toast.error("Error while removing file : " + e);
       });
   };
 
@@ -558,33 +708,65 @@ export default function MainPage(props) {
 
               {/* File List functionality */}
               <div className="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
-                {fileList.map((file, index) => {
-                  return (
-                    <li
-                      key={index}
-                      className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between border-blue-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
-                    >
-                      <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg group flex-1">
-                        {fileIcon(file.type)}
-                        <span
-                          className="ms-3 cursor-pointer line-clamp-1"
-                          title={file.name}
-                        >
-                          {file.name ? getPresizeFileName(file.name) : "file"}{" "}
-                          {/* {file.name ? file.name : "file"}{" "} */}
-                        </span>
-                      </div>
-                      <div className="flex flex-row min-w-[50px]">
-                        <a href={file.url} target="_blank" download={file.name} rel="noreferrer">
-                          {downloadIcon}
-                        </a>
-                        <div onClick={() => confirmFileRemove(file)}>
-                          {removeIcon}
+                {currUser ?
+                  privateFileList.map((file, index) => {
+                    return (
+                      <li
+                        key={index}
+                        className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between border-blue-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
+                      >
+                        <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg group flex-1">
+                          {fileIcon(file.type)}
+                          <span
+                            className="ms-3 cursor-pointer line-clamp-1"
+                            title={file.name}
+                          >
+                            {file.name ? getPresizeFileName(file.name) : "file"}{" "}
+                            {/* {file.name ? file.name : "file"}{" "} */}
+                          </span>
                         </div>
-                      </div>
-                    </li>
-                  );
-                })}
+                        <div className="flex flex-row min-w-[50px]">
+                          <a href={file.url} target="_blank" download={file.name} rel="noreferrer">
+                            {downloadIcon}
+                          </a>
+                          <div onClick={() => confirmFileRemove(file)}>
+                            {removeIcon}
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })
+                  :
+                  fileList.map((file, index) => {
+                    return (
+                      <li
+                        key={index}
+                        className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between border-blue-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
+                      >
+                        <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg group flex-1">
+                          {fileIcon(file.type)}
+                          <span
+                            className="ms-3 cursor-pointer line-clamp-1"
+                            title={file.name}
+                          >
+                            {file.name ? getPresizeFileName(file.name) : "file"}{" "}
+                            {/* {file.name ? file.name : "file"}{" "} */}
+                          </span>
+                        </div>
+                        <div className="flex flex-row min-w-[50px]">
+                          <a href={file.url} target="_blank" download={file.name} rel="noreferrer">
+                            {downloadIcon}
+                          </a>
+                          <div onClick={() => confirmFileRemove(file)}>
+                            {removeIcon}
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })
+
+
+                }
               </div>
             </>}
         </div>
@@ -696,40 +878,75 @@ export default function MainPage(props) {
                         Select to Upload Files
                       </label>
                     </div>
-                    {fileList.length > 0 && (
-                      <div className="pt-1 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
-                        {fileList.map((file, index) => {
-                          return (
-                            <li
-                              key={index}
-                              className="Image-content flex flex-row items-center gap-1 justify-between border-blue-300"
-                            >
-                              <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group flex-1">
-                                {fileIcon(file.type)}
-                                <span className="ms-3">
-                                  {file.name
-                                    ? getPresizeFileName(file.name)
-                                    : "file"}{" "}
-                                </span>
-                              </div>
-                              <div className="flex flex-row">
-                                <a
-                                  href={file.url}
-                                  target="_blank"
-                                  download={file.name}
-                                  rel="noreferrer"
-                                >
-                                  {downloadIcon}
-                                </a>
-                                <div onClick={() => confirmFileRemove(file)}>
-                                  {removeIcon}
+                    {currUser ?
+                      privateFileList.length > 0 && (
+                        <div className="pt-1 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
+                          {privateFileList.map((file, _id) => {
+                            return (
+                              <li
+                                key={_id}
+                                className="Image-content flex flex-row items-center gap-1 justify-between border-blue-300"
+                              >
+                                <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group flex-1">
+                                  {fileIcon(file.type)}
+                                  <span className="ms-3">
+                                    {file.name
+                                      ? getPresizeFileName(file.name)
+                                      : "file"}{" "}
+                                  </span>
                                 </div>
-                              </div>
-                            </li>
-                          );
-                        })}
-                      </div>
-                    )}
+                                <div className="flex flex-row">
+                                  <a
+                                    href={file.url}
+                                    target="_blank"
+                                    download={file.name}
+                                    rel="noreferrer"
+                                  >
+                                    {downloadIcon}
+                                  </a>
+                                  <div onClick={() => confirmFileRemove(file)}>
+                                    {removeIcon}
+                                  </div>
+                                </div>
+                              </li>
+                            );
+                          })}
+                        </div>
+                      )
+                      : fileList.length > 0 && (
+                        <div className="pt-1 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
+                          {fileList.map((file, _id) => {
+                            return (
+                              <li
+                                key={_id}
+                                className="Image-content flex flex-row items-center gap-1 justify-between border-blue-300"
+                              >
+                                <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group flex-1">
+                                  {fileIcon(file.type)}
+                                  <span className="ms-3">
+                                    {file.name
+                                      ? getPresizeFileName(file.name)
+                                      : "file"}{" "}
+                                  </span>
+                                </div>
+                                <div className="flex flex-row">
+                                  <a
+                                    href={file.url}
+                                    target="_blank"
+                                    download={file.name}
+                                    rel="noreferrer"
+                                  >
+                                    {downloadIcon}
+                                  </a>
+                                  <div onClick={() => confirmFileRemove(file)}>
+                                    {removeIcon}
+                                  </div>
+                                </div>
+                              </li>
+                            );
+                          })}
+                        </div>
+                      )}
                   </>}
                 </ul>
               </div>
@@ -758,7 +975,7 @@ export default function MainPage(props) {
             </div>
             {dropdownVisibility.profile && (
               <div
-                className="absolute right-0 z-10 mt-2 p-1 min-w-48 max-h-96 overflow-auto  origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                className="absolute right-0 z-10 mt-2 p-1 min-w-48 max-h-96 overflow-auto origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
                 role="menu"
                 aria-orientation="vertical"
                 aria-labelledby="profile-menu-button"
@@ -767,6 +984,45 @@ export default function MainPage(props) {
                   className="py-2 text-sm text-gray-700 dark:text-gray-200 "
                   aria-labelledby="dropdownDefaultButton"
                 >
+                  <li
+                    className="flex px-1 items-center justify-end w-full"
+                  >
+                    {/* <div
+           className="w-full version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+          >
+           <img
+            src={profilePicture}
+            alt={`${username}'s profile`}
+            className="w-10 h-10 rounded-full mr-2"
+           />
+           {username}
+          </div> */}
+                    <div className="w-full version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white flex items-center"
+                      onClick={handleOpenModal}
+                    >
+                      <div className="w-12 h-12 flex-shrink-0">
+                        {/* <img
+             src={}
+             // alt={`${username}'s profile`}
+             className="w-full h-full rounded-full object-cover"
+            /> */}
+                        {profilePicture}
+                      </div>
+                      <span className="ml-2">{username}</span> {/* Add margin-left for spacing */}
+                    </div>
+                  </li>
+
+
+                  <li
+                    className="flex items-center justify-end w-full px-1">
+                    <div
+                      onClick={handleHelp}
+                      className="w-full version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
+                      Help
+                    </div>
+                  </li>
+
+
                   <li
                     key="logout"
                     className="flex px-1 items-center justify-end w-full"
@@ -782,8 +1038,23 @@ export default function MainPage(props) {
                     </div>
                   </li>
                 </ul>
+                {showHelpModal && (
+                  <Modal onClose={() => setShowHelpModal(false)}>
+                    <h2 className="text-lg font-semibold">Help & Support</h2>
+                    <p>If you have any questions, please contact support at <a href="mailto:notes.developer89@gmail.com" className="text-blue-500">notes.developer89@gmail.com</a>.</p>
+                    <h3 className="mt-4">Frequently Asked Questions</h3>
+                    <ul>
+                      <li>Q: How do I reset my password?</li>
+                      <li>A: You can reset your password by going to the settings page.</li>
+                      <li>Q: How do I contact support?</li>
+                      <li>A: You can contact support using the email above.</li>
+                    </ul>
+                  </Modal>
+                )}
+                {isModalOpen && <UserProfileModal isOpen={isModalOpen} onClose={handleCloseModal} currUser={currUser} />}
               </div>
-            )}
+            )
+            }
           </div>
         </div>
 
@@ -794,7 +1065,7 @@ export default function MainPage(props) {
             <div className="relative inline-block text-left cursor-pointer">
               <div
                 // onMouseOver={() => {
-                //   getAllversionData(false);
+                //  getAllversionData(false);
                 // }}
                 onClick={() => {
                   getAllversionData(true);
@@ -807,7 +1078,7 @@ export default function MainPage(props) {
                   });
                 }}
                 type="button"
-                className="gap-2 flex items-center justify-between rounded-md  text-xs font-semibold shadow-sm   text-dark bg-slate-100 focus:outline-none focus:ring-gray-300 font-medium rounded-lg px-2 py-1 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-gray-800"
+                className="gap-2 flex items-center justify-between rounded-md text-xs font-semibold shadow-sm  text-dark bg-slate-100 focus:outline-none focus:ring-gray-300 font-medium rounded-lg px-2 py-1 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-gray-800"
                 id="menu-button"
                 aria-expanded="true"
                 aria-haspopup="true"

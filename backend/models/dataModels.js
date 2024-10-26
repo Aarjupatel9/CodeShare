@@ -17,11 +17,11 @@ const dataModelsSchema = mongoose.Schema({
             },
             data: {
                 type: String,
-                required:false,
+                required: false,
             },
-            user:{
-                type:mongoose.SchemaTypes.ObjectId,
-                required:false,
+            user: {
+                type: mongoose.SchemaTypes.ObjectId,
+                required: false,
             }
         },
     ],
@@ -56,20 +56,20 @@ const dataModelsSchema = mongoose.Schema({
 
 
     // access: {
-    //   type: mongoose.Schema.Types.Mixed,
-    //   validate: {
-    //     validator: function (v) {
-    //       // Check if v is a string (public or private)
-    //       if (typeof v === "string") {
-    //         return v === "public" || v === "private";
-    //       } else if (Array.isArray(v)) {
-    //         return v.every((item) => item === mongoose.SchemaTypes.ObjectId);
-    //       }
-    //       return false; // Invalid type
-    //     },
-    //     message: (props) =>
-    //       `${props.value} is not a valid access type! It should be "public", "private", or an array of those.`,
-    //   },
+    //  type: mongoose.Schema.Types.Mixed,
+    //  validate: {
+    //   validator: function (v) {
+    //    // Check if v is a string (public or private)
+    //    if (typeof v === "string") {
+    //     return v === "public" || v === "private";
+    //    } else if (Array.isArray(v)) {
+    //     return v.every((item) => item === mongoose.SchemaTypes.ObjectId);
+    //    }
+    //    return false; // Invalid type
+    //   },
+    //   message: (props) =>
+    //    `${props.value} is not a valid access type! It should be "public", "private", or an array of those.`,
+    //  },
     // },/
     access: {
         type: String,
@@ -93,7 +93,7 @@ const dataModelsSchema = mongoose.Schema({
         ref: 'userModels',
         required: false,
     },
-});
+}, { timestamps: true });
 
 
 const dataModels = mongoose.model("dataModels", dataModelsSchema);
