@@ -8,6 +8,7 @@ import { UserProvider } from "./context/UserContext";
 import ForgetPasswordComponent from "./pages/ForgetPasswordComponent";
 import PublicPages from "./pages/PublicPages";
 import PrivatePages from "./pages/PrivatePages";
+import GamePage from "./gamePlugin/GamePage";
 
 function App() {
   return (
@@ -15,6 +16,8 @@ function App() {
       <Toaster />
       <UserProvider>
         <Routes>
+          <Route path="/games" element={<GamePage />} />
+          <Route path="/game/:gameName" element={<GamePage />} />
           <Route path="/auth/login" element={<LoginComponent />} />
           <Route path="/auth/register" element={<RegisterComponent />} />
           <Route path='/auth/forgetpassword' element={<ForgetPasswordComponent/>}/>

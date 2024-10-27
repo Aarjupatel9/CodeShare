@@ -312,7 +312,7 @@ export default function MainPage(props) {
   }
 
   const validateNewPageTitle = (newTitle) => {
-    let reservedPageTitle = ["new", "auth", "p", "api", "socket"];
+    let reservedPageTitle = ["new", "auth", "p", "api", "socket", "game","games"];
     if (reservedPageTitle.includes(newTitle.toLowerCase())) {
       return false;
     }

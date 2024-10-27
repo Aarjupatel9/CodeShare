@@ -1,0 +1,90 @@
+export const pattern = [
+  [1 * 100, 0],
+  [(4 / 6) * 100, 0],
+  [(2 / 6) * 100, 0],
+  [(2 / 6) * 100, 1],
+  [(2 / 6) * 100, 0],
+  [(4 / 6) * 100, 0],
+  [1 * 100, 0],
+]
+
+export const initialState = [
+    { row: 0, col: 0, player: 0, isSelectedForMove: false, index: 0, isRemovable: false, isMovable: false },
+    { row: 0, col: 3, player: 0, isSelectedForMove: false, index: 1, isRemovable: false, isMovable: false },
+    { row: 0, col: 6, player: 0, isSelectedForMove: false, index: 2, isRemovable: false, isMovable: false },
+    { row: 1, col: 1, player: 0, isSelectedForMove: false, index: 3, isRemovable: false, isMovable: false },
+    { row: 1, col: 3, player: 0, isSelectedForMove: false, index: 4, isRemovable: false, isMovable: false },
+    { row: 1, col: 5, player: 0, isSelectedForMove: false, index: 5, isRemovable: false, isMovable: false },
+    { row: 2, col: 2, player: 0, isSelectedForMove: false, index: 6, isRemovable: false, isMovable: false },
+    { row: 2, col: 3, player: 0, isSelectedForMove: false, index: 7, isRemovable: false, isMovable: false },
+    { row: 2, col: 4, player: 0, isSelectedForMove: false, index: 8, isRemovable: false, isMovable: false },
+    { row: 3, col: 0, player: 0, isSelectedForMove: false, index: 9, isRemovable: false, isMovable: false },
+    { row: 3, col: 1, player: 0, isSelectedForMove: false, index: 10, isRemovable: false, isMovable: false },
+    { row: 3, col: 2, player: 0, isSelectedForMove: false, index: 11, isRemovable: false, isMovable: false },
+    { row: 3, col: 4, player: 0, isSelectedForMove: false, index: 12, isRemovable: false, isMovable: false },
+    { row: 3, col: 5, player: 0, isSelectedForMove: false, index: 13, isRemovable: false, isMovable: false },
+    { row: 3, col: 6, player: 0, isSelectedForMove: false, index: 14, isRemovable: false, isMovable: false },
+    { row: 4, col: 2, player: 0, isSelectedForMove: false, index: 15, isRemovable: false, isMovable: false },
+    { row: 4, col: 3, player: 0, isSelectedForMove: false, index: 16, isRemovable: false, isMovable: false },
+    { row: 4, col: 4, player: 0, isSelectedForMove: false, index: 17, isRemovable: false, isMovable: false },
+    { row: 5, col: 1, player: 0, isSelectedForMove: false, index: 18, isRemovable: false, isMovable: false },
+    { row: 5, col: 3, player: 0, isSelectedForMove: false, index: 19, isRemovable: false, isMovable: false },
+    { row: 5, col: 5, player: 0, isSelectedForMove: false, index: 20, isRemovable: false, isMovable: false },
+    { row: 6, col: 0, player: 0, isSelectedForMove: false, index: 21, isRemovable: false, isMovable: false },
+    { row: 6, col: 3, player: 0, isSelectedForMove: false, index: 22, isRemovable: false, isMovable: false },
+    { row: 6, col: 6, player: 0, isSelectedForMove: false, index: 23, isRemovable: false, isMovable: false },
+  ];
+  
+
+export const initialPlayerPositions = [
+  // First 9 players (left side, with left set to -20%)
+  { top: '10%', left: '-10%', index: 0, isBind: false, isRemoved: false },
+  { top: '18.67%', left: '-10%', index: 0, isBind: false, isRemoved: false },
+  { top: '27.34%', left: '-10%', index: 0, isBind: false, isRemoved: false },
+  { top: '36.01%', left: '-10%', index: 0, isBind: false, isRemoved: false },
+  { top: '44.68%', left: '-10%', index: 0, isBind: false, isRemoved: false },
+  { top: '53.35%', left: '-10%', index: 0, isBind: false, isRemoved: false },
+  { top: '62.02%', left: '-10%', index: 0, isBind: false, isRemoved: false },
+  { top: '70.69%', left: '-10%', index: 0, isBind: false, isRemoved: false },
+  { top: '79.36%', left: '-10%', index: 0, isBind: false, isRemoved: false },
+
+  // Next 9 players (right side, with left set to 120%)
+  { top: '10%', left: '110%', index: 0, isBind: false, isRemoved: false },
+  { top: '18.67%', left: '110%', index: 0, isBind: false, isRemoved: false },
+  { top: '27.34%', left: '110%', index: 0, isBind: false, isRemoved: false },
+  { top: '36.01%', left: '110%', index: 0, isBind: false, isRemoved: false },
+  { top: '44.68%', left: '110%', index: 0, isBind: false, isRemoved: false },
+  { top: '53.35%', left: '110%', index: 0, isBind: false, isRemoved: false },
+  { top: '62.02%', left: '110%', index: 0, isBind: false, isRemoved: false },
+  { top: '70.69%', left: '110%', index: 0, isBind: false, isRemoved: false },
+  { top: '79.36%', left: '110%', index: 0, isBind: false, isRemoved: false },
+]
+
+//0-row, 1-col, 2-player-decide, 3-track-for-player-to-move-when-select-points, 4-index, 5-highlite-for-player-remove
+
+export const edges = [
+  [1, 9],
+  [0, 2, 4],
+  [1, 14],
+  [4, 10],
+  [1, 3, 5, 7],
+  [4, 13],
+  [7, 11],
+  [4, 6, 8],
+  [7, 12],
+  [0, 10, 21],
+  [3, 9, 11, 18],
+  [6, 10, 15],
+  [8, 13, 17],
+  [5, 12, 14, 20],
+  [2, 13, 23],
+  [11, 16],
+  [15, 17, 19],
+  [12, 16],
+  [10, 19],
+  [16, 18, 20, 22],
+  [13, 19],
+  [9, 22],
+  [19, 21, 23],
+  [14, 22],
+]
