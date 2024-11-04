@@ -159,7 +159,6 @@ class UserService {
     const server_host = process.env.REACT_APP_SERVER_PATH;
 
 
-
     return new Promise(function (resolve, reject) {
       const fetchPostOptions = {
         method: "POST",
@@ -172,27 +171,47 @@ class UserService {
         },
         body: JSON.stringify(data),
       };
-      fetch(server_host + "/api/data/removeFile/", fetchPostOptions)
-        .then((response) => {
-          return response.json();
-        })
-        .then((res) => {
-          if (res.success) {
-            resolve(res);
-          } else {
-            handleRejectResponse(res.message);
-            reject(res.message);
-          }
-        })
-        .catch((e) => {
-          console.error("error : ", e);
-          handleRejectResponse(e.toString());
-          reject(e.toString());
-        });
+      if (!data.currUser) {
+        fetch(server_host + "/api/data/removeFile/", fetchPostOptions)
+          .then((response) => {
+            return response.json();
+          })
+          .then((res) => {
+            if (res.success) {
+              resolve(res);
+            } else {
+              handleRejectResponse(res.message);
+              reject(res.message);
+            }
+          })
+          .catch((e) => {
+            console.error("error : ", e);
+            handleRejectResponse(e.toString());
+            reject(e.toString());
+          });
+      }
+      else {
+        fetch(server_host + "/api/data/p/removeFile/", fetchPostOptions)
+          .then((response) => {
+            return response.json();
+          })
+          .then((res) => {
+            if (res.success) {
+              resolve(res);
+            } else {
+              handleRejectResponse(res.message);
+              reject(res.message);
+            }
+          })
+          .catch((e) => {
+            console.error("error : ", e);
+            handleRejectResponse(e.toString());
+            reject(e.toString());
+          });
+      }
+
     });
   }
-
-
 
   getUserPreferTheme() {
     const localData = localStorage.getItem("getUserPreferTheme");
@@ -202,7 +221,5 @@ class UserService {
     return JSON.parse(localData);
   }
 }
-
-
 
 export default new UserService();

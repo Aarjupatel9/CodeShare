@@ -1,13 +1,31 @@
 export const socketIcon = `<svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="16" height="16" viewBox="0 0 50 50">
- <path d="M 41 2 C 37.145851 2 34 5.1458514 34 9 C 34 10.842988 34.724355 12.518937 35.896484 13.771484 L 27.525391 24 L 15.919922 24 C 15.430748 20.617539 12.513828 18 9 18 C 5.1458514 18 2 21.145851 2 25 C 2 28.854149 5.1458514 32 9 32 C 12.513828 32 15.430748 29.382461 15.919922 26 L 27.501953 26 L 35.535156 36.640625 C 34.5767 37.838633 34 39.353257 34 41 C 34 44.854149 37.145851 48 41 48 C 44.854149 48 48 44.854149 48 41 C 48 37.145851 44.854149 34 41 34 C 39.515247 34 38.13907 34.471256 37.003906 35.265625 L 29.271484 25.025391 L 37.455078 15.021484 C 38.496931 15.638103 39.706395 16 41 16 C 44.854149 16 48 12.854149 48 9 C 48 5.1458514 44.854149 2 41 2 z M 41 4 C 43.773268 4 46 6.2267316 46 9 C 46 11.773268 43.773268 14 41 14 C 38.226732 14 36 11.773268 36 9 C 36 6.2267316 38.226732 4 41 4 z M 9 20 C 11.773268 20 14 22.226732 14 25 C 14 27.773268 11.773268 30 9 30 C 6.2267316 30 4 27.773268 4 25 C 4 22.226732 6.2267316 20 9 20 z M 41 36 C 43.773268 36 46 38.226732 46 41 C 46 43.773268 43.773268 46 41 46 C 38.226732 46 36 43.773268 36 41 C 36 38.226732 38.226732 36 41 36 z">
- </path>
+<path d="M 41 2 C 37.145851 2 34 5.1458514 34 9 C 34 10.842988 34.724355 12.518937 35.896484 13.771484 L 27.525391 24 L 15.919922 24 C 15.430748 20.617539 12.513828 18 9 18 C 5.1458514 18 2 21.145851 2 25 C 2 28.854149 5.1458514 32 9 32 C 12.513828 32 15.430748 29.382461 15.919922 26 L 27.501953 26 L 35.535156 36.640625 C 34.5767 37.838633 34 39.353257 34 41 C 34 44.854149 37.145851 48 41 48 C 44.854149 48 48 44.854149 48 41 C 48 37.145851 44.854149 34 41 34 C 39.515247 34 38.13907 34.471256 37.003906 35.265625 L 29.271484 25.025391 L 37.455078 15.021484 C 38.496931 15.638103 39.706395 16 41 16 C 44.854149 16 48 12.854149 48 9 C 48 5.1458514 44.854149 2 41 2 z M 41 4 C 43.773268 4 46 6.2267316 46 9 C 46 11.773268 43.773268 14 41 14 C 38.226732 14 36 11.773268 36 9 C 36 6.2267316 38.226732 4 41 4 z M 9 20 C 11.773268 20 14 22.226732 14 25 C 14 27.773268 11.773268 30 9 30 C 6.2267316 30 4 27.773268 4 25 C 4 22.226732 6.2267316 20 9 20 z M 41 36 C 43.773268 36 46 38.226732 46 41 C 46 43.773268 43.773268 46 41 46 C 38.226732 46 36 43.773268 36 41 C 36 38.226732 38.226732 36 41 36 z">
+</path>
 </svg>`;
 
-
 export const addFileIcon = `<svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-  <path d="M18 9V4a1 1 0 0 0-1-1H8.914a1 1 0 0 0-.707.293L4.293 7.207A1 1 0 0 0 4 7.914V20a1 1 0 0 0 1 1h4M9 3v4a1 1 0 0 1-1 1H4m11 6v4m-2-2h4m3 0a5 5 0 1 1-10 0 5 5 0 0 1 10 0Z"/>
- </svg>`;
+ <path d="M18 9V4a1 1 0 0 0-1-1H8.914a1 1 0 0 0-.707.293L4.293 7.207A1 1 0 0 0 4 7.914V20a1 1 0 0 0 1 1h4M9 3v4a1 1 0 0 1-1 1H4m11 6v4m-2-2h4m3 0a5 5 0 1 1-10 0 5 5 0 0 1 10 0Z"/>
+</svg>`;
 
+export const redirectArrowIcon = (
+  <svg
+    className="w-6 h-6 text-gray-800 dark:text-white"
+    aria-hidden="true"
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    fill="none"
+    viewBox="0 0 24 24"
+  >
+    <path
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      d="M19 12H5m14 0-4 4m4-4-4-4"
+    />
+  </svg>
+);
 
 export const zipIcon = (
   <svg
@@ -27,7 +45,6 @@ export const zipIcon = (
     />
   </svg>
 );
-
 
 export const imageIcon = (
   <svg
@@ -49,7 +66,6 @@ export const imageIcon = (
   </svg>
 );
 
-
 export const addIcon = (
   <svg
     className="w-6 h-6 text-gray-800 dark:text-white"
@@ -69,7 +85,6 @@ export const addIcon = (
     />
   </svg>
 );
-
 
 export const downloadIcon = (
   <svg
@@ -91,7 +106,6 @@ export const downloadIcon = (
   </svg>
 );
 
-
 export const removeIcon = (
   <svg
     className="h-6 w-6 cursor-pointer text-gray-800 dark:text-white"
@@ -105,7 +119,6 @@ export const removeIcon = (
     <path d="M 10 2 L 9 3 L 3 3 L 3 5 L 4.109375 5 L 5.8925781 20.255859 L 5.8925781 20.263672 C 6.023602 21.250335 6.8803207 22 7.875 22 L 16.123047 22 C 17.117726 22 17.974445 21.250322 18.105469 20.263672 L 18.107422 20.255859 L 19.890625 5 L 21 5 L 21 3 L 15 3 L 14 2 L 10 2 z M 6.125 5 L 17.875 5 L 16.123047 20 L 7.875 20 L 6.125 5 z"></path>
   </svg>
 );
-
 
 export const pdfIcon = (
   <svg
@@ -127,7 +140,6 @@ export const pdfIcon = (
   </svg>
 );
 
-
 export const defaultFileIcon = (
   <svg
     className="w-6 h-6 text-gray-800 dark:text-white"
@@ -146,7 +158,6 @@ export const defaultFileIcon = (
     />
   </svg>
 );
-
 
 export const fileAddIcon = (
   <svg
@@ -168,7 +179,6 @@ export const fileAddIcon = (
   </svg>
 );
 
-
 export const csvIcon = (
   <svg
     className="w-6 h-6 text-gray-800 dark:text-white"
@@ -189,7 +199,6 @@ export const csvIcon = (
   </svg>
 );
 
-
 export const downArrowIcon = (
   <svg
     className="w-2.5 h-2.5"
@@ -208,12 +217,20 @@ export const downArrowIcon = (
   </svg>
 );
 
+export const profilePicture = (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+    <path d="M16 31C7.729 31 1 24.271 1 16S7.729 1 16 1s15 6.729 15 15-6.729 15-15 15zm0-28C8.832 3 3 8.832 3 16s5.832 13 13 13 13-5.832 13-13S23.168 3 16 3z" />
+    <circle cx="16" cy="15.133" r="4.267" />
+    <path d="M16 30c2.401 0 4.66-.606 6.635-1.671-.425-3.229-3.18-5.82-6.635-5.82s-6.21 2.591-6.635 5.82A13.935 13.935 0 0 0 16 30z" />
+  </svg>
+);
 
 export const currentVersionIcon = (...arg) => {
   return (
     <svg
-      className={`w-4 h-4 text-gray-800 dark:text-white cursor-pointer ${arg[0].isCurrent ? "" : "invisible"
-        }`}
+      className={`w-4 h-4 text-gray-800 dark:text-white cursor-pointer ${
+        arg[0].isCurrent ? "" : "invisible"
+      }`}
       aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       width="24"
@@ -250,19 +267,64 @@ export const versionIndicatorIcon = (
   </svg>
 );
 
-
 export const pageIcon = (
-  <svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7h1v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h11.5M7 14h6m-6 3h6m0-10h.5m-.5 3h.5M7 7h3v3H7V7Z" />
+  <svg
+    className="w-6 h-6 text-gray-800 dark:text-white"
+    aria-hidden="true"
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    fill="none"
+    viewBox="0 0 24 24"
+  >
+    <path
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      d="M19 7h1v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h11.5M7 14h6m-6 3h6m0-10h.5m-.5 3h.5M7 7h3v3H7V7Z"
+    />
   </svg>
-)
+);
 export const pageListIcon = (
-  <svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-    <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.03v13m0-13c-2.819-.831-4.715-1.076-8.029-1.023A.99.99 0 0 0 3 6v11c0 .563.466 1.014 1.03 1.007 3.122-.043 5.018.212 7.97 1.023m0-13c2.819-.831 4.715-1.076 8.029-1.023A.99.99 0 0 1 21 6v11c0 .563-.466 1.014-1.03 1.007-3.122-.043-5.018.212-7.97 1.023" />
+  <svg
+    className="w-6 h-6 text-gray-800 dark:text-white"
+    aria-hidden="true"
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    fill="none"
+    viewBox="0 0 24 24"
+  >
+    <path
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      d="M12 6.03v13m0-13c-2.819-.831-4.715-1.076-8.029-1.023A.99.99 0 0 0 3 6v11c0 .563.466 1.014 1.03 1.007 3.122-.043 5.018.212 7.97 1.023m0-13c2.819-.831 4.715-1.076 8.029-1.023A.99.99 0 0 1 21 6v11c0 .563-.466 1.014-1.03 1.007-3.122-.043-5.018.212-7.97 1.023"
+    />
   </svg>
+);
 
-
-)
+export const userProfileIcon = (
+  <svg
+    className="w-6 h-6 text-gray-800 dark:text-white"
+    aria-hidden="true"
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    fill="none"
+    viewBox="0 0 24 24"
+  >
+    <path
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+      d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0 0a8.949 8.949 0 0 0 4.951-1.488A3.987 3.987 0 0 0 13 16h-2a3.987 3.987 0 0 0-3.951 3.512A8.948 8.948 0 0 0 12 21Zm3-11a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+    />
+  </svg>
+);
 
 const videoIcon = (
   <svg
@@ -283,7 +345,6 @@ const videoIcon = (
   </svg>
 );
 
-
 const fileIcons = {
   "text/plain": defaultFileIcon,
   "image/png": imageIcon,
@@ -295,7 +356,6 @@ const fileIcons = {
   "video/mp4": videoIcon,
   defaultType: defaultFileIcon,
 };
-
 
 export const fileIcon = (type) => {
   if (fileIcons[type]) {
@@ -320,7 +380,21 @@ export const fileIcon = (type) => {
   return fileIcons["defaultType"];
 };
 
-export const menuIcon = (<svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-  <path stroke="currentColor" strokeLinecap="round" strokeWidth="2" d="M20 6H10m0 0a2 2 0 1 0-4 0m4 0a2 2 0 1 1-4 0m0 0H4m16 6h-2m0 0a2 2 0 1 0-4 0m4 0a2 2 0 1 1-4 0m0 0H4m16 6H10m0 0a2 2 0 1 0-4 0m4 0a2 2 0 1 1-4 0m0 0H4"/>
-</svg>
-)
+export const menuIcon = (
+  <svg
+    className="w-6 h-6 text-gray-800 dark:text-white"
+    aria-hidden="true"
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    fill="none"
+    viewBox="0 0 24 24"
+  >
+    <path
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeWidth="2"
+      d="M20 6H10m0 0a2 2 0 1 0-4 0m4 0a2 2 0 1 1-4 0m0 0H4m16 6h-2m0 0a2 2 0 1 0-4 0m4 0a2 2 0 1 1-4 0m0 0H4m16 6H10m0 0a2 2 0 1 0-4 0m4 0a2 2 0 1 1-4 0m0 0H4"
+    />
+  </svg>
+);

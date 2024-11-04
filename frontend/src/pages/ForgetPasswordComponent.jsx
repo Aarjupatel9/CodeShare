@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import './Auth.css';
 import toast from 'react-hot-toast';
 import authService from '../services/authService';
 
@@ -28,20 +27,20 @@ const ForgetPasswordComponent = () => {
 
 
     return (
-        <div className='auth-container'>
-            <form className='auth-form' >
-                <h2>Forget Password</h2>
+        <div className='h-full w-full flex flex-row justify-center items-start'>
+            <form className='flex flex-col mt-[14%] gap-4 bg-white p-[20px] rounded-[8px] shadow-[0_0px_10px_0px_rgba(0,0,0,0.2)] w-80' >
+                <h2 className='font-bold text-xl'>Forget Password</h2>
 
 
-                <input type="email" placeholder="Enter your email" onChange={(e) => setEmail(e.target.value)} required />
+                <input className='bg-gray-50 font-semibold border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500' type="email" placeholder="Enter your email" onChange={(e) => setEmail(e.target.value)} required />
 
 
-                <button type="submit" onClick={e => handleForgetPassword(e)}>Send Reset Link</button>
+                <button className='text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 mt-4' type="submit" onClick={e => handleForgetPassword(e)}>Send Reset Link</button>
 
 
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Link to='/auth/register'>Register</Link>
-                    <Link to='/auth/login'>Back to Login</Link>
+                    <Link className='text-blue-600 hover:underline dark:text-blue-500 ml-2' to='/auth/register'>Register</Link>
+                    <Link className='text-blue-600 hover:underline dark:text-blue-500 ml-2' to='/auth/login'>Back to Login</Link>
                 </div>
             </form>
         </div>
