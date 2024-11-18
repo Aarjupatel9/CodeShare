@@ -203,7 +203,6 @@ exports.saveFileNew = async (req, res, next) => {
   }
 };
 
-
 //deprecated
 exports.saveFile = async (req, res) => {
   try {
@@ -371,6 +370,7 @@ async function _getLatestDataVersion(slug, userId) {
     return null;
   }
 }
+
 async function _getRequiredDataVersion(slug, time, userId) {
   try {
     const matchCondition = {
@@ -400,7 +400,6 @@ async function _getRequiredDataVersion(slug, time, userId) {
     return null;
   }
 }
-
 
 async function _getAllVersion(slug, userId) {
   const matchCondition = {
