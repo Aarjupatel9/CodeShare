@@ -8,6 +8,7 @@ var bodyParser = require("body-parser");
 // routes
 const userRoute = require('../routes/userRoute');
 const authRoute = require('../routes/authRoute');
+const auctionRoute = require('../routes/auctionRoute');
 
 const app = express();
 
@@ -55,6 +56,7 @@ app.get('/', (req, res) => {
 
 app.use("/api/data", userRoute);
 app.use("/api/auth", authRoute);
+app.use("/api/auction", auctionRoute);
 
 
 app.get('*', (req, res) => {
