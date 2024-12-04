@@ -3,6 +3,8 @@ const AuctionTeamModel = require("../models/auctionTeamModel");
 const AuctionPlayerModel = require("../models/auctionPlayerModel");
 const AuctionSetModel = require("../models/auctionSetModel");
 
+const uniEE = require("../emmiters/universal").uniEE;
+
 const mongoose = require("mongoose");
 
 var playerDataMapping = {
@@ -245,6 +247,11 @@ exports.createNewAuction = async function (req, res) {
       })
       newAuction = await newAuction.save();
 
+      //using emmiters
+      uniEE.emit("event",({
+        type:"auction_created",
+        data:newAuction
+      }))
 
       res.status(200).json({
         success: true,
@@ -253,6 +260,7 @@ exports.createNewAuction = async function (req, res) {
       });
     }
   } catch (e) {
+    console.log(e)
     res.status(500).json({
       success: false,
       message: "internal server error : " + e,
