@@ -40,6 +40,42 @@ class AuctionService {
 
   }
 
+  getPublicAuctionDetails(data) {
+    // const host = process.env.REACT_APP_SERVER_PATH;
+    const server_host = process.env.REACT_APP_SERVER_PATH;
+
+    return new Promise(function (resolve, reject) {
+      const fetchPostOptions = {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json;charset=UTF-8",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Method": "GET,POST,PUT,DELETE,OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type,Authorization",
+        },
+        body: JSON.stringify(data),
+      };
+      if (!data.owner) {
+        fetch(server_host + "/api/auction/public/get", fetchPostOptions)
+          .then((response) => {
+            return response.json();
+          })
+          .then((res) => {
+            if (res.success) {
+              resolve(res);
+            } else {
+              reject(res.message);
+            }
+          })
+          .catch((e) => {
+            console.error("error : ", e);
+            reject(e.toString());
+          });
+      }
+    });
+  }
+
   getAuctionDetails(data) {
     // const host = process.env.REACT_APP_SERVER_PATH;
     const server_host = process.env.REACT_APP_SERVER_PATH;

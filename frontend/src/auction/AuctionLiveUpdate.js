@@ -51,7 +51,7 @@ export default function AuctionLiveUpdate(props) {
     }
 
     const getAuctionData = () => {
-        AuctionService.getAuctionDetails({ auctionId: auctionId }).then((res) => {
+        AuctionService.getPublicAuctionDetails({ auctionId: auctionId }, true).then((res) => {
             console.log(res);
             if (res.auction) {
                 setAuction(res.auction);
@@ -191,7 +191,7 @@ export default function AuctionLiveUpdate(props) {
                                 </button>
                             </div>
                         </div>
-                        {view.liveBidding && <div className={`flex flex-row w-full h-full items-center pt-2 overflow-auto ${currentPlayer && Object.keys(currentPlayer).length > 0?"justify-between":"justify-center"} mx-auto`} >
+                        {view.liveBidding && <div className={`flex flex-row w-full h-full items-center pt-2 overflow-auto ${currentPlayer && Object.keys(currentPlayer).length > 0 ? "justify-between" : "justify-center"} mx-auto`} >
                             {(currentPlayer && Object.keys(currentPlayer).length > 0) ? <> <div className='PlayerProfile flex flex-col w-[50%]'>
                                 {getPlayerCard(currentPlayer)}
                             </div>

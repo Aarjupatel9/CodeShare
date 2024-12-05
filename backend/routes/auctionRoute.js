@@ -9,6 +9,7 @@ const authenticateAuction = require('../middleware/AuctionMiddleware');
 
 router.route("/login").post(authenticateUser(), auctionLogin);
 
+router.route("/public/get").post(getAuctionDetails);
 router.route("/get").post(authenticateUser(), authenticateAuction(), getAuctionDetails);
 router.route("/dataImports").post(authenticateUser(), authenticateAuction(), auctionDataImports);
 
