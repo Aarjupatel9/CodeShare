@@ -5,6 +5,8 @@ import toast from 'react-hot-toast';
 import * as xlsx from 'xlsx';
 
 const requiredPlayerColumnForDisplay = ["name", "auctionSet", "playerNumber", "role", "bowlingHand", "bowlingType", "battingHand", "battingPossition", "battingType", "team", "auctionStatus", "basePrice", "soldPrice", "commnets"];
+const requiredSetColumnForDisplay = ["name", "state"];
+const requiredTeamColumnForDisplay = ["name", "budget", "remainingBudget"];
 
 export default function AuctionSetManage(props) {
     const [auction, setAuction] = useState({});
@@ -13,7 +15,8 @@ export default function AuctionSetManage(props) {
     const [sets, setSets] = useState([]);
     const [playersCopy, setPlayersCopy] = useState([]);
     const [view, setView] = useState({ player: false, team: false, set: false });
-
+    const [setPlayerMap, setSetPlayerMap] = useState([]);
+    const [teamPlayerMap, setTeamPlayerMap] = useState([]);
 
     const { auctionId } = useParams();
     const navigate = useNavigate();
@@ -41,8 +44,46 @@ export default function AuctionSetManage(props) {
                 setPlayers(updatedPlayers);
                 setPlayersCopy(updatedPlayers);
             }
+            if (res.sets && res.players) {
+                var data = [];
+                var map = {};
+                res.players.forEach(element => {
+                    if (!map[element.auctionSet]) {
+                        map[element.auctionSet] = [];
+                    }
+                    map[element.auctionSet].push(element);
+                });
+                Object.keys(map).map((key) => {
+                    data.push({ set: key, players: map[key] });
+                })
+                console.log("setSetPlayerMap", data);
+                setSetPlayerMap(data);
+            }
+            if (res.teams && res.players) {
+                var data = [];
+                var map = {};
+                res.players.forEach(element => {
+                    if (!map[element.team]) {
+                        map[element.team] = [];
+                    }
+                    map[element.team].push(element);
+                });
+                Object.keys(map).map((key) => {
+                    if (key != "null") {
+                        var rb = map[key].reduce((total, p) => {
+                            return total + parseInt(p.soldPrice);
+                        }, 0);
+                        rb = getTeamBudget(key, res.teams) - rb;
+                        data.push({ team: key, players: map[key], remainingBudget: rb });
+                    }
+                })
+                setTeamPlayerMap(data);
+            }
         }).catch((error) => {
             console.log(error);
+            if (error == "TokenExpiredError") {
+                navigate("/auth/login")
+            }
             toast.error(error);
         });
     }
@@ -50,7 +91,14 @@ export default function AuctionSetManage(props) {
     useEffect(() => {
         // console.log("player changed " + JSON.stringify(players));
     }, [players])
-
+    const getTeamBudget = (teamId, teams) => {
+        var team = teams.find((t) => { return t._id == teamId });
+        if (team) {
+            return parseInt(team.budget);
+        } else {
+            return "null";
+        }
+    }
     const getSetName = (setId) => {
         var s = sets.find((s) => { return s._id == setId });
         if (s) {
@@ -107,6 +155,10 @@ export default function AuctionSetManage(props) {
                 getAuctionData();
             })
         }
+    }
+    const getTeamBudgetForView = (number) => {
+        number = parseInt(number);
+        return (number / 100000) + " L";
     }
     const handlePlayerSetAssign = () => {
         const selectedPlayers = players.filter(player => player.isSelected);
@@ -495,7 +547,7 @@ export default function AuctionSetManage(props) {
                     <form>
                         <label className='bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md' htmlFor="upload">Upload Exel File</label>
                         <input
-                            className='bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md'
+                            className='bg-blue-600 hover:bg-blue-700 text-white rounded-md'
                             type="file"
                             name="upload"
                             id="upload"
@@ -517,7 +569,8 @@ export default function AuctionSetManage(props) {
     }
 
     const readUploadFile = (e, t) => {
-        const tabName = ["TEAM_NAME", "AR1", "AR2", "AR3", "BA1", "BA2", "BA3", "WK1", "WK2", "Marquee"]
+        const tabName = ["TEAM_NAMES", "AR1", "AR2", "AR3", "BA1", "BA2", "BA3", "WK1", "WK2", "Marquee"];
+        toast.dismiss(t.id);
         e.preventDefault();
         if (e.target.files) {
             const reader = new FileReader();
@@ -530,23 +583,22 @@ export default function AuctionSetManage(props) {
                 var tabsData = [];
                 tabName.forEach((tab) => {
                     var tabData = xlsx.utils.sheet_to_json(workbook.Sheets[tab]);
-                    if (tab == "TEAM_NAME") {
-                        tabData = ["Midnight Marauders",
-                            "Sunrise Sentinels",
-                            "Moonlight Mavericks",
-                            "Twilight Titans",
-                            "Noon Nomads",
-                            "Sunset Strikers",
-                            "Golden Hour Heroes",
-                            "Dawn Defenders"];
-                    }
+                    // if (tab == "TEAM_NAMES") {
+                    //     tabData = ["Midnight Marauders",
+                    //         "Sunrise Sentinels",
+                    //         "Moonlight Mavericks",
+                    //         "Twilight Titans",
+                    //         "Noon Nomads",
+                    //         "Sunset Strikers",
+                    //         "Golden Hour Heroes",
+                    //         "Dawn Defenders"];
+                    // }
                     tabsData.push({ tab: tab, tabData: tabData });
                 })
                 if (tabsData) {
                     handleAuctionDataSetup(tabsData);
-                    console.log(tabsData);
+                    console.log("tabsData", tabsData);
                 }
-                toast.dismiss(t.id);
             };
             reader.readAsArrayBuffer(e.target.files[0]);
         }
@@ -583,8 +635,8 @@ export default function AuctionSetManage(props) {
         <>
             <div className='flex flex-col w-full h-full p-1 text-sx gap-2'>
                 <div className='header flex flex-row  gap-2'>
-                    <div className='button rounded p-1 px-2 bg-gray-300 cursor-pointer' onClick={() => { navigate("/t/auction/" + auctionId) }}>Auction Home</div>
-                    <button onClick={() => { getMSExelForPlayerAdd() }} type="button" className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                    <div onClick={() => { navigate("/t/auction/" + auctionId) }} type="button" className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer" >Auction Home</div>
+                    <button onClick={() => { getMSExelForPlayerAdd() }} type="button" className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
                         Import Auction Details
                     </button>
 
@@ -624,13 +676,17 @@ export default function AuctionSetManage(props) {
                                             <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                                                 <tr>
                                                     {sets && sets.length > 0 && Object.keys(sets[0]).map(key => {
-                                                        return (<th scope="col" className="px-4 py-3">{key}</th>)
+                                                        if (requiredSetColumnForDisplay.includes(key)) {
+                                                            return (<th scope="col" className="px-4 py-3">{key}</th>)
+                                                        }
+                                                        return null;
+                                                        // return (<th scope="col" className="px-4 py-3">{key}</th>)
                                                     })}
-                                                    <th scope="col" className="p-4">
+                                                    {/* <th scope="col" className="p-4">
                                                         <div className="flex items-center">
                                                             <label htmlFor="checkbox-all" className="sr-only bg-red-700">Remove</label>
                                                         </div>
-                                                    </th>
+                                                    </th> */}
                                                 </tr>
                                             </thead>
                                             <tbody className='h-full overflow-auto'>
@@ -638,15 +694,19 @@ export default function AuctionSetManage(props) {
                                                     return (
                                                         <tr key={"sets-" + rowIndex} className="border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
                                                             {Object.keys(set).map((key, colIndex) => {
-                                                                return (
-                                                                    <td key={"sets-" + rowIndex + "-" + colIndex} className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white">{set[key]}</td>
-                                                                )
+                                                                if (requiredSetColumnForDisplay.includes(key)) {
+                                                                    var value = set[key];
+                                                                    return (
+                                                                        <td key={"player-" + rowIndex + "-" + colIndex} className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white">{value}</td>
+                                                                    )
+                                                                }
+                                                                return null;
                                                             })}
-                                                            <td key={"sets-" + rowIndex + "remove"} className="w-4 px-4 py-3">
+                                                            {/* <td key={"sets-" + rowIndex + "remove"} className="w-4 px-4 py-3">
                                                                 <div onClick={() => { handleSetPermenentRemove(set) }} className="flex items-center cursor-pointer ">
                                                                     Remove
                                                                 </div>
-                                                            </td>
+                                                            </td> */}
                                                         </tr>
                                                     )
                                                 })}
@@ -771,13 +831,16 @@ export default function AuctionSetManage(props) {
                                             <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                                                 <tr>
                                                     {teams && teams.length > 0 && Object.keys(teams[0]).map(key => {
-                                                        return (<th scope="col" className="px-4 py-3">{key}</th>)
+                                                        if (requiredTeamColumnForDisplay.includes(key)) {
+                                                            return (<th scope="col" className="px-4 py-3">{key}</th>)
+                                                        }
+                                                        return null;
                                                     })}
-                                                    <th scope="col" className="p-4">
+                                                    {/* <th scope="col" className="p-4">
                                                         <div className="flex items-center">
                                                             <label htmlFor="checkbox-all" className="sr-only bg-red-700">Remove</label>
                                                         </div>
-                                                    </th>
+                                                    </th> */}
                                                 </tr>
                                             </thead>
                                             <tbody className='h-full overflow-auto'>
@@ -785,15 +848,22 @@ export default function AuctionSetManage(props) {
                                                     return (
                                                         <tr key={"teams-" + rowIndex} className="border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
                                                             {Object.keys(team).map((key, colIndex) => {
-                                                                return (
-                                                                    <td key={"teams-" + rowIndex + "-" + colIndex} className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white">{team[key]}</td>
-                                                                )
+                                                                if (requiredTeamColumnForDisplay.includes(key)) {
+                                                                    var value = team[key];
+                                                                    if (key == "budget" || key == "remainingBudget") {
+                                                                        value = getTeamBudgetForView(value);
+                                                                    }
+                                                                    return (
+                                                                        <td key={"player-" + rowIndex + "-" + colIndex} className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white">{value}</td>
+                                                                    )
+                                                                }
+                                                                return null;
                                                             })}
-                                                            <td key={"teams-" + rowIndex + "-checkbox"} className="w-4 px-4 py-3">
+                                                            {/* <td key={"teams-" + rowIndex + "-checkbox"} className="w-4 px-4 py-3">
                                                                 <div onClick={() => { handleTeamPermenentRemove(team) }} className="flex items-center cursor-pointer ">
                                                                     Remove
                                                                 </div>
-                                                            </td>
+                                                            </td> */}
                                                         </tr>
                                                     )
                                                 })}

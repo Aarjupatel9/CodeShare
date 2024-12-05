@@ -4,6 +4,10 @@ import AuctionService from '../services/auctionService';
 import toast from 'react-hot-toast';
 import * as xlsx from 'xlsx';
 import "./auction.css";
+import { undoIcons } from "../assets/svgs"
+import { io } from "socket.io-client";
+var SOCKET_ADDRESS = process.env.REACT_APP_SOCKET_ADDRESS;
+
 //auctionStatus : idle, bidding, sold, unsold
 const tabName = ["Marquee", "AR1", "AR2", "AR3", "BA1", "BA2", "BA3", "WK1", "WK2",]
 const requiredSetColumnForDisplay = ["name"];
@@ -13,20 +17,30 @@ export default function AuctionBidding(props) {
     const [players, setPlayers] = useState([]);
     const [sets, setSets] = useState([]);
     const [setPlayerMap, setSetPlayerMap] = useState([]);
+    const [teamPlayerMap, setTeamPlayerMap] = useState([]);
     const [view, setView] = useState({ set: false });
     const [player, setPlayer] = useState({});
     const [currentSet, setCurrentSet] = useState({});
     const [auctionDetails, setAuctionDetails] = useState({});
+    const [socket, setSocket] = useState(null);
+
 
     const { auctionId } = useParams();
     const navigate = useNavigate();
 
     useEffect(() => {
-        getAuctionData()
+        getAuctionData();
+        createAuctionSocket();
+        return () => {
+            if (socket) {
+                socket.disconnect();
+            }
+        };
     }, [])
+
     const getAuctionData = () => {
         AuctionService.getAuctionDetails({ auctionId: auctionId }).then((res) => {
-            console.log(res);
+            console.log("getAuctionData", res);
             if (res.auction) {
                 setAuction(res.auction);
             }
@@ -51,22 +65,72 @@ export default function AuctionBidding(props) {
                 Object.keys(map).map((key) => {
                     data.push({ set: key, players: map[key] });
                 })
-                console.log(data);
+                console.log("setSetPlayerMap", data);
                 setSetPlayerMap(data);
             }
+            if (res.teams && res.players) {
+                var data = [];
+                var map = {};
+                res.players.forEach(element => {
+                    if (!map[element.team]) {
+                        map[element.team] = [];
+                    }
+                    map[element.team].push(element);
+                });
+                Object.keys(map).map((key) => {
+                    if (key != "null") {
+                        var rb = map[key].reduce((total, p) => {
+                            return total + parseInt(p.soldPrice);
+                        }, 0);
+                        rb = getTeamBudget(key, res.teams) - rb;
+                        data.push({ team: key, players: map[key], remainingBudget: rb });
+                    }
+                })
+                setTeamPlayerMap(data);
+            }
         }).catch((error) => {
-            console.log(error);
+            console.error(error);
+            if (error == "TokenExpiredError") {
+                navigate("/auth/login")
+            }
             toast.error(error);
         });
+    }
 
+    function createAuctionSocket() {
+        const socket = new io(SOCKET_ADDRESS, {
+            query: { slug: "auction" + auctionId },
+            path: "/auction/", // Custom path for Socket.IO
+        });
+        socket.emit("newPlayerBiddingUpdate", player);
+        socket.on("getPlayerBiddingUpdate", () => {
+            socket.emit("newPlayerBiddingUpdate", player);
+        });
+        setSocket(socket);
     }
     useEffect(() => {
         console.log(setPlayerMap, sets)
-
         if (sets && sets.length > 0 && setPlayerMap && setPlayerMap.length > 0) {
             updateAuctionDetails();
         }
     }, [sets, setPlayerMap]);
+
+    useEffect(() => {
+        if (teamPlayerMap && teamPlayerMap.length > 0) {
+            var isAuctionOver = true;
+            for (var i = 0; i < teamPlayerMap.length; i++) {
+                var m = teamPlayerMap[i];
+                if (m.players.length < 13) {
+                    isAuctionOver = false;
+                }
+            }
+            if (isAuctionOver) {
+                toast.success("Auction is completed, no team can bid now, thank you!!")
+            } else {
+                console.log("auction is running");
+            }
+        }
+    }, [teamPlayerMap]);
 
     const getIdlePlayer = (set) => {
         var mapping = setPlayerMap.find((m) => { return m.set == set._id });
@@ -94,7 +158,6 @@ export default function AuctionBidding(props) {
         var px = players.find((p) => { return (p.auctionStatus == "bidding" || p.auctionStatus == "idle") });
         return px ? false : true;
     }
-
 
     const updateAuctionDetails = () => {
 
@@ -137,7 +200,7 @@ export default function AuctionBidding(props) {
             console.log("updateAuctionDetails isCompleted ", isCompleted);
 
             if (isCompleted) {
-                AuctionService.updateAuctionSet({ set: { _id: runningSet._id, state: "completed" } }).then((res) => {
+                AuctionService.updateAuctionSet({ set: { _id: runningSet._id, state: "completed" }, auction: auction }).then((res) => {
                     toast.success("Set is completed, please select next set for bidding");
                 }).catch((err) => {
                     toast.error(err);
@@ -177,6 +240,9 @@ export default function AuctionBidding(props) {
 
     useEffect(() => {
         console.log("player details changed ", player);
+        if (socket) {
+            socket.emit("newPlayerBiddingUpdate", player);
+        }
     }, [player])
     useEffect(() => {
         // console.log("auctionDetails.state  changed ",auctionDetails.state );
@@ -224,10 +290,23 @@ export default function AuctionBidding(props) {
             return lastPrice + 2500000;
         }
     }
+    function canTeamBid(teamId) {
+        console.log("teamPlayerMap", teamPlayerMap);
+        for (var i = 0; i < teamPlayerMap.length; i++) {
+            var m = teamPlayerMap[i];
+            if (m.team == teamId && m.players.length < 13) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     const handleTeamClick = (team) => {
         console.log(team);
-        // baseprice , bidding = [ { team, price}]
+        if (!canTeamBid(team._id)) {
+            // toast.error("Team have maximum players");
+            return;
+        }
         if (player && Object.keys(player).length > 0 && player.auctionStatus == "bidding") {
 
             const newBiddingState = structuredClone(player.bidding);
@@ -243,7 +322,10 @@ export default function AuctionBidding(props) {
             } else {
                 nextBid = player.basePrice;
             }
-
+            if (nextBid > team.remainingBudget) {
+                toast.error("Not enough purse to bid the player");
+                return;
+            }
 
             newBiddingState.push({ team: team._id, price: nextBid })
             setPlayer((old) => {
@@ -257,7 +339,7 @@ export default function AuctionBidding(props) {
                 toast.success("Current bid at " + nextBid + " of team " + team.name);
             }).catch((err) => {
                 toast.error(err);
-                console.log(err);
+                console.error(err);
             }).finally(() => {
                 // getAuctionData();
             });
@@ -270,6 +352,23 @@ export default function AuctionBidding(props) {
         } else {
             return "null";
         }
+    }
+    const getTeamBudget = (teamId, teams) => {
+        var team = teams.find((t) => { return t._id == teamId });
+        if (team) {
+            return parseInt(team.budget);
+        } else {
+            return "null";
+        }
+    }
+    const getTeamPlayerCount = (team) => {
+        for (var i = 0; i < teamPlayerMap.length; i++) {
+            var m = teamPlayerMap[i];
+            if (m.team == team._id) {
+                return m.players.length;
+            }
+        }
+        return "Something went wrong";
     }
 
     const handleBidUndo = (player) => {
@@ -310,14 +409,41 @@ export default function AuctionBidding(props) {
                 return (
                     <div className={`${index == 0 ? "bg-green-400" : "bg-slate-300"} flex flex-row justify-center    rounded p-2 `}>
                         <div >
-                            {getTeamName(b.team)} -  {getTeamBudgetForView(b.price)} L
+                            {getTeamName(b.team)} -  {getTeamBudgetForView(b.price)}
                         </div>
-                        {index == 0 && <div onClick={() => { handleBidUndo(player) }} className={`bg-red-400 px-2 rounded ml-auto button cursor-pointer `}>
-                            Undo
+                        {index == 0 && <div onClick={() => { handleBidUndo(player) }} className={`bg-gray-200 px-2 rounded ml-auto button cursor-pointer `}>
+                            {undoIcons}
                         </div>}
                     </div>
                 )
             })
+        }
+    }
+    const getProfilePicture = (player) => {
+        var name = player.name;
+        name = name.split(" ");
+        let sn = name[0][0];
+        if (name[1]) {
+            sn += name[1][0];
+        }
+        return (<div className='flex flex-col justify-center items-center text-6xl min-w-[200px] min-h-[200px] capitalize'>{sn}</div>)
+    }
+    const getPlayerCard = (player) => {
+        if (player && Object.keys(player).length > 0) {
+            return (
+                <div className={` flex flex-row justify-center  items-center gap-4 rounded p-2 `}>
+
+                    <div className="bg-slate-200  max-w-[400px] rounded-full">
+                        {getProfilePicture(player)}
+                    </div>
+
+                    <div className='flex flex-col justify-start items-start '>
+                        <div className='font-medium'>Number - {player.playerNumber}</div>
+                        <div className='font-medium'>Name - {player.name}</div>
+                        <div className='font-medium'>Base Price - {getTeamBudgetForView(player.basePrice)}</div>
+                    </div>
+                </div>
+            )
         }
     }
 
@@ -327,6 +453,7 @@ export default function AuctionBidding(props) {
                 player.auctionStatus = "unsold"; // ned to change
                 AuctionService.updateAuctionPlayer({ players: [{ _id: player._id, auctionStatus: "unsold" }] }).then((res) => {
                     toast.success("Player - " + player.name + " is unsold")
+                    socket.emit("playerSoldUpdate", "Player - " + player.name + " is unsold");
                     setPlayer({});
                 }).catch((err) => {
                     toast.error(err);
@@ -340,7 +467,9 @@ export default function AuctionBidding(props) {
                 var team = biddingState[biddingState.length - 1].team;
                 var soldPrice = biddingState[biddingState.length - 1].price;
                 AuctionService.updateAuctionPlayer({ players: [{ _id: player._id, auctionStatus: "sold", bidding: biddingState, team: team, soldPrice: soldPrice }] }).then((res) => {
-                    toast.success("Player - " + player.name + " is sold to team - " + biddingState[biddingState.length - 1].price);
+                    let message = "Player - " + player.name + " is sold to team - " + getTeamName(biddingState[biddingState.length - 1].team) + " at price" + getTeamBudgetForView(biddingState[biddingState.length - 1].price);
+                    toast.success(message);
+                    socket.emit("playerSoldUpdate", message);
                     setPlayer({});
                 }).catch((err) => {
                     toast.error(err);
@@ -349,17 +478,11 @@ export default function AuctionBidding(props) {
                     getAuctionData();
                 });
             }
-
-            // setSetPlayerMap((old) => {
-            //     old = structuredClone(old);
-            //     var currentMap = old.find((o) => { return o.set == currentSet._id });
-
-            // })
         }
     }
 
     const handleSelectNextSet = (set, t) => {
-        AuctionService.updateAuctionSet({ set: { _id: set._id, state: "running" } }).then((res) => {
+        AuctionService.updateAuctionSet({ set: { _id: set._id, state: "running" }, auction: auction }).then((res) => {
             toast.success("Please start bidding for set - " + set.name);
         }).catch((err) => {
             toast.error(err);
@@ -382,11 +505,11 @@ export default function AuctionBidding(props) {
                     className={`text-gray-800 text-lg font-semibold ${t.visible ? "animate-enter" : "animate-leave"
                         }`}
                 >
-                    Select Next Set
+                    Select next set
                 </div>
-                <div className="flex flex-col items-start w-full space-y-2">
+                <div className="flex flex-col items-center items-start w-full space-y-2">
                     <label htmlFor="newTitle" className="text-gray-700">
-                        Select Player set to assign
+                        Select Player set to continue
                     </label>
                     {selectableSet && selectableSet.length > 0 && selectableSet.map((set, index) => {
                         return (<div>
@@ -410,121 +533,60 @@ export default function AuctionBidding(props) {
 
     const getTeamBudgetForView = (number) => {
         number = parseInt(number);
-        return number / 100000;
+        return (number / 100000) + " L";
     }
 
     return (
         <>
             <div className='flex flex-col w-full h-full p-1 text-sx gap-2'>
-                <div className='header flex flex-row justify-end gap-2 bg-gray-50'>
-                    <div className='button rounded p-1 px-2 bg-gray-300 cursor-pointer' onClick={() => { navigate("/t/auction/" + auctionId) }}>Auction Home</div>
+                <div className='header flex flex-row justify-start gap-2 bg-gray-50'>
+                    <div onClick={() => { navigate("/t/auction/" + auctionId) }} className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer">Auction Home</div>
                 </div>
 
-                <div className='flex flex-col gap-2 h-full max-h-full overflow-auto bg-gray-100'>
-                    <div className={`${"SetPannel-1"} flex  flex-row gap-2 w-full overflow-auto `}>
-                        <section className="bg-gray-100 dark:bg-gray-900 py-3 sm:py-2 w-full  overflow-auto">
-                            <div className="px-4 mx-auto max-w-screen-2xl lg:px-12 p-1">
-                                <div className="relative overflow-hidden bg-white shadow-md dark:bg-gray-800 sm:rounded-lg px-3">
-                                    <div className="flex flex-col px-4 py-3 space-y-3 lg:flex-row lg:items-center lg:justify-between lg:space-y-0 lg:space-x-4">
-                                        <div className="flex items-center flex-1 space-x-4">
-                                            <h5>
-                                                <span className="text-gray-500">All Sets:</span>
-                                                <span className="dark:text-white">{sets.length}</span>
-                                            </h5>
-                                        </div>
-                                        <div className="flex flex-col flex-shrink-0 space-y-3 md:flex-row md:items-center lg:justify-end md:space-y-0 md:space-x-3">
-                                            {/* <button onClick={() => { }} type="button" className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                                                Add Set
-                                            </button> */}
-                                            <button onClick={() => {
-                                                setView((old) => {
-                                                    old = structuredClone(old);
-                                                    old.set = !old.set
-                                                    return old;
-                                                })
-                                            }} type="button" className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                                                hide/show
-                                            </button>
-                                        </div>
-                                    </div>
-                                    {view.set && <div className="overflow-x-auto">
-                                        <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                                            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                                                <tr>
-                                                    {sets && sets.length > 0 && Object.keys(sets[0]).map((key) => {
-                                                        // Only render columns that are in requiredColumns
-                                                        if (requiredSetColumnForDisplay.includes(key)) {
-                                                            return <th scope="col" className="px-4 py-3" key={key}>{key}</th>;
-                                                        }
-                                                        return null;  // Skip the unwanted columns
-                                                    })}
-                                                    <th scope="col" className="p-4">
-                                                        <div className="flex items-center">
-                                                            <label htmlFor="checkbox-all" className="sr-only bg-red-700">Remove</label>
-                                                        </div>
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className='h-full overflow-auto'>
-                                                {sets && sets.length > 0 && sets.map((set, rowIndex) => {
-                                                    return (
-                                                        <tr key={"sets-" + rowIndex} className="border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                                            {Object.keys(set).map((key, colIndex) => {
-                                                                if (requiredSetColumnForDisplay.includes(key)) {
-                                                                    return (
-                                                                        <td key={"sets-" + rowIndex + "-" + colIndex} className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white">{set[key]}</td>
-                                                                    )
-                                                                }
-                                                                return null;
-                                                            })}
-                                                        </tr>
-                                                    )
-                                                })}
-                                            </tbody>
-                                        </table>
-                                    </div>}
-                                </div>
-                            </div>
-                        </section>
-                    </div>
+                <div className='flex flex-col gap-2 h-full max-h-full overflow-auto bg-gray-100 rounded-lg'>
+
                     <div className={`${"PlayerPannel-1"}   flex flex-col gap-2 w-full overflow-auto `}>
-                        <div className='bg-gray-300 py-3 flex  flex-row justify-between px-3 '>
-                            <div>{(auctionDetails && auctionDetails.currentSet && Object.keys(auctionDetails.currentSet).length > 0 && auctionDetails.currentSet.name) ? (`Current set -  ${auctionDetails.currentSet.name} ${auctionDetails.remainingPlayerInCurrentSet && (" Remaining player - " + auctionDetails.remainingPlayerInCurrentSet)}`) : ("Please select next set to continue")} </div>
+                        <div className='bg-gray-300 py-3 flex  flex-row justify-between items-center font-medium px-3 normal-case '>
+                            <div className='font-medium'>{(auctionDetails && auctionDetails.currentSet && Object.keys(auctionDetails.currentSet).length > 0 && auctionDetails.currentSet.name) ? (`Current set -  ${auctionDetails.currentSet.name} ${auctionDetails.remainingPlayerInCurrentSet && (", Remaining player - " + auctionDetails.remainingPlayerInCurrentSet)}`) : ("Please select next set to continue")} </div>
                             {auctionDetails && auctionDetails.selectSet && <div onClick={() => { selectNextSet() }} className='button cursor-pointer rounded bg-gray-400 px-2 p-1'>
-                                Select Next set
+                                Select next set
                             </div>}
                             {auctionDetails && auctionDetails.shouldNext && <div onClick={() => { pickUpRandomPlayer() }} className='button cursor-pointer rounded bg-gray-400 px-2 p-1'>
-                                Pick Up Random Player
+                                Pick up random player
                             </div>}
 
                             {player && Object.keys(player).length > 0 && <div onClick={() => { handlePlayerSold() }} className='button cursor-pointer rounded bg-gray-400 px-2 p-1'>
                                 {player.bidding.length == 0 ? "Un Sold" : "Make Sold"}
                             </div>}
                         </div>
-                        <div className='flex-1 flex flex-row w-full items-center overflow-auto'>
-                            <div className='PlayerProfile flex flex-col w-[50%]'>
-                                <div>{player.name}</div>
-                                <div>{player.basePrice}</div>
-                                <div>photo</div>
+                        <div className='flex-1 flex flex-row w-full justify-center items-center overflow-auto'>
+                            {!auctionDetails.shouldNext ? <> <div className='PlayerProfile flex flex-col w-[50%]'>
+                                {getPlayerCard(player)}
                             </div>
-                            <div className='PlayerProfile flex flex-col w-[50%] max-h-full overflow-auto'>
-                                {(player.bidding && player.bidding.length > 0) ? <div className='flex max-w-[400px] flex-col gap-[1px] overflow-auto'>
-                                    {getBiddingView()}
-                                </div> : <div className=''>
-                                    Start bidding
-                                </div>}
-                            </div>
+                                <div className='PlayerProfile flex flex-col w-[50%] max-h-full overflow-auto'>
+                                    {(player.bidding && player.bidding.length > 0) ? <div className='flex max-w-[400px] flex-col gap-[1px] overflow-auto'>
+                                        {getBiddingView()}
+                                    </div> : <div className='normal-case font-medium'>
+                                        Start bidding
+                                    </div>}
+                                </div>
+                            </> : <>
+                                <div className='flex flex-row normal-case font-medium'>Please select the player</div>
+                            </>}
                         </div>
                     </div>
                     <div className={`${"TeamPannel-1"}TeamPannel-1  flex flex-col gap-2 w-full overflow-auto py-3`}>
                         <div className='flex flex-row justify-center bg-gray-200 gap-2 p-2'>
                             {teams && teams.length && teams.map((team, index) => {
-                                return (<div onClick={() => { handleTeamClick(team) }} className='bg-blue-200 rounded p-3 cursor-pointer'>
-                                    <div>
+                                return (<div onClick={() => { handleTeamClick(team) }} className={`${canTeamBid(team._id) ? "bg-blue-200 cursor-pointer" : "bg-green-500 cursor-not-allowed"} rounded p-3 `}>
+                                    <div className='text-md font-medium'>
                                         {team.name}
                                     </div>
-                                    <div>
-                                        Remaining - {getTeamBudgetForView(team.remainingBudget)} L
+                                    <div className='text-xs'>
+                                        Remaining - {getTeamBudgetForView(team.remainingBudget)}
+                                    </div>
+                                    <div className='text-xs'>
+                                        Total Players - {getTeamPlayerCount(team)}
                                     </div>
 
                                 </div>)

@@ -13,6 +13,7 @@ import AuctionHome from "./auction/AuctionHome";
 import AuctionMain from "./auction/AuctionMain";
 import AuctionSetManage from "./auction/AuctionSetManage";
 import AuctionBidding from "./auction/AuctionBidding";
+import AuctionLiveUpdate from "./auction/AuctionLiveUpdate";
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route path="/t/auction/:auctionId" element={<AuctionMain />} />
           <Route path="/t/auction/:auctionId/manageset" element={<AuctionSetManage />} />
           <Route path="/t/auction/:auctionId/bidding" element={<AuctionBidding />} />
+          <Route path="/t/auction/:auctionId/live" element={<AuctionLiveUpdate />} />
           <Route path="/games" element={<GamePage />} />
           <Route path="/game/:gameName" element={<GamePage />} />
           <Route path="/auth/login" element={<LoginComponent />} />

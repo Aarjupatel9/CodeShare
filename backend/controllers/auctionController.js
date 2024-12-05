@@ -3,6 +3,15 @@ const AuctionTeamModel = require("../models/auctionTeamModel");
 const AuctionPlayerModel = require("../models/auctionPlayerModel");
 const AuctionSetModel = require("../models/auctionSetModel");
 
+const {
+  genJWTToken,
+  compareHashPassword,
+  verifyJWTToken,
+  generateHashPassword,
+  sendEmail,
+} = require("../services/authService");
+const jwt = require("jsonwebtoken");
+
 const mongoose = require("mongoose");
 
 var playerDataMapping = {
@@ -25,6 +34,50 @@ var playerDataMapping = {
   "CATEGORY": "category"
 }
 
+exports.auctionLogin = async function (req, res) {
+  try {
+    const { name, organizer, password } = req.body;
+    console.log("started");
+    const auction = await AuctionModel.findOne({ name: name, organizer: organizer, password: password });
+    if (!auction) {
+      return res
+        .status(400)
+        .json({ message: "Auction details invalid.", success: false });
+    }
+
+    const payload = {
+      _id: auction._id,
+      organizer: auction.organizer,
+    };
+
+    const token = genJWTToken(payload);
+
+    res.cookie("auction_token", token, {
+      httpOnly: true,
+      secure: false,
+      maxAge: 3600000000000,
+    });
+    auction.password = undefined;
+    res
+      .status(200)
+      .json({
+        message: "Successfully Logged Inn.",
+        success: true,
+        auction: auction,
+      });
+
+  } catch (e) {
+    console.log("error", e);
+    res
+      .status(500)
+      .json({
+        message: "An error occurred during registration" + e.toString(),
+        success: false,
+      });
+  }
+};
+
+
 exports.auctionDataImports = async function (req, res) {
   try {
     const { tabsData, auction } = req.body;
@@ -46,7 +99,7 @@ exports.auctionDataImports = async function (req, res) {
     try {
       var teamsData = tabsData[0].tabData; // 0 must be team list
       for (var i = 0; i < teamsData.length; i++) {
-        var team = await _createTeam(teamsData[i], auction);
+        var team = await _createTeam(teamsData[i]["TEAM NAME"], auction);
         if (team) {
           teams.push(team);
         } else {
@@ -286,8 +339,8 @@ exports.updateNewAuction = async (req, res) => {
 };
 exports.updateNewAuctionSet = async (req, res) => {
   try {
-    const { set } = req.body;
-    if (!set || !set._id) {
+    const { set, auction } = req.body;
+    if (!set || !set._id || !auction || !auction._id) {
       return res.status(200).json({
         success: false,
         message: "Invalid payload is required",
@@ -295,6 +348,27 @@ exports.updateNewAuctionSet = async (req, res) => {
     }
 
     let updatedSet = await AuctionSetModel.updateOne({ _id: set._id }, set, { upsert: false });
+    let sets = await AuctionSetModel.find({ auction: auction._id });
+
+    if (sets && sets.length > 0) {
+      let flag = true;
+      for (var k = 0; k < sets.length; k++) {
+        var s = sets[k];
+        console.log("set", s.name, s.state);
+
+        if (sets[k].state != "completed" || sets[k].name == "unsold") {
+          console.log("making false");
+          flag = false;
+          break;
+        }
+      }
+      if (flag) {
+        console.log("creating unsold set");
+        var unsoldSet = await _createSet("unsold", auction, false);
+        // var unsoldPlayers = AuctionPlayerModel.find({ auctionStatus: "unsold", auction: auction._id });
+        await AuctionPlayerModel.updateMany({ auctionStatus: "unsold", auction: auction._id }, { auctionStatus: "idle", auctionSet: unsoldSet._id })
+      }
+    }
 
     return res.status(200).json({
       success: true,
@@ -509,17 +583,24 @@ exports.updateNewAuctionPlayer = async (req, res) => {
 
     for (var i = 0; i < players.length; i++) {
       var player = players[i];
+
+
+      if (player.auctionSet == "sold") {
+        let oldPlayer = await AuctionPlayerModel.findOne({ _id: player._id });
+        if (oldPlayer.auctionSet != "sold") {
+          var x = await AuctionPlayerModel.findOne({ country_id: 10 }).sort('-soldNumber').exec();
+          player.soldNumber = parse(x.soldNumber)+1;
+        }
+      }
+
+
       let updatedPlayer = await AuctionPlayerModel.updateOne({ _id: player._id }, player, { upsert: false });
       if (player.team) {
         await _updateRemainingBudget(player.team);
       }
+
     }
-    // players.forEach(async (player) => {
-    //   let updatedPlayer = await AuctionPlayerModel.updateOne({ _id: player._id }, player, { upsert: false });
-    //   if (player.team) {
-    //     await _updateRemainingBudget(player.team);
-    //   }
-    // });
+
 
     return res.status(200).json({
       success: true,
@@ -614,5 +695,3 @@ exports.getAuctionDetails = async (req, res) => {
     });
   }
 };
-
-

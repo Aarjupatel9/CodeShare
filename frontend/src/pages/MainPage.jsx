@@ -151,7 +151,7 @@ export default function MainPage(props) {
           <button
             onClick={onClose}
             className="absolute top-2 right-2 text-lg"
-            // aria-label="Close"
+          // aria-label="Close"
           >
             &times;
           </button>
@@ -312,7 +312,7 @@ export default function MainPage(props) {
   }
 
   const validateNewPageTitle = (newTitle) => {
-    let reservedPageTitle = ["new", "auth", "p", "api", "socket", "game","games"];
+    let reservedPageTitle = ["new", "auth", "p", "api", "socket", "game", "games"];
     if (reservedPageTitle.includes(newTitle.toLowerCase())) {
       return false;
     }
@@ -326,9 +326,8 @@ export default function MainPage(props) {
         toast.custom((t) => (
           <div className="z-[1000] bg-gray-100 border border-gray-200 p-6 rounded w-[350px] h-auto flex flex-col justify-center items-center space-y-4 shadow-md">
             <div
-              className={`text-gray-800 text-lg font-semibold ${
-                t.visible ? "animate-enter" : "animate-leave"
-              }`}
+              className={`text-gray-800 text-lg font-semibold ${t.visible ? "animate-enter" : "animate-leave"
+                }`}
             >
               Rename Page
             </div>
@@ -553,9 +552,8 @@ export default function MainPage(props) {
     toast.custom((t) => (
       <div className="z-[1000] bg-gray-100 border border-gray-2 p-4 rounded w-[300] h-[300] flex- flex-col justify-center items-center space-y-2 shadow-md rounded">
         <div
-          className={`px-2 py-2 line-clamp-4 ${
-            t.visible ? "animate-enter" : "animate-leave"
-          }`}
+          className={`px-2 py-2 line-clamp-4 ${t.visible ? "animate-enter" : "animate-leave"
+            }`}
         >
           Are you sure to Delete file - {file.name} ?
         </div>
@@ -620,6 +618,11 @@ export default function MainPage(props) {
   const handlePageNavigate = (slugName) => {
     navigate("/p/" + username + "/" + slugName);
   };
+
+  const redirectAuction = () => {
+    navigate("/t/auction");
+  };
+
   return (
     <div className="MainPage">
       <input
@@ -667,9 +670,8 @@ export default function MainPage(props) {
                 return (
                   <div
                     key={tab.tabId + generateRandomString(10)}
-                    className={`${
-                      tab.selected ? "bg-slate-300" : "bg-slate-100"
-                    } h-full flex items-center justify-center w-full hover:bg-slate-400 text-black rounded`}
+                    className={`${tab.selected ? "bg-slate-300" : "bg-slate-100"
+                      } h-full flex items-center justify-center w-full hover:bg-slate-400 text-black rounded`}
                     onClick={(e) => onSelectTab(tab.tabId, e)}
                   >
                     {tab.tabName}
@@ -741,73 +743,73 @@ export default function MainPage(props) {
               <div className="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
                 {currUser
                   ? privateFileList.map((file, index) => {
-                      return (
-                        <li
-                          key={index}
-                          className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between border-blue-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
-                        >
-                          <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg group flex-1">
-                            {fileIcon(file.type)}
-                            <span
-                              className="ms-3 cursor-pointer line-clamp-1"
-                              title={file.name}
-                            >
-                              {file.name
-                                ? getPresizeFileName(file.name)
-                                : "file"}{" "}
-                              {/* {file.name ? file.name : "file"}{" "} */}
-                            </span>
+                    return (
+                      <li
+                        key={index}
+                        className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between border-blue-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
+                      >
+                        <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg group flex-1">
+                          {fileIcon(file.type)}
+                          <span
+                            className="ms-3 cursor-pointer line-clamp-1"
+                            title={file.name}
+                          >
+                            {file.name
+                              ? getPresizeFileName(file.name)
+                              : "file"}{" "}
+                            {/* {file.name ? file.name : "file"}{" "} */}
+                          </span>
+                        </div>
+                        <div className="flex flex-row min-w-[50px]">
+                          <a
+                            href={file.url}
+                            target="_blank"
+                            download={file.name}
+                            rel="noreferrer"
+                          >
+                            {downloadIcon}
+                          </a>
+                          <div onClick={() => confirmFileRemove(file)}>
+                            {removeIcon}
                           </div>
-                          <div className="flex flex-row min-w-[50px]">
-                            <a
-                              href={file.url}
-                              target="_blank"
-                              download={file.name}
-                              rel="noreferrer"
-                            >
-                              {downloadIcon}
-                            </a>
-                            <div onClick={() => confirmFileRemove(file)}>
-                              {removeIcon}
-                            </div>
-                          </div>
-                        </li>
-                      );
-                    })
+                        </div>
+                      </li>
+                    );
+                  })
                   : fileList.map((file, index) => {
-                      return (
-                        <li
-                          key={index}
-                          className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between border-blue-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
-                        >
-                          <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg group flex-1">
-                            {fileIcon(file.type)}
-                            <span
-                              className="ms-3 cursor-pointer line-clamp-1"
-                              title={file.name}
-                            >
-                              {file.name
-                                ? getPresizeFileName(file.name)
-                                : "file"}{" "}
-                              {/* {file.name ? file.name : "file"}{" "} */}
-                            </span>
+                    return (
+                      <li
+                        key={index}
+                        className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between border-blue-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
+                      >
+                        <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg group flex-1">
+                          {fileIcon(file.type)}
+                          <span
+                            className="ms-3 cursor-pointer line-clamp-1"
+                            title={file.name}
+                          >
+                            {file.name
+                              ? getPresizeFileName(file.name)
+                              : "file"}{" "}
+                            {/* {file.name ? file.name : "file"}{" "} */}
+                          </span>
+                        </div>
+                        <div className="flex flex-row min-w-[50px]">
+                          <a
+                            href={file.url}
+                            target="_blank"
+                            download={file.name}
+                            rel="noreferrer"
+                          >
+                            {downloadIcon}
+                          </a>
+                          <div onClick={() => confirmFileRemove(file)}>
+                            {removeIcon}
                           </div>
-                          <div className="flex flex-row min-w-[50px]">
-                            <a
-                              href={file.url}
-                              target="_blank"
-                              download={file.name}
-                              rel="noreferrer"
-                            >
-                              {downloadIcon}
-                            </a>
-                            <div onClick={() => confirmFileRemove(file)}>
-                              {removeIcon}
-                            </div>
-                          </div>
-                        </li>
-                      );
-                    })}
+                        </div>
+                      </li>
+                    );
+                  })}
               </div>
             </>
           )}
@@ -880,9 +882,8 @@ export default function MainPage(props) {
                         return (
                           <div
                             key={tab.tabId + generateRandomString(10)}
-                            className={`${
-                              tab.selected ? "bg-slate-300" : "bg-slate-100"
-                            } h-full flex items-center justify-center w-full hover:bg-slate-400 text-black rounded`}
+                            className={`${tab.selected ? "bg-slate-300" : "bg-slate-100"
+                              } h-full flex items-center justify-center w-full hover:bg-slate-400 text-black rounded`}
                             onClick={(e) => onSelectTab(tab.tabId, e)}
                           >
                             {tab.tabName}
@@ -927,8 +928,8 @@ export default function MainPage(props) {
                                   >
                                     {page.pageId.unique_name
                                       ? getPresizeFileName(
-                                          page.pageId.unique_name
-                                        )
+                                        page.pageId.unique_name
+                                      )
                                       : "page"}{" "}
                                   </span>
                                 </div>
@@ -952,77 +953,77 @@ export default function MainPage(props) {
                       </div>
                       {currUser
                         ? privateFileList.length > 0 && (
-                            <div className="pt-1 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
-                              {privateFileList.map((file, _id) => {
-                                return (
-                                  <li
-                                    key={_id}
-                                    className="Image-content flex flex-row items-center gap-1 justify-between border-blue-300"
-                                  >
-                                    <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group flex-1">
-                                      {fileIcon(file.type)}
-                                      <span className="ms-3">
-                                        {file.name
-                                          ? getPresizeFileName(file.name)
-                                          : "file"}{" "}
-                                      </span>
+                          <div className="pt-1 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
+                            {privateFileList.map((file, _id) => {
+                              return (
+                                <li
+                                  key={_id}
+                                  className="Image-content flex flex-row items-center gap-1 justify-between border-blue-300"
+                                >
+                                  <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group flex-1">
+                                    {fileIcon(file.type)}
+                                    <span className="ms-3">
+                                      {file.name
+                                        ? getPresizeFileName(file.name)
+                                        : "file"}{" "}
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-row">
+                                    <a
+                                      href={file.url}
+                                      target="_blank"
+                                      download={file.name}
+                                      rel="noreferrer"
+                                    >
+                                      {downloadIcon}
+                                    </a>
+                                    <div
+                                      onClick={() => confirmFileRemove(file)}
+                                    >
+                                      {removeIcon}
                                     </div>
-                                    <div className="flex flex-row">
-                                      <a
-                                        href={file.url}
-                                        target="_blank"
-                                        download={file.name}
-                                        rel="noreferrer"
-                                      >
-                                        {downloadIcon}
-                                      </a>
-                                      <div
-                                        onClick={() => confirmFileRemove(file)}
-                                      >
-                                        {removeIcon}
-                                      </div>
-                                    </div>
-                                  </li>
-                                );
-                              })}
-                            </div>
-                          )
+                                  </div>
+                                </li>
+                              );
+                            })}
+                          </div>
+                        )
                         : fileList.length > 0 && (
-                            <div className="pt-1 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
-                              {fileList.map((file, _id) => {
-                                return (
-                                  <li
-                                    key={_id}
-                                    className="Image-content flex flex-row items-center gap-1 justify-between border-blue-300"
-                                  >
-                                    <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group flex-1">
-                                      {fileIcon(file.type)}
-                                      <span className="ms-3">
-                                        {file.name
-                                          ? getPresizeFileName(file.name)
-                                          : "file"}{" "}
-                                      </span>
+                          <div className="pt-1 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
+                            {fileList.map((file, _id) => {
+                              return (
+                                <li
+                                  key={_id}
+                                  className="Image-content flex flex-row items-center gap-1 justify-between border-blue-300"
+                                >
+                                  <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group flex-1">
+                                    {fileIcon(file.type)}
+                                    <span className="ms-3">
+                                      {file.name
+                                        ? getPresizeFileName(file.name)
+                                        : "file"}{" "}
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-row">
+                                    <a
+                                      href={file.url}
+                                      target="_blank"
+                                      download={file.name}
+                                      rel="noreferrer"
+                                    >
+                                      {downloadIcon}
+                                    </a>
+                                    <div
+                                      onClick={() => confirmFileRemove(file)}
+                                    >
+                                      {removeIcon}
                                     </div>
-                                    <div className="flex flex-row">
-                                      <a
-                                        href={file.url}
-                                        target="_blank"
-                                        download={file.name}
-                                        rel="noreferrer"
-                                      >
-                                        {downloadIcon}
-                                      </a>
-                                      <div
-                                        onClick={() => confirmFileRemove(file)}
-                                      >
-                                        {removeIcon}
-                                      </div>
-                                    </div>
-                                  </li>
-                                );
-                              })}
-                            </div>
-                          )}
+                                  </div>
+                                </li>
+                              );
+                            })}
+                          </div>
+                        )}
                     </>
                   )}
                 </ul>
@@ -1036,21 +1037,20 @@ export default function MainPage(props) {
               onClick={
                 currUser
                   ? () => {
-                      setDropdownVisibility(() => {
-                        var val = structuredClone(dropdownVisibility);
-                        val.file = false;
-                        val.history = false;
-                        val.profile = !val.profile;
-                        return val;
-                      });
-                    }
+                    setDropdownVisibility(() => {
+                      var val = structuredClone(dropdownVisibility);
+                      val.file = false;
+                      val.history = false;
+                      val.profile = !val.profile;
+                      return val;
+                    });
+                  }
                   : handleLogin
               }
-              className={`${
-                currUser
+              className={`${currUser
                   ? "px-1"
                   : "bg-slate-500 hover:bg-slate-600 text-white px-4"
-              } py-1 ml-auto text-sm font-bold rounded cursor-pointer`}
+                } py-1 ml-auto text-sm font-bold rounded cursor-pointer`}
               id="profile-menu-button"
               aria-expanded="true"
               aria-haspopup="true"
@@ -1093,6 +1093,15 @@ export default function MainPage(props) {
                       </div>
                       <span className="ml-2">{username}</span>{" "}
                       {/* Add margin-left for spacing */}
+                    </div>
+                  </li>
+
+                  <li className="flex items-center justify-end w-full px-1">
+                    <div
+                      onClick={redirectAuction}
+                      className="w-full version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                    >
+                      Auction
                     </div>
                   </li>
 
