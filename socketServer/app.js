@@ -79,11 +79,13 @@ auctionIO.on('connection', (socket) => {
 
     socket.on('newPlayerBiddingUpdate', (player) => {
         // console.log("newPlayerBiddingUpdate", player)
-        auctionIO.sockets.emit('playerBiddingUpdate', player);
+        // auctionIO.sockets.emit('playerBiddingUpdate', player);
+        socket.to(room).emit('playerBiddingUpdate', player);
     })
     socket.on('playerSoldUpdate', (message) => {
         // console.log("newPlayerBiddingUpdate", player)
-        auctionIO.sockets.emit('playerSoldUpdate', message);
+        // auctionIO.sockets.emit('playerSoldUpdate', message);
+        socket.to(room).emit('playerSoldUpdate', message);
     })
 
     console.log("on connect ", socket.id, room);

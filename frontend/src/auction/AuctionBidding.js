@@ -99,7 +99,7 @@ export default function AuctionBidding(props) {
 
     function createAuctionSocket() {
         const socket = new io(SOCKET_ADDRESS, {
-            query: { slug: "auction" + auctionId },
+            query: { slug: "auction-" + auctionId },
             path: "/auction/", // Custom path for Socket.IO
         });
         socket.emit("newPlayerBiddingUpdate", player);
@@ -282,7 +282,9 @@ export default function AuctionBidding(props) {
     }
     function getNextPrice(lastPrice) {
         lastPrice = parseInt(lastPrice);
-        if (lastPrice < 20000000) {
+        if (lastPrice < 10000000) {
+            return lastPrice + 500000;
+        } else if ((lastPrice >= 10000000) && (lastPrice < 20000000)) {
             return lastPrice + 1000000;
         } else if ((lastPrice >= 20000000) && (lastPrice < 50000000)) {
             return lastPrice + 2000000;
@@ -438,8 +440,12 @@ export default function AuctionBidding(props) {
                     </div>
 
                     <div className='flex flex-col justify-start items-start '>
-                        <div className='font-medium'>Number - {player.playerNumber}</div>
-                        <div className='font-medium'>Name - {player.name}</div>
+                        <div className='font-medium'>Player No. - {player.playerNumber}</div>
+                        <div className='font-bold'>Name - {player.name}</div>
+                        <div className='font-medium'>Role - {player.role}</div>
+                        {player.bowlingHand && <div className='font-medium'>Bowl  -<span className='lowercase'> {player.bowlingHand} Arm - {player.bowlingType} </span></div>}
+                        {player.battingHand && <div className='font-medium '>Bat - <span className='lowercase'> {player.battingHand} Arm - {player.battingPossition} order {player.battingType}</span> </div>}
+
                         <div className='font-medium'>Base Price - {getTeamBudgetForView(player.basePrice)}</div>
                     </div>
                 </div>
@@ -447,10 +453,59 @@ export default function AuctionBidding(props) {
         }
     }
 
+    const confirmPlayerSoldUnsold = () => {
+        let confirmText = '';
+        toast.custom((t) => (
+            <div className="z-[1000] bg-gray-100 border border-gray-200 p-6 rounded w-[350px] h-auto flex flex-col justify-center items-center space-y-4 shadow-md">
+                <div
+                    className={`text-gray-800 text-lg font-semibold ${t.visible ? "animate-enter" : "animate-leave"
+                        }`}
+                >
+                    Confirm Player SOLD / UN SOLD
+                </div>
+                <div className="flex flex-col items-start w-full space-y-2">
+                    <div>Please type 'confirm'</div>
+                    <input
+                        id="newTitle"
+                        type="text"
+                        placeholder="Auction title"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        onChange={(e) => (confirmText = e.target.value)}
+                    />
+                </div>
+                <div className="flex flex-row gap-4 justify-center w-full">
+                    <button
+                        onClick={() => {
+                            toast.dismiss(t.id);
+                        }}
+                        className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={() => {
+                            if (confirmText.trim()) {
+                                console.log(`confirmText action ${confirmText}`);
+                                if (confirmText == "confirm") {
+                                    handlePlayerSold();
+                                    toast.dismiss(t.id);
+                                } else {
+                                    toast.error("please enter 'confirm' for continue")
+                                }
+                            }
+                        }}
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
+                    >
+                        Continue
+                    </button>
+                </div>
+            </div>
+        ), { duration: 4000000, });
+    }
+
     const handlePlayerSold = () => {
         if (player) {
             if (player.bidding.length == 0) {
-                player.auctionStatus = "unsold"; // ned to change
                 AuctionService.updateAuctionPlayer({ players: [{ _id: player._id, auctionStatus: "unsold" }] }).then((res) => {
                     toast.success("Player - " + player.name + " is unsold")
                     socket.emit("playerSoldUpdate", "Player - " + player.name + " is unsold");
@@ -507,13 +562,13 @@ export default function AuctionBidding(props) {
                 >
                     Select next set
                 </div>
-                <div className="flex flex-col items-center items-start w-full space-y-2">
+                <div className="flex flex-col items-center items-start w-full space-y-4">
                     <label htmlFor="newTitle" className="text-gray-700">
                         Select Player set to continue
                     </label>
                     {selectableSet && selectableSet.length > 0 && selectableSet.map((set, index) => {
                         return (<div>
-                            <button className='button bg-slate-300 rounded p-2' onClick={() => { handleSelectNextSet(set, t) }}> {set.name}</button>
+                            <button className='button bg-slate-300 cursor-pointer rounded p-2' onClick={() => { handleSelectNextSet(set, t) }}> {set.name}</button>
                         </div>)
                     })}
                 </div>
@@ -555,7 +610,7 @@ export default function AuctionBidding(props) {
                                 Pick up random player
                             </div>}
 
-                            {player && Object.keys(player).length > 0 && <div onClick={() => { handlePlayerSold() }} className='button cursor-pointer rounded bg-gray-400 px-2 p-1'>
+                            {player && Object.keys(player).length > 0 && <div onClick={() => { confirmPlayerSoldUnsold() }} className='button cursor-pointer rounded bg-gray-400 px-2 p-1'>
                                 {player.bidding.length == 0 ? "Un Sold" : "Make Sold"}
                             </div>}
                         </div>
