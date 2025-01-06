@@ -16,7 +16,7 @@ exports.genJWTToken = (payload, type = null) => {
 
     return token;
   } catch (error) {
-    console.log(error);
+    console.error(error);
     throw new Error("Error generating JWT token");
   }
 
@@ -84,7 +84,5 @@ exports.sendEmail = async ({ to, subject, text }) => {
     subject,
     text,
   };
-  // Send the email
-  console.log("Email send return");
   return transporter.sendMail(mailOptions);
 }

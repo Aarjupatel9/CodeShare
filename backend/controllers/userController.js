@@ -60,6 +60,44 @@ exports.getData = async function (req, res) {
   }
 };
 
+exports.removePage = async function (req, res) {
+  try {
+    const { pageId } = req.body;
+    const owner = req.user;
+
+    if (!pageId || !owner) {
+      return res.status(400).json({ status: fasle, message: "Invalid requesrt body" });
+    }
+    var page = await DataModel.findOne({ _id: pageId, owner: owner._id })
+    if (page) {
+
+      var deletedPage = await DataModel.updateOne({ _id: pageId, owner: owner._id }, { isDeleted: true }, { upsert: false });
+
+      var user = await UserModel.updateOne(
+        { _id: owner._id },
+        { $pull: { pages: { pageId: pageId } } },
+        { upsert: false }
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Page successfully removed",
+      });
+    } else {
+      res.status(200).json({
+        success: false,
+        message: "Page not found",
+      });
+    }
+  } catch (e) {
+    console.error("error: ", e);
+    res.status(500).json({
+      success: false,
+      message: "internal server error : " + e,
+    });
+  }
+};
+
 
 exports.saveData = async (req, res) => {
   try {
@@ -78,6 +116,7 @@ exports.saveData = async (req, res) => {
     };
     const matchCondition = {
       unique_name: slug,
+      isDeleted: { $ne: true }
     };
     if (owner) {
       matchCondition.owner = owner._id;
@@ -107,7 +146,7 @@ exports.saveData = async (req, res) => {
       data_present = await newPage.save();
       if (owner) {
         await UserModel.updateOne({ _id: owner._id }, {
-          $push: { pages: { pageId: data_present._id, rights: "owner" } },
+          $push: { pages: { pageId: data_present._id, right: "owner" } },
         });
       }
       if (data_present) {
@@ -160,7 +199,14 @@ exports.validateFile = async (req, res, next) => {
 
 exports.saveFileNew = async (req, res, next) => {
   try {
-    const unique_name = req.body.slug;
+    const { unique_name } = req.body;
+    const user = req.user;
+    if (!user || !unique_name) {
+      return res.status(400).json({
+        success: false,
+        message: "Inavlaid request body",
+      });
+    }
     var fileObject = {
       name: req.file.originalname,
       url: req.file.location,
@@ -175,19 +221,19 @@ exports.saveFileNew = async (req, res, next) => {
         acl: req.file.acl,
       },
     };
+
     try {
       const data = await DataModel.updateOne(
-        { unique_name: unique_name },
+        { unique_name: unique_name, owner: user._id },
         { $push: { files: fileObject } },
         { upsert: true }
       );
     } catch (e) {
       return res.status(200).json({
-        success: true,
+        success: false,
         message: `Error uploading file: ${e}`,
       });
     }
-
 
     res.status(200).json({
       success: true,
@@ -195,87 +241,28 @@ exports.saveFileNew = async (req, res, next) => {
       result: fileObject,
     });
   } catch (err) {
-    console.error(`Error uploading file: ${err.message}`);
-    return res.status(200).json({
-      success: true,
-      message: `Error uploading file`,
-    });
-  }
-};
-
-//deprecated
-exports.saveFile = async (req, res) => {
-  try {
-    const base64File = req.body.file;
-    const unique_name = req.body.slug;
-    const type = req.body.type;
-
-
-    if (!unique_name) {
-      return res.status(404).json({
-        success: false,
-        message: "Slug is required",
-      });
-    }
-    const fileName = unique_name + "-" + req.body.fileName;
-    let response;
-    try {
-      response = await s3BucketService.upload(fileName, base64File, type);
-
-
-      var fileObject = {
-        name: fileName,
-        url: response.Location,
-        key: response.key,
-        type: type,
-      };
-      try {
-        const data = await DataModel.updateOne(
-          { unique_name: unique_name },
-          { $push: { files: fileObject } },
-          { upsert: true }
-        );
-      } catch (e) {
-        return res.status(200).json({
-          success: true,
-          message: `Error uploading file: ${e}`,
-        });
-      }
-
-
-      res.status(200).json({
-        success: true,
-        message: "File successfully saved",
-        result: fileObject,
-      });
-    } catch (err) {
-      console.error(`Error uploading file: ${err.message}`);
-      return res.status(200).json({
-        success: true,
-        message: `Error uploading file: ${fileName}`,
-      });
-    }
-  } catch (e) {
-    res.status(500).json({
+    console.error(`Internal server error: ${err.message}`);
+    return res.status(500).json({
       success: false,
-      message: "internal server error : " + e,
+      message: `Internal server error: ${err}`,
     });
   }
 };
-
 
 exports.removeFile = async (req, res) => {
   try {
     const fileObject = req.body.file;
-    var fileKey = fileObject.key;
+    const fileKey = fileObject.key;
     const unique_name = req.body.slug;
-    if (!unique_name) {
+    const owner = req.user;
+
+    if (!unique_name || !owner) {
       return res.status(404).json({
         success: false,
         message: "Slug is required",
       });
     }
-    const data = await DataModel.findOne({ unique_name: unique_name });
+    const data = await DataModel.findOne({ unique_name: unique_name, owner: owner._id });
     if (!data) {
       return res.status(200).json({
         success: false,
@@ -296,7 +283,7 @@ exports.removeFile = async (req, res) => {
 
     try {
       const data = await DataModel.updateOne(
-        { unique_name: unique_name },
+        { unique_name: unique_name, owner: owner._id },
         { $pull: { files: { _id: fileObject._id } } }
       );
     } catch (e) {
@@ -305,7 +292,6 @@ exports.removeFile = async (req, res) => {
         message: `Error uploading file1: ${e}`,
       });
     }
-
 
     res.status(200).json({
       success: true,
@@ -325,6 +311,7 @@ async function _getLatestDataVersion(slug, userId) {
   try {
     const matchCondition = {
       unique_name: slug,
+      isDeleted: { $ne: true }
     };
     if (userId) {
       matchCondition.owner = new mongoose.Types.ObjectId(userId);
@@ -375,6 +362,7 @@ async function _getRequiredDataVersion(slug, time, userId) {
   try {
     const matchCondition = {
       unique_name: slug,
+      isDeleted: { $ne: true }
     };
     if (userId) {
       matchCondition.owner = new mongoose.Types.ObjectId(userId);
@@ -404,6 +392,7 @@ async function _getRequiredDataVersion(slug, time, userId) {
 async function _getAllVersion(slug, userId) {
   const matchCondition = {
     unique_name: slug,
+    isDeleted: { $ne: true }
   };
   if (userId) {
     matchCondition.owner = new mongoose.Types.ObjectId(userId);

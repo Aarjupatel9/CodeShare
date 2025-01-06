@@ -38,8 +38,7 @@ class UserService {
             console.error("error : ", e);
             reject(e.toString());
           });
-      }
-      else {
+      } else {
         fetch(server_host + "/api/data/p/getData", fetchPostOptions)
           .then((response) => {
             return response.json();
@@ -63,13 +62,8 @@ class UserService {
     });
   }
 
-
   saveData(data) {
-    // const host = process.env.REACT_APP_SERVER_PATH;
     const server_host = process.env.REACT_APP_SERVER_PATH;
-
-
-
     return new Promise(function (resolve, reject) {
       const fetchPostOptions = {
         method: "POST",
@@ -98,8 +92,7 @@ class UserService {
             console.error("error : ", e);
             reject(e.toString());
           });
-      }
-      else {
+      } else {
         fetch(server_host + "/api/data/p/saveData/", fetchPostOptions)
           .then((response) => {
             return response.json();
@@ -120,11 +113,10 @@ class UserService {
       }
     });
   }
+
   saveFile(formData) {
     // const host = process.env.REACT_APP_SERVER_PATH;
     const server_host = process.env.REACT_APP_SERVER_PATH;
-
-
 
     return new Promise(function (resolve, reject) {
       const fetchPostOptions = {
@@ -137,7 +129,7 @@ class UserService {
         },
         body: formData,
       };
-      fetch(server_host + "/api/data/saveFile/", fetchPostOptions)
+      fetch(server_host + "/api/data/p/saveFile/", fetchPostOptions)
         .then((response) => {
           return response.json();
         })
@@ -154,11 +146,9 @@ class UserService {
         });
     });
   }
+
   removeFile(data) {
-    // const host = process.env.REACT_APP_SERVER_PATH;
     const server_host = process.env.REACT_APP_SERVER_PATH;
-
-
     return new Promise(function (resolve, reject) {
       const fetchPostOptions = {
         method: "POST",
@@ -189,8 +179,7 @@ class UserService {
             handleRejectResponse(e.toString());
             reject(e.toString());
           });
-      }
-      else {
+      } else {
         fetch(server_host + "/api/data/p/removeFile/", fetchPostOptions)
           .then((response) => {
             return response.json();
@@ -210,6 +199,39 @@ class UserService {
           });
       }
 
+    });
+  }
+  removePage(data) {
+    const server_host = process.env.REACT_APP_SERVER_PATH;
+    return new Promise(function (resolve, reject) {
+      const fetchPostOptions = {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json;charset=UTF-8",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Method": "GET,POST,PUT,DELETE,OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type,Authorization",
+        },
+        body: JSON.stringify(data),
+      };
+
+      fetch(server_host + "/api/data/p/removePage", fetchPostOptions)
+        .then((response) => {
+          return response.json();
+        })
+        .then((res) => {
+          if (res.success) {
+            resolve(res);
+          } else {
+            handleRejectResponse(res.message);
+            reject(res.message);
+          }
+        }).catch((e) => {
+          console.error("error : ", e);
+          handleRejectResponse(e.toString());
+          reject(e.toString());
+        });
     });
   }
 

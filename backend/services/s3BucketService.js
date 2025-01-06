@@ -44,8 +44,6 @@ async function upload(imageName, base64Image, type) {
     console.error(err);
     return "";
   }
-  console.log("after upload data : ", data);
-
   return data;
 }
 //used to remove file
@@ -56,8 +54,6 @@ async function remove(fileKey) {
   };
   try {
     let data = await removeFormS3Client(input);
-    
-    console.log("after remove file : ", data, " : ", input);
     return data;
   } catch (err) {
     console.error(err);
@@ -117,7 +113,7 @@ function removeFormS3Client(input) {
 
 // nfigure multer-s3
 const multerUpload = multer({
-  limits: { fileSize: max_file_size},
+  limits: { fileSize: max_file_size },
   storage: multerS3({
     s3: s3Client,
     bucket: BUCKET_NAME,

@@ -1,4 +1,4 @@
-const { verifyJWTToken,genJWTToken } = require('../services/authService');
+const { verifyJWTToken, genJWTToken } = require('../services/authService');
 const userModel = require('../models/userModels');
 
 module.exports = () => {
@@ -20,45 +20,34 @@ module.exports = () => {
             });
             return next();
         }
-        // console.log(token);
+
         if (!token) {
-            return res
-                .status(401)
-                .json({ success: false, message: "TokenExpiredError", specialMessage: "Not Authorized. Token not found !!!" });
+            return res.status(401).json({ success: false, message: "TokenExpiredError", details: "Token not found" });
         }
         try {
             const { _id, anonymous } = verifyJWTToken(token);
             if (_id == '' && anonymous) {
                 req.user = null;
                 next();
-            }else {
+            } else {
                 try {
                     const user = await userModel.findById(_id);
                     if (!user) {
-                        return res
-                            .status(401)
-                            .json({ success: false, message: "TokenExpiredError", specialMessage: "User not found." });
+                        return res.status(401).json({ success: false, message: "TokenExpiredError", details: "User not found." });
                     }
                     req.user = user;
                     next();
                 } catch (error) {
-                    console.log(error);
-                    return res
-                        .status(401)
-                        .json({ success: false, message: "Internal server error" });
+                    console.error(error);
+                    return res.status(401).json({ success: false, message: "Internal server error" });
                 }
             }
         } catch (error) {
-            console.log(error);
+            console.error(error);
             if (error.name == "TokenExpiredError") {
-                return res.clearCookie("token")
-                    .status(401)
-                    .json({ success: false, message: error.message });
-
+                return res.clearCookie("token").status(401).json({ success: false, message: error.message });
             } else {
-                return res
-                    .status(401)
-                    .json({ success: false, message: error.message });
+                return res.status(401).json({ success: false, message: error.message });
             }
         }
     };

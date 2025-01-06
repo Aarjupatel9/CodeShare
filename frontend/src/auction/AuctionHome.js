@@ -59,7 +59,22 @@ export default function AuctionHome(props) {
     let newPassword = "";
     let newOrganizer = "";
     toast.custom((t) => (
-      <div className="z-[1000] bg-gray-100 border border-gray-200 p-6 rounded w-[350px] h-auto flex flex-col justify-center items-center space-y-4 shadow-md">
+      <form onSubmit={(e) => {
+        e.preventDefault()
+        if (newTitle.trim()) {
+          var data = {
+            name: newTitle.trim(),
+            organizer: newOrganizer.trim(),
+            password: newPassword.trim(),
+          }
+          console.log(`Joining action ${JSON.stringify(data)}`);
+
+          if (validateNewAuctionData(data)) {
+            joinOngoingAuctionHandler(data);
+            toast.dismiss(t.id);
+          }
+        }
+      }} className="z-[1000] bg-gray-100 border border-gray-200 p-6 rounded w-[350px] h-auto flex flex-col justify-center items-center space-y-4 shadow-md">
         <div
           className={`text-gray-800 text-lg font-semibold ${t.visible ? "animate-enter" : "animate-leave"
             }`}
@@ -91,6 +106,7 @@ export default function AuctionHome(props) {
         </div>
         <div className="flex flex-row gap-4 justify-center w-full">
           <button
+            type='button'
             onClick={() => {
               toast.dismiss(t.id);
             }}
@@ -99,27 +115,13 @@ export default function AuctionHome(props) {
             Cancel
           </button>
           <button
-            onClick={() => {
-              if (newTitle.trim()) {
-                var data = {
-                  name: newTitle.trim(),
-                  organizer: newOrganizer.trim(),
-                  password: newPassword.trim(),
-                }
-                console.log(`Joining action ${JSON.stringify(data)}`);
-
-                if (validateNewAuctionData(data)) {
-                  joinOngoingAuctionHandler(data);
-                  toast.dismiss(t.id);
-                }
-              }
-            }}
+            type='submit'
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
           >
             Join
           </button>
         </div>
-      </div>
+      </form>
     ), { duration: 4000000, });
   }
   const createNewAuction = () => {
@@ -200,11 +202,11 @@ export default function AuctionHome(props) {
   }
   return (
     <div className='flex flex-col font-medium capitalize gap-3 mt-4'>
-      <div className='button p-2 bg-gray-200 rounded cursor-pointer px-4' onClick={() => { createNewAuction() }}>
+      <div className='button p-2 bg-gray-200 rounded cursor-pointer px-4 normal-case' onClick={() => { createNewAuction() }}>
         Start new auction
       </div>
 
-      <div className='button p-2 bg-gray-200 rounded cursor-pointer px-4' onClick={() => { joinOngoingAuction() }}>
+      <div className='button p-2 bg-gray-200 rounded cursor-pointer px-4 normal-case' onClick={() => { joinOngoingAuction() }}>
         Continue ongoing auction
       </div>
 

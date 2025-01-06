@@ -11,6 +11,12 @@ export function generateRandomString(length) {
     return result;
 }
 
+export function isValidSlug(slug) {
+    // Regular expression to match valid characters for a slug
+    const slugRegex = /^[a-zA-Z0-9 _-]+$/;
+    return slugRegex.test(slug) && slug.length > 1;
+}
+
 export function getTimeInFormate(time) {
     let t = new Date(time);
     // Pad each component with leading zeros if necessary
