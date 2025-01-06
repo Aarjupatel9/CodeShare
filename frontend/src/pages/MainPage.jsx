@@ -610,7 +610,7 @@ export default function MainPage(props) {
 
   const loginButtonView = (<div className="ml-auto mr-1">
     <div
-      onClick={!currUser ? navigate("/auth/login") : () => {
+      onClick={!currUser ? () => { navigate("/auth/login"); } : () => {
         setDropdownVisibility(() => {
           var val = structuredClone(dropdownVisibility);
           val.file = false;
