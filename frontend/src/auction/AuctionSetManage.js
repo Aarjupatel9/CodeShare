@@ -536,25 +536,22 @@ export default function AuctionSetManage(props) {
 
     const getMSExelForPlayerAdd = () => {
         toast.custom((t) => (
-            <div className="z-[1000] bg-gray-100 border border-gray-200 p-6 rounded w-[350px] h-auto flex flex-col justify-center items-center space-y-4 shadow-md">
-                <div
-                    className={`text-gray-800 text-lg font-semibold ${t.visible ? "animate-enter" : "animate-leave"
-                        }`}
-                >
-                    Player add via MS Exel
+            <div className="z-[1000] bg-gray-100 border border-gray-200 p-6 rounded w-[350px] h-auto flex flex-col justify-center items-center shadow-md">
+                <div className="text-gray-800 text-lg font-semibold ">
+                    Player add via MS Exel file
                 </div>
-                <div className="flex flex-row gap-4 justify-center w-full">
-                    <form>
-                        <label className='bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md' htmlFor="upload">Upload Exel File</label>
-                        <input
-                            className='bg-blue-600 hover:bg-blue-700 text-white rounded-md'
-                            type="file"
-                            name="upload"
-                            id="upload"
-                            accept='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                            onChange={(e) => { readUploadFile(e, t) }}
-                        />
-                    </form>
+                <div className="flex flex-row gap-4 p-4 justify-center w-full">
+
+                    <label className='bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md' htmlFor="upload">Upload Exel File</label>
+                    <input
+                        className='bg-blue-600 hover:bg-blue-700 text-white rounded-md'
+                        type="file"
+                        name="upload"
+                        id="upload"
+                        accept='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                        onChange={(e) => { readUploadFile(e, t) }}
+                    />
+
                     <button
                         onClick={() => {
                             toast.dismiss(t.id);
@@ -564,8 +561,8 @@ export default function AuctionSetManage(props) {
                         Cancel
                     </button>
                 </div>
-            </div>
-        ));
+            </div >
+        ), { duration: 4000000, });
     }
 
     const readUploadFile = (e, t) => {

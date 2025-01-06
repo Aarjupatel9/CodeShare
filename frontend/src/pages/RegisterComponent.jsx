@@ -26,21 +26,16 @@ const RegisterComponent = () => {
         password: registerUser.password,
         email: registerUser.email,
       }
-      authService
-        .register(newUser)
-        .then((res) => {
-          console.log(res)
-          if (res.success) {
-            toast.success(res.message)
-            console.log(res.message)
-            navigate('/auth/login')
-          } else {
-            toast.error(res.message)
-          }
-        })
-        .catch((er) => {
-          toast.error(er)
-        })
+      authService.register(newUser).then((res) => {
+        if (res.success) {
+          toast.success(res.message)
+          navigate('/auth/login')
+        } else {
+          toast.error(res.message)
+        }
+      }).catch((er) => {
+        toast.error(er)
+      })
     } else {
       toast.error('Please fill all the fields')
     }

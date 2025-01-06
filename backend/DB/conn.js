@@ -2,7 +2,6 @@ const mongoose = require("mongoose");
 
 const HOST = process.env.MONGODB_URI;
 
-// Connect to the database using async/await
 (async () => {
     try {
         await mongoose.connect(HOST, {
@@ -11,9 +10,9 @@ const HOST = process.env.MONGODB_URI;
             useUnifiedTopology: true,
             autoIndex: true,
         });
-        console.log(`Connected to department database --> host : ${HOST}`);
+        console.info(`Database service is up and running...`);
     } catch (error) {
-        console.error(error);
+        console.error("Failed to connect with database, error: ", error);
     }
 })();
 

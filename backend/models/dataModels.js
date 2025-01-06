@@ -53,24 +53,6 @@ const dataModelsSchema = mongoose.Schema({
         type: String,
         required: false,
     },
-
-
-    // access: {
-    //  type: mongoose.Schema.Types.Mixed,
-    //  validate: {
-    //   validator: function (v) {
-    //    // Check if v is a string (public or private)
-    //    if (typeof v === "string") {
-    //     return v === "public" || v === "private";
-    //    } else if (Array.isArray(v)) {
-    //     return v.every((item) => item === mongoose.SchemaTypes.ObjectId);
-    //    }
-    //    return false; // Invalid type
-    //   },
-    //   message: (props) =>
-    //    `${props.value} is not a valid access type! It should be "public", "private", or an array of those.`,
-    //  },
-    // },/
     access: {
         type: String,
         required: true,
@@ -92,6 +74,11 @@ const dataModelsSchema = mongoose.Schema({
         type: mongoose.SchemaTypes.ObjectId,
         ref: 'userModels',
         required: false,
+    },
+    isDeleted: {
+        type: Boolean,
+        required: true,
+        default: false
     },
 }, { timestamps: true });
 

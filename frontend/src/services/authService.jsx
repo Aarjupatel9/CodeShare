@@ -36,6 +36,48 @@ class AuthService {
         });
     }
 
+    checkUserLogInStatus() {
+        return new Promise(function (resolve, reject) {
+            const currentUser = localStorage.getItem("currentUser") ? JSON.parse(localStorage.getItem("currentUser")) : null;
+
+            if (currentUser) {
+                var requestPayload = {
+                    email: currentUser.email
+                }
+            } else {
+                reject({ type: 0, message: "User not found locally" });
+                return;
+            }
+            const fetchPostOptions = {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json;charset=UTF-8",
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Method": "GET,POST,PUT,DELETE,OPTIONS",
+                    "Access-Control-Allow-Headers": "Content-Type,Authorization",
+                },
+                body: JSON.stringify(requestPayload)
+            };
+            fetch(server_host + "/api/auth/checkUserLogInStatus", fetchPostOptions)
+                .then((response) => {
+                    return response.json();
+                })
+                .then((res) => {
+                    if (res.success) {
+                        localStorage.setItem("currentUser", JSON.stringify(res.user))
+                        resolve(res);
+                    } else {
+                        reject({ type: 1, message: res.message });
+                    }
+                })
+                .catch((e) => {
+                    console.error("error : ", e);
+                    reject({ type: 2, message: e.toString() });
+                });
+        });
+    }
+
 
     register(requestPayload) {
         return new Promise(function (resolve, reject) {
@@ -97,16 +139,6 @@ class AuthService {
                     reject(e.toString()); // Reject with the error string
                 });
         });
-    }
-
-
-    checkLoggedInUser() {
-        const currentUser = localStorage.getItem("currentUser") ? JSON.parse(localStorage.getItem("currentUser")) : null;
-        if (currentUser) {
-            return currentUser;
-        } else {
-            return false;
-        }
     }
 
 

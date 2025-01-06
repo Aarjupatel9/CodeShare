@@ -26,34 +26,20 @@ import {
   generateRandomString,
   getPresizeFileName,
   getTimeInFormate,
+  isValidSlug,
 } from "../common/functions";
+import { HelpMoedal, UserProfileModal } from "../common/Modals";
 
 var SOCKET_ADDRESS = process.env.REACT_APP_SOCKET_ADDRESS;
 
 export default function MainPage(props) {
   const { currUser, setCurrUser } = useContext(UserContext);
-  let userprofilePicture;
-  if (currUser) {
-    userprofilePicture = currUser.profilePic || profilePicture;
-  }
 
   const editorRef = useRef(null);
   const navigate = useNavigate();
   const { slug, username } = useParams();
 
   const [userSlug, setUserSlug] = useState(slug);
-  const [isRedirectFocused, setIsRedirectFocused] = useState(true);
-  const [latestVersion, setLatestVersion] = useState({
-    time: "",
-    data: "",
-    _id: "",
-  });
-  const [privateTabs, setPrivateTabs] = useState([
-    [
-      { tabId: 1, tabName: "Pages", selected: false },
-      { tabId: 2, tabName: "Files", selected: true },
-    ],
-  ]);
   const [socketEnabled, setSocketEnabled] = useState(true);
   const [allVersionData, setAllVersionData] = useState([]);
   const [socket, setSocket] = useState(null);
@@ -65,39 +51,32 @@ export default function MainPage(props) {
     history: false,
     profile: false,
   });
+  const [latestVersion, setLatestVersion] = useState({
+    time: "",
+    data: "",
+    _id: "",
+  });
+  const [privateTabs, setPrivateTabs] = useState([
+    [
+      { tabId: 1, tabName: "Pages", selected: false },
+      { tabId: 2, tabName: "Files", selected: true },
+    ],
+  ]);
 
   const [incomingEditorValue, setIncomingEditorValue] = useState("");
   const [showHelpModal, setShowHelpModal] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const handleOpenModal = () => {
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-  };
-
-  const handleHelp = () => {
-    setShowHelpModal(true);
-  };
+  const [showUserProfileModal, setShowUserProfileModal] = useState(false);
 
   useEffect(() => {
-    console.log("first render " + JSON.stringify(props));
     if (props.user) {
       setPrivateTabs([
         { tabId: 1, tabName: "Pages", selected: true },
         { tabId: 2, tabName: "Files", selected: false },
       ]);
-    }
-  }, []);
 
-  useEffect(() => {
-    if (currUser) {
       let results = [];
       Object.values(props.user.pages).forEach((page) => {
         const { _id, unique_name, files = [] } = page.pageId;
-
         files.forEach((file) => {
           results.push({
             ...file,
@@ -106,64 +85,17 @@ export default function MainPage(props) {
         });
       });
       setPrivateFileList(results);
-      console.log(privateFileList);
     }
-    console.log("Private List:");
-    console.log(privateFileList);
-  }, [slug]);
+  }, []);
 
-  const UserProfileModal = ({ isOpen, onClose, currUser }) => {
-    return (
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <div className="flex p-6 max-w-3xl w-full">
-          {/* Profile Image */}
-          <div className="w-1/3 flex items-center justify-center">
-            {profilePicture}
-          </div>
-
-          {/* Profile Info */}
-          <div className="w-2/3 pl-6">
-            <h2 className="text-lg font-semibold">{currUser.username}</h2>
-            <p className="text-gray-600">{currUser.email}</p>
-            <p className="text-gray-600">{currUser.bio}</p>
-
-            {/* Links */}
-            <div className="mt-4">
-              <button
-                className="text-blue-500 hover:underline"
-                onClick={() => {
-                  navigate("/auth/forgetpassword");
-                }}
-              >
-                Forgot Password?
-              </button>
-            </div>
-          </div>
-        </div>
-      </Modal>
-    );
-  };
-
-  const Modal = ({ onClose, children }) => {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <div className="bg-white rounded shadow-lg max-w-lg w-full p-6 relative">
-          <button
-            onClick={onClose}
-            className="absolute top-2 right-2 text-lg"
-          // aria-label="Close"
-          >
-            &times;
-          </button>
-          {children}
-        </div>
-      </div>
-    );
-  };
   const checkSlug = () => {
-    if (!slug) {
+    if (!slug || !isValidSlug(slug)) {
       const newSlug = generateRandomString(7);
-      navigate("/" + newSlug);
+      if (props.user) {
+        navigate("/p/" + props.user.username + "/new");
+      } else {
+        navigate("/" + newSlug);
+      }
       setTmpSlug(newSlug);
       setUserSlug(newSlug);
     } else {
@@ -173,41 +105,41 @@ export default function MainPage(props) {
       setTmpSlug(slug);
       setUserSlug(slug);
 
-      userService
-        .getData(slug, null, "latest", props.user)
-        .then((res) => {
-          if (res.success) {
-            if (res.result.data) {
-              if (editorRef && editorRef.current) {
-                editorRef.current.value = res.result.data.data;
-              }
-              res.result.data.timeformate = getTimeInFormate(
-                res.result.data.time
-              );
-              setLatestVersion(res.result.data);
+      if (slug == "new") {
+        return;
+      }
+      userService.getData(slug, null, "latest", props.user).then((res) => {
+        if (res.success) {
+          if (res.result.data) {
+            if (editorRef && editorRef.current) {
+              editorRef.current.value = res.result.data.data;
             }
-            if (res.result.files && res.result.files.length > 0) {
-              if (!currUser) {
-                var publicFile = res.result.files;
-                publicFile.forEach(function (file) {
-                  file.pageName = slug;
-                });
-                setFileList(publicFile);
-              }
-            } else {
-              setFileList([]);
+            res.result.data.timeformate = getTimeInFormate(
+              res.result.data.time
+            );
+            setLatestVersion(res.result.data);
+          }
+          if (res.result.files && res.result.files.length > 0) {
+            if (!currUser) {
+              var publicFile = res.result.files;
+              publicFile.forEach(function (file) {
+                file.pageName = slug;
+              });
+              setFileList(publicFile);
             }
           } else {
-            if (props.user) {
-              navigate("/p/" + props.user.username + "/new");
-            }
-            clearEditorValue();
+            setFileList([]);
           }
-        })
-        .catch((error) => {
-          console.error(error);
+        } else {
+          if (props.user) {
+            navigate("/p/" + props.user.username + "/new");
+          }
           clearEditorValue();
-        });
+        }
+      }).catch((error) => {
+        console.error(error);
+        clearEditorValue();
+      });
     }
     setUserSlug(slug);
   };
@@ -215,11 +147,6 @@ export default function MainPage(props) {
   useEffect(() => {
     checkSlug();
   }, [slug]);
-  useEffect(() => {
-    // checkSlug();
-    console.log("Slug: " + slug);
-    console.log("Userslug :" + userSlug);
-  }, [slug, userSlug]);
 
   useEffect(() => {
     if (socketEnabled) {
@@ -250,6 +177,68 @@ export default function MainPage(props) {
       editorRef.current.setContent(incomingEditorValue);
     }
   }, [incomingEditorValue]);
+
+  const confirmPageRemove = (page) => {
+    let confirmText = '';
+    toast.custom((t) => (
+      <form className="z-[1000] bg-gray-100 border border-gray-200 p-2 rounded w-[350px] h-auto flex flex-col justify-center items-center space-y-1 shadow-md"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (confirmText.trim()) {
+            if (confirmText == "confirm") {
+              handlePageRemove(page._id)
+              toast.dismiss(t.id);
+            } else {
+              toast.error("please enter 'confirm' for continue", { duration: 3000 })
+            }
+          }
+        }}
+      >
+        <div
+          className={`text-gray-800 text-lg font-semibold ${t.visible ? "animate-enter" : "animate-leave"
+            }`}
+        >
+          Page Delete
+        </div>
+        <div className="flex flex-col items-start w-full space-y-2">
+          <div>Please type 'confirm' to remove the page</div>
+          <input
+            id="newTitle"
+            type="text"
+            placeholder="Confirmation text"
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={(e) => (confirmText = e.target.value)}
+          />
+        </div>
+        <div className="flex flex-row gap-4 justify-center w-full">
+          <button
+            type="button"
+            onClick={() => {
+              toast.dismiss(t.id);
+            }}
+            className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="bg-green-600 bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded-md"
+          >
+            Delete
+          </button>
+        </div>
+      </form>
+    ), { duration: 4000000, });
+  }
+  const handlePageRemove = (pageId) => {
+    userService.removePage({ pageId: pageId }).then((res) => {
+      toast.success("Page deleted.");
+    }).catch((err) => {
+      toast.error("Error while delete the page: " + err);
+    }).finally(() => {
+
+    });
+  }
 
   const getAllversionData = (isCliced) => {
     if (allVersionData.length > 0) {
@@ -316,59 +305,71 @@ export default function MainPage(props) {
     if (reservedPageTitle.includes(newTitle.toLowerCase())) {
       return false;
     }
+    if (!isValidSlug(newTitle)) {
+      return true
+    }
     return true;
   };
+
+  const isDuplicatePageName = (newName) => {
+    var existingPage = currUser.pages.find((p) => { return p.pageId.unique_name == newName });
+    return existingPage ? true : false;
+  }
+
   const saveData = () => {
     if (props.user) {
-      console.log("UserSlug " + userSlug + " : " + slug);
-      if (userSlug == "new") {
+      if (userSlug.toLocaleLowerCase() == "new") {
         let newTitle = "";
         toast.custom((t) => (
           <div className="z-[1000] bg-gray-100 border border-gray-200 p-6 rounded w-[350px] h-auto flex flex-col justify-center items-center space-y-4 shadow-md">
-            <div
-              className={`text-gray-800 text-lg font-semibold ${t.visible ? "animate-enter" : "animate-leave"
-                }`}
-            >
-              Rename Page
+            <div className={`text-gray-800 text-lg font-semibold normal-case ${t.visible ? "animate-enter" : "animate-leave"}`}>
+              Enter new page name
             </div>
-            <div className="flex flex-col items-start w-full space-y-2">
-              <label htmlFor="newTitle" className="text-gray-700">
-                Enter New Page Title
-              </label>
-              <input
-                id="newTitle"
-                type="text"
-                placeholder="Page name"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                onChange={(e) => (newTitle = e.target.value)}
-              />
-            </div>
-            <div className="flex flex-row gap-4 justify-center w-full">
-              <button
-                onClick={() => {
-                  toast.dismiss(t.id);
-                }}
-                className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  if (newTitle.trim()) {
-                    console.log(`Renamed page to: ${newTitle}`);
-                    if (validateNewPageTitle(newTitle)) {
-                      saveDataMain(newTitle);
-                      toast.dismiss(t.id);
-                    }
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              newTitle = newTitle.trim()
+              if (newTitle) {
+                newTitle = newTitle.replaceAll(" ", "_");
+                if (validateNewPageTitle(newTitle)) {
+                  if (!isDuplicatePageName(newTitle)) {
+                    saveDataMain(newTitle);
+                    toast.dismiss(t.id);
+                  } else {
+                    toast.error("Page already exist, create page with new name");
                   }
-                }}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-              >
-                Save
-              </button>
-            </div>
+                }
+              }
+            }}
+              className="flex flex-col gap-2">
+              <div className="flex flex-col items-start w-full space-y-2">
+                <input
+                  id="newTitle"
+                  type="text"
+                  placeholder="Page name"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => (newTitle = e.target.value)}
+                />
+              </div>
+              <div className="flex flex-row gap-4 justify-center w-full">
+                <button
+                  type="button"
+                  onClick={() => {
+                    toast.dismiss(t.id);
+                  }}
+                  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+                >
+                  Save
+                </button>
+              </div>
+            </form>
           </div>
-        ));
+        ), { duration: 400000 });
       } else {
         saveDataMain(userSlug);
       }
@@ -387,7 +388,6 @@ export default function MainPage(props) {
       data: editorValue,
       owner: props.user,
     };
-    console.log("savedata body:" + JSON.stringify(body));
     var dataSavePromise = userService
       .saveData(body)
       .then((res) => {
@@ -439,54 +439,54 @@ export default function MainPage(props) {
   };
 
   const onSelectFile = async (event) => {
+    event.preventDefault();
+    if (!currUser) {
+      return;
+    }
     let fileSlug = userSlug;
     if (fileSlug == "new") {
       if (props.user.pages.length == 0) {
         toast.error("Please create a page first to save a file.");
+        return;
       } else {
         fileSlug = props.user.pages[0].pageId.unique_name;
       }
     }
+
     const file = event.target.files[0];
     if (file.size > 20e6 && !userSlug.includes("aarju")) {
       toast.error("Please upload a file smaller than 10 MB");
       return false;
     }
+
     const formData = new FormData();
     formData.append("file", file);
     formData.append("fileName", file.name);
     formData.append("fileSize", file.size * 8);
-    console.log("file : ", file);
-    console.log("file : ", file.size);
     formData.append("slug", fileSlug);
     const toastId = toast.loading("Uploading file server...");
-    userService
-      .saveFile(formData)
-      .then((res) => {
-        toast.success(res.message, {
-          id: toastId,
-        });
-        res.result.pageName = fileSlug;
-        if (currUser) {
-          setPrivateFileList((file) => [...file, res.result]);
-          var localUser = JSON.parse(localStorage.getItem("currentUser"));
-          localUser.pages.map((page) => {
-            if (page.pageId.unique_name == fileSlug) {
-              page.pageId.files.push(res.result);
-            }
-            return page;
-          });
-          localStorage.setItem("currentUser", JSON.stringify(localUser));
-        } else {
-          setFileList((list) => [...list, res.result]);
-        }
-      })
-      .catch((error) => {
-        console.error(error);
-        toast.error(error, {
-          id: toastId,
-        });
+    userService.saveFile(formData).then((res) => {
+      toast.success(res.message, {
+        id: toastId,
       });
+      res.result.pageName = fileSlug;
+
+      setPrivateFileList((file) => [...file, res.result]);
+      var localUser = JSON.parse(localStorage.getItem("currentUser"));
+      localUser.pages.map((page) => {
+        if (page.pageId.unique_name == fileSlug) {
+          page.pageId.files.push(res.result);
+        }
+        return page;
+      });
+      localStorage.setItem("currentUser", JSON.stringify(localUser));
+
+    }).catch((error) => {
+      console.error(error);
+      toast.error(error, {
+        id: toastId,
+      });
+    });
   };
 
   const redirect = () => {
@@ -533,7 +533,7 @@ export default function MainPage(props) {
         }
       })
       .catch((e) => {
-        console.log(e);
+        console.error(e);
         toast.error("Error while removing file : " + e);
       });
   };
@@ -541,11 +541,6 @@ export default function MainPage(props) {
   useKeys("ctrl+s", (event) => {
     event.preventDefault();
     saveData();
-  });
-  useKeys("Enter", (event) => {
-    if (isRedirectFocused) {
-      redirect();
-    }
   });
 
   const confirmFileRemove = (file) => {
@@ -582,11 +577,6 @@ export default function MainPage(props) {
 
   const inputFile = useRef(null);
 
-  const handleLogin = () => {
-    console.log("In login");
-    navigate("/auth/login");
-  };
-
   const handleLogout = () => {
     navigate("/");
     setCurrUser(null);
@@ -598,6 +588,7 @@ export default function MainPage(props) {
       socket.emit("room_message", userSlug, value);
     }
   };
+
   const onSelectTab = (tabId, e) => {
     e.preventDefault();
     setPrivateTabs((old) => {
@@ -611,62 +602,123 @@ export default function MainPage(props) {
       });
     });
   };
-  const handleCreateNewPage = () => {
-    navigate("/p/" + username + "/new");
-  };
 
   const handlePageNavigate = (slugName) => {
     navigate("/p/" + username + "/" + slugName);
   };
 
-  const redirectAuction = () => {
-    navigate("/t/auction");
-  };
 
-  return (
-    <div className="MainPage">
-      <input
-        type="file"
-        accept="*"
-        onChange={onSelectFile}
-        ref={inputFile}
-        style={{ display: "none" }}
-      />
-      <script src={flobiteJS}></script>
-      <aside
-        id="separator-sidebar"
-        className="hidden md:block lg:block SideBar z-40 h-screen h-full "
-        aria-label="Sidebar"
+  const loginButtonView = (<div className="ml-auto mr-1">
+    <div
+      onClick={!currUser ? navigate("/auth/login") : () => {
+        setDropdownVisibility(() => {
+          var val = structuredClone(dropdownVisibility);
+          val.file = false;
+          val.history = false;
+          val.profile = !val.profile;
+          return val;
+        });
+      }}
+      className={`${currUser ? "px-2 " : "py-1 bg-slate-500 hover:bg-slate-600 text-white px-4"} ml-auto text-sm font-bold rounded cursor-pointer`}
+    >
+      {currUser ? userProfileIcon : "Login"}
+    </div>
+    {currUser && dropdownVisibility.profile && (
+      <div
+        className="absolute right-0 z-10 mt-2 p-1 min-w-48 max-h-96 overflow-auto origin-top-right rounded-md bg-slate-300 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+        role="menu"
       >
-        <div className="flex flex-col h-full px-2 py-4 overflow-y-auto ">
-          {/* redirect */}
-          {!currUser ? (
+        <ul
+          className="py-2 text-sm text-gray-700 dark:text-gray-200 rounded font-bold"
+        >
+          <li className="flex px-1 items-center rounded">
             <div
-              onFocus={() => {
-                setIsRedirectFocused(true);
-              }}
-              onBlur={() => {
-                setIsRedirectFocused(false);
-              }}
-              className="flex flex-row space-x-2 py-1 text-sm justify-center items-center gap-2 "
+              className="w-full version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-slate-100 dark:hover:bg-gray-600 dark:hover:text-white flex items-center rounded"
+              onClick={() => { setShowUserProfileModal(true) }}
             >
-              <input
-                className="font-bold w-full mx-2 px-2 border-b border-blue-700 outline-none"
-                onChange={(e) => {
-                  setTmpSlug(e.target.value);
-                }}
-                value={tmpSlug}
-              />
-              <button
-                onClick={redirect}
-                className="px-2  text-sm font-bold bg-blue-200 hover:bg-blue-300 text-white border-b-1 border-blue-700 hover:border-blue-500 rounded"
-              >
-                {redirectArrowIcon}
-              </button>
+              <div className="w-12 h-12 flex-shrink-0">
+                {profilePicture}
+              </div>
+              <span className="ml-2">{username}</span>
             </div>
-          ) : (
+          </li>
+
+          <li className="flex items-center px-1">
+            <div
+              onClick={() => { navigate("/t/auction"); }}
+              className="w-full version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-slate-200 dark:hover:bg-gray-600 dark:hover:text-white rounded"
+            >
+              Auction
+            </div>
+          </li>
+
+          <li className="flex items-center px-1">
+            <div
+              onClick={() => { setShowHelpModal(true); }}
+              className="w-full version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-slate-200 dark:hover:bg-gray-600 dark:hover:text-white rounded"
+            >
+              Help
+            </div>
+          </li>
+
+          <li
+            key="logout"
+            className="flex px-1 items-center px-1"
+          >
+            <div
+              title="Click to logout"
+              onClick={() => {
+                handleLogout();
+              }}
+              className="w-full version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-slate-200 dark:hover:bg-gray-600 dark:hover:text-white rounded"
+            >
+              Logout
+            </div>
+          </li>
+        </ul>
+
+        {showHelpModal && (
+          <HelpMoedal onClose={() => setShowHelpModal(false)} />
+        )}
+        {showUserProfileModal && (
+          <UserProfileModal
+            onClose={() => { setShowUserProfileModal(false) }}
+            currUser={currUser}
+            navigate={navigate}
+          />
+        )}
+      </div>
+    )}
+  </div>)
+
+  const mainListView = (
+    <div className="md:hidden inline-block text-left">
+      <button
+        onClick={() => {
+          setDropdownVisibility(() => {
+            var val = structuredClone(dropdownVisibility);
+            val.file = !val.file;
+            val.history = false;
+            val.profile = false;
+            return val;
+          });
+        }}
+        type="button"
+        className="inline-flex md:hidden items-center justify-center rounded-md px-2 py-2 text-xs font-semibold shadow-sm ring-1 ring-inset ring-gray-300 text-dark bg-slate-100 hover:bg-slate-200 focus:outline-none focus:ring-gray-300 font-medium rounded-lg px-2 py-1 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-gray-800"
+        aria-expanded="true"
+        aria-haspopup="true"
+      >
+        {menuIcon}
+      </button>
+
+      {dropdownVisibility.file && (
+        <div className="absolute left-0 z-10 mt-2 min-w-[240px] max-w-96 max-h-96 overflow-auto p-1 px-3 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+          <ul
+            className=" text-sm text-gray-700 dark:text-gray-200 "
+            aria-labelledby="fileDropdownDefaultButton"
+          >
             <div className="flex flex-row h-[30px] w-full text-sm justify-center gap-2 ">
-              {privateTabs.map((tab, index) => {
+              {privateTabs.map((tab) => {
                 return (
                   <div
                     key={tab.tabId + generateRandomString(10)}
@@ -679,592 +731,370 @@ export default function MainPage(props) {
                 );
               })}
             </div>
-          )}
 
-          {/* Tabs content */}
-          {privateTabs[0].selected ? (
-            <>
-              <div className="pt-4 mt-4 space-y-2 font-medium text-sm border-t border-gray-200 dark:border-gray-700">
-                <div>
-                  <label
-                    onClick={(e) => handleCreateNewPage()}
-                    className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group"
-                  >
-                    {pageListIcon}
-                    Create new page
-                  </label>
-                </div>
-              </div>
-
-              {/* File List functionality */}
-              <div className="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
-                {currUser &&
-                  currUser.pages &&
-                  currUser.pages.map((page) => {
-                    return (
-                      <li
-                        key={page.pageId._id}
-                        className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between border-blue-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
-                      >
-                        <div
-                          className="flex items-center cursor-pointer p-2 text-gray-900 transition duration-75 rounded-lg group flex-1"
-                          onClick={(e) =>
-                            handlePageNavigate(page.pageId.unique_name)
-                          }
-                        >
-                          {pageIcon}
-                          <span
-                            className="ms-3 w-full line-clamp-1"
-                            title={page.pageId.unique_name}
-                          >
-                            {page.pageId.unique_name
-                              ? getPresizeFileName(page.pageId.unique_name)
-                              : "page"}{" "}
-                          </span>
-                        </div>
-                      </li>
-                    );
-                  })}
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="pt-4 mt-4 space-y-2 font-medium text-sm border-t border-gray-200 dark:border-gray-700">
-                <div>
-                  <label className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group">
-                    <input type="file" accept="*" onChange={onSelectFile} />
-                    {fileAddIcon}
-                    Select to Upload Files
-                  </label>
-                </div>
-              </div>
-
-              {/* File List functionality */}
-              <div className="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
-                {currUser
-                  ? privateFileList.map((file, index) => {
-                    return (
-                      <li
-                        key={index}
-                        className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between border-blue-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
-                      >
-                        <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg group flex-1">
-                          {fileIcon(file.type)}
-                          <span
-                            className="ms-3 cursor-pointer line-clamp-1"
-                            title={file.name}
-                          >
-                            {file.name
-                              ? getPresizeFileName(file.name)
-                              : "file"}{" "}
-                            {/* {file.name ? file.name : "file"}{" "} */}
-                          </span>
-                        </div>
-                        <div className="flex flex-row min-w-[50px]">
-                          <a
-                            href={file.url}
-                            target="_blank"
-                            download={file.name}
-                            rel="noreferrer"
-                          >
-                            {downloadIcon}
-                          </a>
-                          <div onClick={() => confirmFileRemove(file)}>
-                            {removeIcon}
-                          </div>
-                        </div>
-                      </li>
-                    );
-                  })
-                  : fileList.map((file, index) => {
-                    return (
-                      <li
-                        key={index}
-                        className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between border-blue-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
-                      >
-                        <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg group flex-1">
-                          {fileIcon(file.type)}
-                          <span
-                            className="ms-3 cursor-pointer line-clamp-1"
-                            title={file.name}
-                          >
-                            {file.name
-                              ? getPresizeFileName(file.name)
-                              : "file"}{" "}
-                            {/* {file.name ? file.name : "file"}{" "} */}
-                          </span>
-                        </div>
-                        <div className="flex flex-row min-w-[50px]">
-                          <a
-                            href={file.url}
-                            target="_blank"
-                            download={file.name}
-                            rel="noreferrer"
-                          >
-                            {downloadIcon}
-                          </a>
-                          <div onClick={() => confirmFileRemove(file)}>
-                            {removeIcon}
-                          </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-              </div>
-            </>
-          )}
-        </div>
-      </aside>
-
-      <div className="MainArea sm:size-full text-xs md:text:sm p-1 md:p-4 gap-2">
-        {!currUser && (
-          <div
-            onFocus={() => {
-              setIsRedirectFocused(true);
-            }}
-            onBlur={() => {
-              setIsRedirectFocused(false);
-            }}
-            className="md:hidden flex flex-row space-x-2 py-1 text-sm justify-center items-center gap-2 "
-          >
-            <input
-              className="font-bold w-full mx-2 px-2 border-b border-blue-700 outline-none"
-              onChange={(e) => {
-                setTmpSlug(e.target.value);
-              }}
-              value={tmpSlug}
-            />
-            <button
-              onClick={redirect}
-              className="px-4 py-1 text-sm font-bold bg-blue-200 hover:bg-blue-300 text-white border-b-1 border-blue-700 hover:border-blue-500 rounded"
-            >
-              {redirectArrowIcon}
-            </button>
-          </div>
-        )}
-
-        {/* app bar header */}
-        <div className="flex flex-row justify-between items-center p-y-2 ">
-          {/* Tabs handling for smal screen */}
-          <div className="md:hidden inline-block text-left">
-            <button
-              onClick={() => {
-                setDropdownVisibility(() => {
-                  var val = structuredClone(dropdownVisibility);
-                  val.file = !val.file;
-                  val.history = false;
-                  val.profile = false;
-                  return val;
-                });
-              }}
-              type="button"
-              className="inline-flex md:hidden items-center justify-center rounded-md px-2 py-2 text-xs font-semibold shadow-sm ring-1 ring-inset ring-gray-300 text-dark bg-slate-100 hover:bg-slate-200 focus:outline-none focus:ring-gray-300 font-medium rounded-lg px-2 py-1 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-gray-800"
-              aria-expanded="true"
-              aria-haspopup="true"
-            >
-              {menuIcon}
-            </button>
-
-            {dropdownVisibility.file && (
-              <div
-                className="absolute left-0 z-10 mt-2 min-w-[240px] max-w-96 max-h-96 overflow-auto p-1 px-3 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-                role="menu"
-                aria-orientation="vertical"
-                aria-labelledby="menu-button"
-              >
-                <ul
-                  className=" text-sm text-gray-700 dark:text-gray-200 "
-                  aria-labelledby="fileDropdownDefaultButton"
-                >
-                  {currUser && (
-                    <div className="flex flex-row h-[30px] w-full text-sm justify-center gap-2 ">
-                      {privateTabs.map((tab) => {
-                        return (
-                          <div
-                            key={tab.tabId + generateRandomString(10)}
-                            className={`${tab.selected ? "bg-slate-300" : "bg-slate-100"
-                              } h-full flex items-center justify-center w-full hover:bg-slate-400 text-black rounded`}
-                            onClick={(e) => onSelectTab(tab.tabId, e)}
-                          >
-                            {tab.tabName}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                  {privateTabs[0].selected ? (
-                    <>
-                      <div className="pt-2 mt-4 font-medium text-sm border-t border-gray-200 dark:border-gray-700">
-                        <div>
-                          <label
-                            onClick={(e) => handleCreateNewPage()}
-                            className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-1 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group"
-                          >
-                            {pageListIcon}
-                            Create new page
-                          </label>
-                        </div>
-                      </div>
-                      {/* File List functionality */}
-                      <div className="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
-                        {currUser &&
-                          currUser.pages &&
-                          currUser.pages.map((page) => {
-                            return (
-                              <li
-                                key={page.pageId._id}
-                                className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between border-blue-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
-                              >
-                                <div
-                                  className="flex items-center cursor-pointer p-2 text-gray-900 transition duration-75 rounded-lg group flex-1"
-                                  onClick={(e) =>
-                                    handlePageNavigate(page.pageId.unique_name)
-                                  }
-                                >
-                                  {pageIcon}
-                                  <span
-                                    className="ms-3 w-full line-clamp-1"
-                                    title={page.pageId.unique_name}
-                                  >
-                                    {page.pageId.unique_name
-                                      ? getPresizeFileName(
-                                        page.pageId.unique_name
-                                      )
-                                      : "page"}{" "}
-                                  </span>
-                                </div>
-                              </li>
-                            );
-                          })}
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="pt-2 mt-4 font-medium text-sm border-gray-200 dark:border-gray-700">
-                        <label className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group">
-                          <input
-                            type="file"
-                            accept="*"
-                            onChange={onSelectFile}
-                          />
-                          {fileAddIcon}
-                          Select to Upload Files
-                        </label>
-                      </div>
-                      {currUser
-                        ? privateFileList.length > 0 && (
-                          <div className="pt-1 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
-                            {privateFileList.map((file, _id) => {
-                              return (
-                                <li
-                                  key={_id}
-                                  className="Image-content flex flex-row items-center gap-1 justify-between border-blue-300"
-                                >
-                                  <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group flex-1">
-                                    {fileIcon(file.type)}
-                                    <span className="ms-3">
-                                      {file.name
-                                        ? getPresizeFileName(file.name)
-                                        : "file"}{" "}
-                                    </span>
-                                  </div>
-                                  <div className="flex flex-row">
-                                    <a
-                                      href={file.url}
-                                      target="_blank"
-                                      download={file.name}
-                                      rel="noreferrer"
-                                    >
-                                      {downloadIcon}
-                                    </a>
-                                    <div
-                                      onClick={() => confirmFileRemove(file)}
-                                    >
-                                      {removeIcon}
-                                    </div>
-                                  </div>
-                                </li>
-                              );
-                            })}
-                          </div>
-                        )
-                        : fileList.length > 0 && (
-                          <div className="pt-1 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
-                            {fileList.map((file, _id) => {
-                              return (
-                                <li
-                                  key={_id}
-                                  className="Image-content flex flex-row items-center gap-1 justify-between border-blue-300"
-                                >
-                                  <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group flex-1">
-                                    {fileIcon(file.type)}
-                                    <span className="ms-3">
-                                      {file.name
-                                        ? getPresizeFileName(file.name)
-                                        : "file"}{" "}
-                                    </span>
-                                  </div>
-                                  <div className="flex flex-row">
-                                    <a
-                                      href={file.url}
-                                      target="_blank"
-                                      download={file.name}
-                                      rel="noreferrer"
-                                    >
-                                      {downloadIcon}
-                                    </a>
-                                    <div
-                                      onClick={() => confirmFileRemove(file)}
-                                    >
-                                      {removeIcon}
-                                    </div>
-                                  </div>
-                                </li>
-                              );
-                            })}
-                          </div>
-                        )}
-                    </>
-                  )}
-                </ul>
-              </div>
-            )}
-          </div>
-
-          {/* login logout */}
-          <div className="relative inline-block ml-auto">
-            <div
-              onClick={
-                currUser
-                  ? () => {
-                    setDropdownVisibility(() => {
-                      var val = structuredClone(dropdownVisibility);
-                      val.file = false;
-                      val.history = false;
-                      val.profile = !val.profile;
-                      return val;
-                    });
-                  }
-                  : handleLogin
-              }
-              className={`${currUser
-                  ? "px-1"
-                  : "bg-slate-500 hover:bg-slate-600 text-white px-4"
-                } py-1 ml-auto text-sm font-bold rounded cursor-pointer`}
-              id="profile-menu-button"
-              aria-expanded="true"
-              aria-haspopup="true"
-            >
-              {currUser ? userProfileIcon : "Login"}
-            </div>
-            {dropdownVisibility.profile && (
-              <div
-                className="absolute right-0 z-10 mt-2 p-1 min-w-48 max-h-96 overflow-auto origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-                role="menu"
-                aria-orientation="vertical"
-                aria-labelledby="profile-menu-button"
-              >
-                <ul
-                  className="py-2 text-sm text-gray-700 dark:text-gray-200 "
-                  aria-labelledby="dropdownDefaultButton"
-                >
-                  <li className="flex px-1 items-center justify-end w-full">
-                    {/* <div
-           className="w-full version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-          >
-           <img
-            src={profilePicture}
-            alt={`${username}'s profile`}
-            className="w-10 h-10 rounded-full mr-2"
-           />
-           {username}
-          </div> */}
-                    <div
-                      className="w-full version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white flex items-center"
-                      onClick={handleOpenModal}
+            {privateTabs[0].selected ? (
+              <>
+                <div className="pt-2 mt-4 font-medium text-sm border-t border-gray-200 dark:border-gray-700">
+                  <div>
+                    <label
+                      onClick={(e) => handlePageNavigate("new")}
+                      className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-1 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group"
                     >
-                      <div className="w-12 h-12 flex-shrink-0">
-                        {/* <img
-             src={}
-             // alt={`${username}'s profile`}
-             className="w-full h-full rounded-full object-cover"
-            /> */}
-                        {profilePicture}
-                      </div>
-                      <span className="ml-2">{username}</span>{" "}
-                      {/* Add margin-left for spacing */}
-                    </div>
-                  </li>
-
-                  <li className="flex items-center justify-end w-full px-1">
-                    <div
-                      onClick={redirectAuction}
-                      className="w-full version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                    >
-                      Auction
-                    </div>
-                  </li>
-
-                  <li className="flex items-center justify-end w-full px-1">
-                    <div
-                      onClick={handleHelp}
-                      className="w-full version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                    >
-                      Help
-                    </div>
-                  </li>
-
-                  <li
-                    key="logout"
-                    className="flex px-1 items-center justify-end w-full"
-                  >
-                    <div
-                      title="Click to logout"
-                      onClick={() => {
-                        handleLogout();
-                      }}
-                      className="w-full version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                    >
-                      Logout
-                    </div>
-                  </li>
-                </ul>
-                {showHelpModal && (
-                  <Modal onClose={() => setShowHelpModal(false)}>
-                    <h2 className="text-lg font-semibold">Help & Support</h2>
-                    <p>
-                      If you have any questions, please contact support at{" "}
-                      <a
-                        href="mailto:notes.developer89@gmail.com"
-                        className="text-blue-500"
-                      >
-                        notes.developer89@gmail.com
-                      </a>
-                      .
-                    </p>
-                    <h3 className="mt-4">Frequently Asked Questions</h3>
-                    <ul>
-                      <li>Q: How do I reset my password?</li>
-                      <li>
-                        A: You can reset your password by going to the settings
-                        page.
-                      </li>
-                      <li>Q: How do I contact support?</li>
-                      <li>A: You can contact support using the email above.</li>
-                    </ul>
-                  </Modal>
-                )}
-                {isModalOpen && (
-                  <UserProfileModal
-                    isOpen={isModalOpen}
-                    onClose={handleCloseModal}
-                    currUser={currUser}
-                  />
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* page title and version */}
-        <div className="flex flex-row gap-2 items-center">
-          <div className="flex flex-row gap-3 items-center justify-between ">
-            {/* version */}
-            <div className="relative inline-block text-left cursor-pointer">
-              <div
-                // onMouseOver={() => {
-                //  getAllversionData(false);
-                // }}
-                onClick={() => {
-                  getAllversionData(true);
-                  setDropdownVisibility(() => {
-                    var val = structuredClone(dropdownVisibility);
-                    val.history = !val.history;
-                    val.file = false;
-                    val.profile = false;
-                    return val;
-                  });
-                }}
-                type="button"
-                className="gap-2 flex items-center justify-between rounded-md text-xs font-semibold shadow-sm  text-dark bg-slate-100 focus:outline-none focus:ring-gray-300 font-medium rounded-lg px-2 py-1 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-gray-800"
-                id="menu-button"
-                aria-expanded="true"
-                aria-haspopup="true"
-              >
-                <div className="px-2 py-2 capitalize">
-                  {latestVersion.timeformate ? userSlug : "New Page"}
+                      {pageListIcon}
+                      Create new page
+                    </label>
+                  </div>
                 </div>
-                <div
-                  title="Click to show page versions"
-                  className="flex items-center justify-between px-2 py-2 cursor-pointer hover:bg-slate-200 "
-                >
-                  {downArrowIcon}
-                </div>
-              </div>
-
-              {dropdownVisibility.history && allVersionData.length > 0 && (
-                <div
-                  className="absolute left-0 z-10 mt-2 min-w-[240px] max-w-[300px] max-h-96 overflow-auto p-1 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-                  role="menu"
-                  aria-orientation="vertical"
-                  aria-labelledby="menu-button"
-                >
-                  <ul
-                    className="py-2 text-sm text-gray-700 dark:text-gray-200 "
-                    aria-labelledby="dropdownDefaultButton"
-                  >
-                    {allVersionData.map((v, index) => {
+                {/* Page List functionality */}
+                <div className="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700 overflow-auto">
+                  {currUser &&
+                    currUser.pages &&
+                    currUser.pages.map((page) => {
                       return (
                         <li
-                          key={index}
-                          className="flex px-1 items-center justify-end min-w-[250px] max-w-[380px]"
+                          key={page.pageId._id}
+                          className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between border-blue-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
                         >
                           <div
-                            className="min-w-[20px] max-w-[30px]"
-                            title="Current version"
+                            className="flex items-center cursor-pointer p-2 text-gray-900 transition duration-75 rounded-lg group flex-1"
+                            onClick={(e) => handlePageNavigate(page.pageId.unique_name)}
                           >
-                            {v.isCurrent && currentVersionIcon(v)}
-                            {v.isLoaded && !v.isCurrent && versionIndicatorIcon}
+                            {pageIcon}
+                            <span
+                              className="ms-3 w-full line-clamp-1"
+                              title={page.pageId.unique_name}
+                            >
+                              {page.pageId.unique_name ? getPresizeFileName(page.pageId.unique_name) : "page"}
+                            </span>
                           </div>
-                          <div
-                            title="Click to load this version"
-                            onClick={() => {
-                              loadSpecificVersion(v.time, index);
-                            }}
-                            className="min-w-[230px] max-w-[350px] version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                          >
-                            Version - {v.timeformat}
+                          <div className="flex flex-row">
+                            <div onClick={() => confirmPageRemove(page.pageId)}>
+                              {removeIcon}
+                            </div>
                           </div>
                         </li>
                       );
                     })}
-                  </ul>
                 </div>
+              </>
+            ) : (
+              currUser && <>
+                <div className="pt-2 mt-4 font-medium text-sm border-gray-200 dark:border-gray-700">
+                  <label className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group">
+                    <input
+                      type="file"
+                      accept="*"
+                      onChange={onSelectFile}
+                    />
+                    {fileAddIcon}
+                    Select to Upload Files
+                  </label>
+                </div>
+                {privateFileList.length > 0 && (
+                  <div className="pt-1 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
+                    {privateFileList.map((file, _id) => {
+                      return (
+                        <li
+                          key={_id}
+                          className="Image-content flex flex-row items-center gap-1 justify-between border-blue-300"
+                        >
+                          <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group flex-1">
+                            {fileIcon(file.type)}
+                            <span className="ms-3">
+                              {file.name ? getPresizeFileName(file.name) : "file"}
+                            </span>
+                          </div>
+                          <div className="flex flex-row">
+                            <a
+                              href={file.url}
+                              target="_blank"
+                              download={file.name}
+                              rel="noreferrer"
+                            >
+                              {downloadIcon}
+                            </a>
+                            <div onClick={() => confirmFileRemove(file)}>
+                              {removeIcon}
+                            </div>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+          </ul>
+        </div>
+      )}
+    </div>)
+
+  const redirectView = (!currUser && <form onSubmit={(e) => { e.preventDefault(); redirect(); }} className="flex flex-row space-x-2 py-1 text-sm justify-center items-center gap-2 ">
+    <input
+      className="font-bold  mx-2 px-1 border-b border-blue-700 outline-none"
+      onChange={(e) => { setTmpSlug(e.target.value); }}
+      value={tmpSlug}
+    />
+    <button
+      type="submit"
+      className="px-2  text-sm font-bold bg-blue-200 hover:bg-blue-300 text-white border-b-1 border-blue-700 hover:border-blue-500 rounded"
+    >
+      {redirectArrowIcon}
+    </button>
+  </form>)
+
+  return (
+    <div className="MainPage flex flex-col h-full w-full p-1 gap-1">
+
+      <script src={flobiteJS}></script>
+      <input
+        type="file"
+        accept="*"
+        onChange={onSelectFile}
+        ref={inputFile}
+        style={{ display: "none" }}
+      />
+
+      <header className="flex flex-row justify-between px-1 gap-1 flex-wrap">
+        {currUser ? mainListView : <>
+          <div className="md:hidden">
+            {redirectView}
+          </div>
+        </>}
+        {/* login logout */}
+        <div className="md:hidden">
+          {loginButtonView}
+        </div>
+      </header>
+
+      <div className="flex flex-row h-full w-full">
+
+        {currUser &&
+          <aside
+            id="separator-sidebar"
+            className="hidden md:block lg:block SideBar z-40 h-screen h-full "
+            aria-label="Sidebar"
+          >
+            <div className="flex flex-col h-full px-2 py-4 overflow-y-auto ">
+              {/* tabs */}
+              <div className="flex flex-row h-[30px] w-full text-sm justify-center gap-2 ">
+                {privateTabs.map((tab, index) => {
+                  return (
+                    <div
+                      key={tab.tabId + generateRandomString(10)}
+                      className={`${tab.selected ? "bg-slate-300" : "bg-slate-100"
+                        } h-full flex items-center justify-center w-full hover:bg-slate-400 text-black rounded`}
+                      onClick={(e) => onSelectTab(tab.tabId, e)}
+                    >
+                      {tab.tabName}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Tabs content */}
+              {privateTabs[0].selected ? (<>
+                <div className="pt-4 mt-4 space-y-2 font-medium text-sm border-t border-gray-200 dark:border-gray-700">
+                  <div>
+                    <label
+                      onClick={(e) => handlePageNavigate("new")}
+                      className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group"
+                    >
+                      {pageListIcon}
+                      Create new page
+                    </label>
+                  </div>
+                </div>
+
+                {/* File List functionality */}
+                <div className="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
+                  {currUser.pages &&
+                    currUser.pages.map((page) => {
+                      return (
+                        <li
+                          key={page.pageId._id}
+                          className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between border-blue-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
+                        >
+                          <div
+                            className="flex items-center cursor-pointer p-2 text-gray-900 transition duration-75 rounded-lg group flex-1"
+                            onClick={(e) =>
+                              handlePageNavigate(page.pageId.unique_name)
+                            }
+                          >
+                            {pageIcon}
+                            <span
+                              className="ms-3 w-full line-clamp-1"
+                              title={page.pageId.unique_name}
+                            >
+                              {page.pageId.unique_name ? getPresizeFileName(page.pageId.unique_name) : "page"}
+                            </span>
+                          </div>
+                          <div className="flex flex-row">
+                            <div onClick={() => confirmPageRemove(page.pageId)}>
+                              {removeIcon}
+                            </div>
+                          </div>
+                        </li>
+                      );
+                    })}
+                </div>
+              </>
+              ) : (<>
+                <div className="pt-4 mt-4 space-y-2 font-medium text-sm border-t border-gray-200 dark:border-gray-700">
+                  <div>
+                    <label className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group">
+                      <input type="file" accept="*" onChange={onSelectFile} />
+                      {fileAddIcon}
+                      Select to Upload Files
+                    </label>
+                  </div>
+                </div>
+
+                {/* File List functionality */}
+                <div className="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
+                  {privateFileList.map((file, index) => {
+                    return (
+                      <li
+                        key={index}
+                        className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between border-blue-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
+                      >
+                        <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg group flex-1">
+                          {fileIcon(file.type)}
+                          <span
+                            className="ms-3 cursor-pointer line-clamp-1"
+                            title={file.name}
+                          >
+                            {file.name ? getPresizeFileName(file.name) : "file"}
+                          </span>
+                        </div>
+                        <div className="flex flex-row min-w-[50px]">
+                          <a
+                            href={file.url}
+                            target="_blank"
+                            download={file.name}
+                            rel="noreferrer"
+                          >
+                            {downloadIcon}
+                          </a>
+                          <div onClick={() => confirmFileRemove(file)}>
+                            {removeIcon}
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </div>
+              </>
               )}
             </div>
+          </aside>
+        }
+        <div className="MainArea sm:size-full text-xs md:text:sm p-1 md:p-1 gap-2">
+
+          {/* page title and version */}
+          <div className="flex flex-row gap-2 items-center">
+            {/* version and page name */}
+            <div className="flex flex-row gap-2 w-full">
+
+              <div className="flex flex-row gap-3 items-center justify-between ">
+                <div className="relative inline-block text-left cursor-pointer">
+                  <div onClick={() => {
+                    getAllversionData(true);
+                    setDropdownVisibility(() => {
+                      var val = structuredClone(dropdownVisibility);
+                      val.history = !val.history;
+                      val.file = false;
+                      val.profile = false;
+                      return val;
+                    });
+                  }}
+                    type="button"
+                    className="gap-2 flex items-center justify-between rounded-md text-xs font-semibold shadow-sm  text-dark bg-slate-200 focus:outline-none focus:ring-gray-300 font-medium rounded-lg px-1 py-1 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-gray-800"
+                  >
+                    <div className="px-1 py-1 capitalize">
+                      {latestVersion.timeformate ? userSlug : "New page"}
+                    </div>
+                    <div
+                      title="Click to show page versions"
+                      className="flex items-center justify-between px-1 py-1 cursor-pointer hover:bg-slate-200 "
+                    >
+                      {downArrowIcon}
+                    </div>
+                  </div>
+
+                  {dropdownVisibility.history && allVersionData.length > 0 && (
+                    <div
+                      className="absolute left-0 z-10 mt-2 min-w-[240px] max-w-[300px] max-h-96 overflow-auto p-1 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                      role="menu"
+                      aria-orientation="vertical"
+                      aria-labelledby="menu-button"
+                    >
+                      <ul
+                        className="py-2 text-sm text-gray-700 dark:text-gray-200 "
+                        aria-labelledby="dropdownDefaultButton"
+                      >
+                        {allVersionData.map((v, index) => {
+                          return (
+                            <li
+                              key={index}
+                              className="flex px-1 items-center justify-end min-w-[250px] max-w-[380px]"
+                            >
+                              <div
+                                className="min-w-[20px] max-w-[30px]"
+                                title="Current version"
+                              >
+                                {v.isCurrent && currentVersionIcon(v)}
+                                {v.isLoaded && !v.isCurrent && versionIndicatorIcon}
+                              </div>
+                              <div
+                                title="Click to load this version"
+                                onClick={() => {
+                                  loadSpecificVersion(v.time, index);
+                                }}
+                                className="min-w-[230px] max-w-[350px] version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                              >
+                                Version - {v.timeformat}
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div
+                onClick={(e) => saveData()}
+                className="cursor-pointer text-dark px-2 py-1 text-sm bg-blue-200 hover:bg-blue-300 rounded"
+              >
+                Save
+              </div>
+            </div>
+            <div className="sm:hidden md:block lg:block">
+              {redirectView}
+            </div>
+            <div className="sm:hidden md:block lg:block">
+              {loginButtonView}
+            </div>
           </div>
-          <div
-            onClick={(e) => saveData()}
-            className="cursor-pointer px-2 py-2 text-sm bg-blue-100 hover:bg-blue-300 rounded"
-          >
-            Save
+
+          {/* code area */}
+          <div className="MainTextArea text-sm relative">
+            <TmceEditor
+              props={{
+                inputFile,
+                editorRef,
+                latestVersion,
+                setSocketEnabled,
+                saveData,
+                handleOnEditorChange,
+              }}
+            />
           </div>
         </div>
 
-        {/* code area */}
-        <div className="MainTextArea text-sm relative">
-          <TmceEditor
-            props={{
-              inputFile,
-              editorRef,
-              latestVersion,
-              setSocketEnabled,
-              saveData,
-              handleOnEditorChange,
-            }}
-          />
-        </div>
       </div>
-    </div>
+    </div >
   );
 }
