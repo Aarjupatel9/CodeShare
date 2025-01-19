@@ -199,7 +199,7 @@ exports.validateFile = async (req, res, next) => {
 
 exports.saveFileNew = async (req, res, next) => {
   try {
-    const { unique_name } = req.body;
+    const unique_name  = req.body.slug;
     const user = req.user;
     if (!user || !unique_name) {
       return res.status(400).json({
