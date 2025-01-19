@@ -712,132 +712,135 @@ export default function MainPage(props) {
       </button>
 
       {dropdownVisibility.file && (
-        <div className="absolute left-0 z-10 mt-2 min-w-[240px] max-w-96 max-h-96 overflow-auto p-1 px-3 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-          <ul
-            className=" text-sm text-gray-700 dark:text-gray-200 "
-            aria-labelledby="fileDropdownDefaultButton"
+        <div className="overflow-auto absolute left-0 z-10 mt-2 min-w-[240px] max-w-96 max-h-96 p-1 px-3 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+          <div
+            className="flex flex-col h-full text-sm text-gray-700 dark:text-gray-200 "
           >
-            <div className="flex flex-row h-[30px] w-full text-sm justify-center gap-2 ">
-              {privateTabs.map((tab) => {
-                return (
-                  <div
-                    key={tab.tabId + generateRandomString(10)}
-                    className={`${tab.selected ? "bg-slate-300" : "bg-slate-100"
-                      } h-full flex items-center justify-center w-full hover:bg-slate-400 text-black rounded`}
-                    onClick={(e) => onSelectTab(tab.tabId, e)}
-                  >
-                    {tab.tabName}
-                  </div>
-                );
-              })}
-            </div>
-
-            {privateTabs[0].selected ? (
-              <>
-                <div className="pt-2 mt-4 font-medium text-sm border-t border-gray-200 dark:border-gray-700">
-                  <div>
-                    <label
-                      onClick={(e) => handlePageNavigate("new")}
-                      className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-1 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group"
+            <div className="relative fixed top-0">
+              <div className="flex flex-row h-[30px] w-full text-sm justify-center gap-2">
+                {privateTabs.map((tab) => {
+                  return (
+                    <div
+                      key={tab.tabId + generateRandomString(10)}
+                      className={`${tab.selected ? "bg-slate-300" : "bg-slate-100"
+                        } h-full flex items-center justify-center w-full hover:bg-slate-400 text-black rounded`}
+                      onClick={(e) => onSelectTab(tab.tabId, e)}
                     >
-                      {pageListIcon}
-                      Create new page
+                      {tab.tabName}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="overflow-auto flex-grow h-full">
+
+              {privateTabs[0].selected ? (
+                <>
+                  <div className="pt-2 mt-4 font-medium text-sm border-t border-gray-200 dark:border-gray-700">
+                    <div>
+                      <label
+                        onClick={(e) => handlePageNavigate("new")}
+                        className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-1 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group"
+                      >
+                        {pageListIcon}
+                        Create new page
+                      </label>
+                    </div>
+                  </div>
+                  {/* Page List functionality */}
+                  <div className="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700 overflow-auto">
+                    {currUser &&
+                      currUser.pages &&
+                      currUser.pages.map((page) => {
+                        return (
+                          <li
+                            key={page.pageId._id}
+                            className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between border-blue-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
+                          >
+                            <div
+                              className="flex items-center cursor-pointer p-2 text-gray-900 transition duration-75 rounded-lg group flex-1"
+                              onClick={(e) => handlePageNavigate(page.pageId.unique_name)}
+                            >
+                              {pageIcon}
+                              <span
+                                className="ms-3 w-full line-clamp-1"
+                                title={page.pageId.unique_name}
+                              >
+                                {page.pageId.unique_name ? getPresizeFileName(page.pageId.unique_name) : "page"}
+                              </span>
+                            </div>
+                            <div className="flex flex-row">
+                              <div onClick={() => confirmPageRemove(page.pageId)}>
+                                {removeIcon}
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
+                  </div>
+                </>
+              ) : (
+                currUser && <>
+                  <div className="pt-2 mt-4 font-medium text-sm border-gray-200 dark:border-gray-700">
+                    <label className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group">
+                      <input
+                        type="file"
+                        accept="*"
+                        onChange={onSelectFile}
+                      />
+                      {fileAddIcon}
+                      Select to Upload Files
                     </label>
                   </div>
-                </div>
-                {/* Page List functionality */}
-                <div className="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700 overflow-auto">
-                  {currUser &&
-                    currUser.pages &&
-                    currUser.pages.map((page) => {
-                      return (
-                        <li
-                          key={page.pageId._id}
-                          className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between border-blue-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
-                        >
-                          <div
-                            className="flex items-center cursor-pointer p-2 text-gray-900 transition duration-75 rounded-lg group flex-1"
-                            onClick={(e) => handlePageNavigate(page.pageId.unique_name)}
+                  {privateFileList.length > 0 && (
+                    <div className="pt-1 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
+                      {privateFileList.map((file, _id) => {
+                        return (
+                          <li
+                            key={_id}
+                            className="Image-content flex flex-row items-center gap-1 justify-between border-blue-300"
                           >
-                            {pageIcon}
-                            <span
-                              className="ms-3 w-full line-clamp-1"
-                              title={page.pageId.unique_name}
-                            >
-                              {page.pageId.unique_name ? getPresizeFileName(page.pageId.unique_name) : "page"}
-                            </span>
-                          </div>
-                          <div className="flex flex-row">
-                            <div onClick={() => confirmPageRemove(page.pageId)}>
-                              {removeIcon}
+                            <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group flex-1">
+                              {fileIcon(file.type)}
+                              <span className="ms-3">
+                                {file.name ? getPresizeFileName(file.name) : "file"}
+                              </span>
                             </div>
-                          </div>
-                        </li>
-                      );
-                    })}
-                </div>
-              </>
-            ) : (
-              currUser && <>
-                <div className="pt-2 mt-4 font-medium text-sm border-gray-200 dark:border-gray-700">
-                  <label className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group">
-                    <input
-                      type="file"
-                      accept="*"
-                      onChange={onSelectFile}
-                    />
-                    {fileAddIcon}
-                    Select to Upload Files
-                  </label>
-                </div>
-                {privateFileList.length > 0 && (
-                  <div className="pt-1 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
-                    {privateFileList.map((file, _id) => {
-                      return (
-                        <li
-                          key={_id}
-                          className="Image-content flex flex-row items-center gap-1 justify-between border-blue-300"
-                        >
-                          <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group flex-1">
-                            {fileIcon(file.type)}
-                            <span className="ms-3">
-                              {file.name ? getPresizeFileName(file.name) : "file"}
-                            </span>
-                          </div>
-                          <div className="flex flex-row">
-                            <a
-                              href={file.url}
-                              target="_blank"
-                              download={file.name}
-                              rel="noreferrer"
-                            >
-                              {downloadIcon}
-                            </a>
-                            <div onClick={() => confirmFileRemove(file)}>
-                              {removeIcon}
+                            <div className="flex flex-row">
+                              <a
+                                href={file.url}
+                                target="_blank"
+                                download={file.name}
+                                rel="noreferrer"
+                              >
+                                {downloadIcon}
+                              </a>
+                              <div onClick={() => confirmFileRemove(file)}>
+                                {removeIcon}
+                              </div>
                             </div>
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </div>
-                )}
-              </>
-            )}
-          </ul>
+                          </li>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>)
 
   const redirectView = (!currUser && <form onSubmit={(e) => { e.preventDefault(); redirect(); }} className="flex flex-row space-x-2 py-1 text-sm justify-center items-center gap-2 ">
     <input
-      className="font-bold  mx-2 px-1 border-b border-blue-700 outline-none"
+      className="font-bold  mx-2 px-1 border-b border-blue-700 outline-none max-w-[130px]"
       onChange={(e) => { setTmpSlug(e.target.value); }}
       value={tmpSlug}
     />
     <button
       type="submit"
-      className="px-2  text-sm font-bold bg-blue-200 hover:bg-blue-300 text-white border-b-1 border-blue-700 hover:border-blue-500 rounded"
+      className="px-2 text-sm font-bold bg-blue-200 hover:bg-blue-300 text-white border-b-1 border-blue-700 hover:border-blue-500 rounded"
     >
       {redirectArrowIcon}
     </button>
@@ -875,7 +878,7 @@ export default function MainPage(props) {
             className="hidden md:block lg:block SideBar z-40 h-screen h-full "
             aria-label="Sidebar"
           >
-            <div className="flex flex-col h-full px-2 py-4 overflow-y-auto ">
+            <div className="flex flex-col h-full px-2 py-1 overflow-y-auto ">
               {/* tabs */}
               <div className="flex flex-row h-[30px] w-full text-sm justify-center gap-2 ">
                 {privateTabs.map((tab, index) => {
@@ -1065,6 +1068,7 @@ export default function MainPage(props) {
               </div>
 
               <div
+              type="button"
                 onClick={(e) => saveData()}
                 className="cursor-pointer text-dark px-2 py-1 text-sm bg-blue-200 hover:bg-blue-300 rounded"
               >
