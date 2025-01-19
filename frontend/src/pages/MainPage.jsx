@@ -834,13 +834,13 @@ export default function MainPage(props) {
 
   const redirectView = (!currUser && <form onSubmit={(e) => { e.preventDefault(); redirect(); }} className="flex flex-row space-x-2 py-1 text-sm justify-center items-center gap-2 ">
     <input
-      className="font-bold  mx-2 px-1 border-b border-blue-700 outline-none"
+      className="font-bold  mx-2 px-1 border-b border-blue-700 outline-none max-w-[130px]"
       onChange={(e) => { setTmpSlug(e.target.value); }}
       value={tmpSlug}
     />
     <button
       type="submit"
-      className="px-2  text-sm font-bold bg-blue-200 hover:bg-blue-300 text-white border-b-1 border-blue-700 hover:border-blue-500 rounded"
+      className="px-2 text-sm font-bold bg-blue-200 hover:bg-blue-300 text-white border-b-1 border-blue-700 hover:border-blue-500 rounded"
     >
       {redirectArrowIcon}
     </button>
@@ -1068,6 +1068,7 @@ export default function MainPage(props) {
               </div>
 
               <div
+              type="button"
                 onClick={(e) => saveData()}
                 className="cursor-pointer text-dark px-2 py-1 text-sm bg-blue-200 hover:bg-blue-300 rounded"
               >

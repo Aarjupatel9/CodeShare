@@ -259,6 +259,5 @@ export default function AuctionMain(props) {
                 </div>
             </div>}
         </div>
-
     </div>)
 }
