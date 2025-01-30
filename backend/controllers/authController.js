@@ -64,7 +64,7 @@ exports.login = async function (req, res) {
             });
             user.password = undefined;
             res.status(200).json({
-                message: "Successfully Logged Inn.",
+                message: "Login Successful.",
                 success: true,
                 user: user,
             });

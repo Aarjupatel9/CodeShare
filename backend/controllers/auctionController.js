@@ -14,10 +14,9 @@ const jwt = require("jsonwebtoken");
 
 const mongoose = require("mongoose");
 
-var playerDataMapping = {
-  "PLAYER No.": "playerNumber",
+const playerDataMapping = {
+  "PLAYER NO.": "playerNumber",
   "PLAYER NAME": "name",
-  "CATEGORY": "AR1",
   "CONTACT NO.": "contactNumber",
   "SHIFT": "shift",
   "ROLE": "role",
@@ -27,18 +26,47 @@ var playerDataMapping = {
   "BATTING ORDER": "battingPossition",
   "BATTING STYLE": "battingType",
   "BASE PRICE": "basePrice",
-  "SOLD PRICE": "soldPrice",
-  "TEAM NAME": "team",
-  "TEAM CODE": "teamCode",
+  // "SOLD PRICE": "soldPrice",
+  // "TEAM NAME": "team",
+  // "TEAM CODE": "teamCode",
   "COMMENTS": "commnets",
-  "CATEGORY": "category"
+  "CATEGORY": "category",
+  "PLAYER'S CRICHEROES ACCOUNT": "applicationLink",
+  "BU": "businessUnit",
+  "PREFFERED SET": "auctionSet",
 }
+
+
+exports.checkPublicAvailability = () => {
+  return async (req, res, next) => {
+    try {
+      const { auctionId } = req.body;
+
+      const auction = await AuctionModel.findOne({ _id: auctionId });
+      if (!auction) {
+        return res.status(400).json({ success: false, message: "Auction not found" });
+      }
+
+      if (!auction.auctionLiveEnabled) {
+        return res.status(401).json({ success: false, message: "Please Contact auction organizer to enable public live link" });
+      }
+
+      next();
+    } catch (error) {
+      console.error(error);
+      if (error.name == "TokenExpiredError") {
+        return res.clearCookie("token").clearCookie("auction_token").status(401).json({ success: false, message: error.message });
+      } else {
+        return res.status(500).json({ success: false, message: "Internal server error" });
+      }
+    }
+  };
+};
 
 exports.auctionLogin = async function (req, res) {
   try {
     const { name, organizer, password } = req.body;
-    console.log("started");
-    const auction = await AuctionModel.findOne({ name: name, organizer: organizer, password: password });
+    let auction = await AuctionModel.findOne({ name: name, organizer: organizer, password: password });
     if (!auction) {
       return res
         .status(400)
@@ -58,10 +86,11 @@ exports.auctionLogin = async function (req, res) {
       maxAge: 3600000000000,
     });
     auction.password = undefined;
+
     res
       .status(200)
       .json({
-        message: "Successfully Logged Inn.",
+        message: "Successfully logged in to Auction - " + name,
         success: true,
         auction: auction,
       });
@@ -80,12 +109,12 @@ exports.auctionLogin = async function (req, res) {
 
 exports.auctionDataImports = async function (req, res) {
   try {
-    const { tabsData, auction } = req.body;
+    const { playerData, auction } = req.body;
 
-    if (typeof tabsData != "object" || tabsData.length < 1) {
+    if (typeof playerData.main != "object" || playerData.main.length < 1) {
       return res.status(200).json({
         success: false,
-        message: "Invalid tabsData found",
+        message: "Invalid player data",
       });
     } else if (!auction || !auction._id) {
       return res.status(200).json({
@@ -94,86 +123,29 @@ exports.auctionDataImports = async function (req, res) {
       });
     }
 
-    //creating team;
-    var teams = [];
     try {
-      var teamsData = tabsData[0].tabData; // 0 must be team list
-      for (var i = 0; i < teamsData.length; i++) {
-        var team = await _createTeam(teamsData[i]["TEAM NAME"], auction);
-        if (team) {
-          teams.push(team);
+
+      for (let j = 0; j < playerData.main.length; j++) {
+        let player = playerData.main[j];
+        if (j % 10 == 0) {
+          console.info("Importing players..., current staus " + j + " ++");
+        }
+
+        let existing_player = await _lookUpPlayer(player["PLAYER No."], auction);
+        if (!existing_player) {
+          let playerPrefferedSet = await _createSet(player["PREFFERED SET"], auction, false);
+          let newPlayer = await _createPlayer(player, auction, playerPrefferedSet)
         } else {
-          throw new Error("team create fails");
+          console.log("player already exist, not updating the player: " + player["PLAYER NAME"]);
         }
       }
     } catch (e) {
       console.log(e);
       return res.status(200).json({
         success: false,
-        message: "Team create error: " + e.toString(),
+        message: "Player import error: " + e.toString(),
       });
     }
-
-    for (var i = 1; i < (tabsData.length - 1); i++) {
-      console.log("processing for set ", i, tabsData[i].tabData.length);
-      try {
-        var tabData = tabsData[i];
-        var newSet = await _createSet(tabData.tab, auction, false);
-        var playerList = tabData.tabData;
-
-        for (var j = 0; j < playerList.length; j++) {
-          var playerData = playerList[j];
-          var existing_player = await _lookUpPlayer(playerData["PLAYER No."], auction);
-
-          if (!existing_player) {
-            var newPlayer = await _createPlayer(playerData, auction, newSet)
-          } else {
-            console.log("player already exist, so not create");
-          }
-        }
-      } catch (e) {
-        console.log(e);
-        return res.status(200).json({
-          success: false,
-          message: "Set create for " + i + ", error: " + e.toString(),
-        });
-      }
-    }
-
-    // for marquee set
-    var tabData = tabsData[tabsData.length - 1];
-    var newSet = await _createSet(tabData.tab, auction, true);
-    // if (!newSet) {
-    //   throw new Error("Set createion faild")
-    // }
-    var playerList = tabData.tabData;
-
-    for (var i = 0; i < playerList.length; i++) {
-      try {
-        var playerData = playerList[i];
-        var existing_player = await _lookUpPlayer(playerData["PLAYER No."], auction);
-        if (existing_player) {
-          var player = await AuctionPlayerModel.updateOne({ playerNumber: existing_player.playerNumber, auction: auction._id }, {
-            marquee: true, auctionSet: newSet._id
-
-          }, { upsert: false });
-          console.log("markiee player updated");
-        } else {
-          console.log("markiee player not exits");
-        }
-      } catch (e) {
-        console.log(e);
-        return res.status(200).json({
-          success: false,
-          message: "Marquee set create for " + i + ", error: " + e.toString(),
-        });
-      }
-    }// end marquee
-
-    teams.forEach(async (team) => {
-      console.log("_updateRemainingBudget", team._id);
-      await _updateRemainingBudget(team._id);
-    })
 
     res.status(200).json({
       success: true,
@@ -189,13 +161,124 @@ exports.auctionDataImports = async function (req, res) {
   }
 };
 
+// exports.auctionDataImports = async function (req, res) {
+//   try {
+//     const { tabsData, auction } = req.body;
+
+//     if (typeof tabsData != "object" || tabsData.length < 1) {
+//       return res.status(200).json({
+//         success: false,
+//         message: "Invalid tabsData found",
+//       });
+//     } else if (!auction || !auction._id) {
+//       return res.status(200).json({
+//         success: false,
+//         message: "Invalid Auction ID",
+//       });
+//     }
+
+//     //creating team;
+//     let teams = [];
+//     try {
+//       let teamsData = tabsData[0].tabData; // 0 must be team list
+//       for (let i = 0; i < teamsData.length; i++) {
+//         let team = await _createTeam(teamsData[i]["TEAM NAME"], auction);
+//         if (team) {
+//           teams.push(team);
+//         } else {
+//           throw new Error("team create fails");
+//         }
+//       }
+//     } catch (e) {
+//       console.log(e);
+//       return res.status(200).json({
+//         success: false,
+//         message: "Team create error: " + e.toString(),
+//       });
+//     }
+
+//     for (let i = 1; i < (tabsData.length - 1); i++) {
+//       console.log("processing for set ", i, tabsData[i].tabData.length);
+//       try {
+//         let tabData = tabsData[i];
+//         let newSet = await _createSet(tabData.tab, auction, false);
+//         let playerList = tabData.tabData;
+
+//         for (let j = 0; j < playerList.length; j++) {
+//           let playerData = playerList[j];
+//           let existing_player = await _lookUpPlayer(playerData["PLAYER No."], auction);
+
+//           if (!existing_player) {
+//             let newPlayer = await _createPlayer(playerData, auction, newSet)
+//           } else {
+//             console.log("player already exist, so not create");
+//           }
+//         }
+//       } catch (e) {
+//         console.log(e);
+//         return res.status(200).json({
+//           success: false,
+//           message: "Set create for " + i + ", error: " + e.toString(),
+//         });
+//       }
+//     }
+
+//     // for marquee set
+//     let tabData = tabsData[tabsData.length - 1];
+//     let newSet = await _createSet(tabData.tab, auction, true);
+//     // if (!newSet) {
+//     //   throw new Error("Set createion faild")
+//     // }
+//     let playerList = tabData.tabData;
+
+//     for (let i = 0; i < playerList.length; i++) {
+//       try {
+//         let playerData = playerList[i];
+//         let existing_player = await _lookUpPlayer(playerData["PLAYER No."], auction);
+//         if (existing_player) {
+//           let player = await AuctionPlayerModel.updateOne({ playerNumber: existing_player.playerNumber, auction: auction._id }, {
+//             marquee: true, auctionSet: newSet._id
+
+//           }, { upsert: false });
+//           console.log("markiee player updated");
+//         } else {
+//           console.log("markiee player not exits");
+//         }
+//       } catch (e) {
+//         console.log(e);
+//         return res.status(200).json({
+//           success: false,
+//           message: "Marquee set create for " + i + ", error: " + e.toString(),
+//         });
+//       }
+//     }// end marquee
+
+//     teams.forEach(async (team) => {
+//       console.log("_updateRemainingBudget", team._id);
+//       await _updateRemainingBudget(team._id);
+//     })
+
+//     res.status(200).json({
+//       success: true,
+//       message: "Auction data imported",
+//     });
+
+//   } catch (e) {
+//     console.log(e);
+//     res.status(500).json({
+//       success: false,
+//       message: "internal server error : " + e,
+//     });
+//   }
+// };
+
 
 async function _createTeam(teamName, auction) {
-  var team = await AuctionTeamModel.findOne({ name: teamName, auction: auction._id });
+  let team = await AuctionTeamModel.findOne({ name: teamName, auction: auction._id });
   if (team) {
     return team;
   } else {
-    var newAuctionTeam = new AuctionTeamModel({
+    let newAuctionTeam = new AuctionTeamModel({
       name: teamName,
       auction: auction._id,
       budget: auction.budgetPerTeam,
@@ -205,100 +288,96 @@ async function _createTeam(teamName, auction) {
     return newAuctionTeam;
   }
 }
+
 async function _createSet(setName, auction, isMarquee) {
-  var set = await AuctionSetModel.findOne({ name: setName, auction: auction._id });
+  let set = await AuctionSetModel.findOne({ name: setName, auction: auction._id });
   if (set) {
     return set;
   } else {
-    var obj = {
+    let obj = {
       name: setName,
       auction: auction._id,
       state: "idle"
     }
-    if (isMarquee) {
-      obj.state = "running";
-    }
-    var newAuctionSet = new AuctionSetModel(obj);
+    // if (isMarquee) {
+    //   obj.state = "running";
+    // }
+    let newAuctionSet = new AuctionSetModel(obj);
     newAuctionSet = await newAuctionSet.save();
     return newAuctionSet;
   }
 }
+
 async function _createPlayer(data, auction, set) {
-  var existing_player = await AuctionPlayerModel.findOne({ playerNumber: data["PLAYER No."], auction: auction._id });
+  let existing_player = await AuctionPlayerModel.findOne({ playerNumber: data["PLAYER No."], auction: auction._id });
   if (existing_player) {
     return existing_player;
   } else {
-    var newData = {};
+    let newData = {};
     Object.keys(data).forEach((key) => {
       newData[playerDataMapping[key]] = data[key];
     });
     newData.auctionSet = set._id;
-    // newData.auctionSet = _getSetId(setName, auction);
     newData.auction = auction._id;
     newData.marquee = false;
     try {
-
-
       if (newData.basePrice) {
         newData.basePrice = parseInt(newData.basePrice) * 100000;
       }
-      if (newData.soldPrice) {
-        newData.soldPrice = parseInt(newData.soldPrice) * 100000;
-      }
+      // if (newData.soldPrice) {
+      //   newData.soldPrice = parseInt(newData.soldPrice) * 100000;
+      // }
 
     } catch (e) {
 
     }
-    if (newData.team != "#N/A" && newData.soldPrice) {
-      newData.team = await _getTeamId(newData.team, auction);
-      newData.auctionStatus = "sold"
-      newData.bidding = [{ team: newData.team, price: newData.soldPrice }];
-    }
-    if (newData.team == "#N/A") {
-      newData.team = null;
-    }
+    // if (newData.team != "#N/A" && newData.soldPrice) {
+    //   newData.team = await _getTeamId(newData.team, auction);
+    //   newData.auctionStatus = "sold"
+    //   newData.bidding = [{ team: newData.team, price: newData.soldPrice }];
+    // }
+    // if (newData.team == "#N/A") {
+    //   newData.team = null;
+    // }
 
-    var newPlayer = new AuctionPlayerModel(newData)
+    let newPlayer = new AuctionPlayerModel(newData)
     newPlayer = await newPlayer.save();
     return newPlayer;
   }
 }
 
 async function _getTeamId(teamName, auction) {
-  var team = await AuctionTeamModel.findOne({ name: teamName, auction: auction._id });
+  let team = await AuctionTeamModel.findOne({ name: teamName, auction: auction._id });
   return team._id;
 }
 async function _getSetId(setName, auction) {
-  var set = await AuctionSetModel.findOne({ name: setName, auction: auction._id });
+  let set = await AuctionSetModel.findOne({ name: setName, auction: auction._id });
   return set._id;
 }
 
 
 async function _lookUpPlayer(playerNumber, auction) {
-  var player = await AuctionPlayerModel.findOne({ playerNumber: playerNumber, auction: auction._id });
+  let player = await AuctionPlayerModel.findOne({ playerNumber: playerNumber, auction: auction._id });
   return player;
 }
 
 
 exports.createNewAuction = async function (req, res) {
   try {
-    const { name, organizer, password, budgetPerTeam } = req.body;
-    var auction = await AuctionModel.findOne({ name: name });
+    const { name, organizer, password } = req.body;
+    let auction = await AuctionModel.findOne({ name: name });
     if (auction) {
       return res.status(200).json({
         success: false,
         message: "Auction with this name already present, please try with different name",
       });
     } else {
-      var newAuction = new AuctionModel({
+      let newAuction = new AuctionModel({
         name: name,
         organizer: organizer,
         password: password,
-        budgetPerTeam: budgetPerTeam
       })
       newAuction = await newAuction.save();
-
-
       res.status(200).json({
         success: true,
         message: "Auction is created ",
@@ -323,7 +402,16 @@ exports.updateNewAuction = async (req, res) => {
     }
 
     let updatedPlayer = await AuctionModel.updateOne({ _id: auction._id }, auction, { upsert: false });
-
+    if (updatedPlayer.matchedCount > 0 && auction.budgetPerTeam) {
+      let teams = await AuctionTeamModel.find({ auction: auction._id });
+      if (teams && teams.length > 0) {
+        for (let t of teams) {
+          let spent = t.budget - t.remainingBudget;
+          let rm = auction.budgetPerTeam - spent;
+          await AuctionTeamModel.updateOne({ _id: t._id }, { budget: auction.budgetPerTeam, remainingBudget: rm });
+        }
+      }
+    }
     return res.status(200).json({
       success: true,
       message: "Auction Updated",
@@ -352,8 +440,8 @@ exports.updateNewAuctionSet = async (req, res) => {
 
     if (sets && sets.length > 0) {
       let flag = true;
-      for (var k = 0; k < sets.length; k++) {
-        var s = sets[k];
+      for (let k = 0; k < sets.length; k++) {
+        let s = sets[k];
         console.log("set", s.name, s.state);
 
         if (sets[k].state != "completed" || sets[k].name == "unsold") {
@@ -364,8 +452,8 @@ exports.updateNewAuctionSet = async (req, res) => {
       }
       if (flag) {
         console.log("creating unsold set");
-        var unsoldSet = await _createSet("unsold", auction, false);
-        // var unsoldPlayers = AuctionPlayerModel.find({ auctionStatus: "unsold", auction: auction._id });
+        let unsoldSet = await _createSet("unsold", auction, false);
+        // let unsoldPlayers = AuctionPlayerModel.find({ auctionStatus: "unsold", auction: auction._id });
         await AuctionPlayerModel.updateMany({ auctionStatus: "unsold", auction: auction._id }, { auctionStatus: "idle", auctionSet: unsoldSet._id })
       }
     }
@@ -393,17 +481,19 @@ exports.createNewAuctionTeam = async (req, res) => {
         message: "auction id is required",
       });
     }
-    var team = await AuctionTeamModel.findOne({ name: name, auction: auction._id });
+    let team = await AuctionTeamModel.findOne({ name: name, auction: auction._id });
     if (team) {
       return res.status(200).json({
         success: false,
         message: "Team with this name already present in current auction, please try with different name",
       });
     } else {
-      var newAuctionTeam = new AuctionTeamModel({
+      let newAuctionTeam = new AuctionTeamModel({
         name: name,
         owner: owner,
         auction: auction._id,
+        budget: auction.budgetPerTeam,
+        remainingBudget: auction.budgetPerTeam
       })
       newAuctionTeam = await newAuctionTeam.save();
       res.status(200).json({
@@ -428,14 +518,14 @@ exports.removeNewAuctionTeam = async (req, res) => {
         message: "auction id is required",
       });
     }
-    var players = await AuctionPlayerModel.findOne({ team: team._id });
+    let players = await AuctionPlayerModel.findOne({ team: team._id });
     if (players) {
       return res.status(200).json({
         success: false,
         message: "Team has player assigned, please remove them first",
       });
     } else {
-      var t = await AuctionTeamModel.deleteOne({ _id: team._id });
+      let t = await AuctionTeamModel.deleteOne({ _id: team._id });
       return res.status(200).json({
         success: true,
         message: "Team removed",
@@ -460,24 +550,16 @@ exports.createNewAuctionSet = async (req, res) => {
         message: "auction id is required",
       });
     }
-    var set = await AuctionSetModel.findOne({ name: name, auction: auction._id });
+    let set = await AuctionSetModel.findOne({ name: name, auction: auction._id });
     if (set) {
       return res.status(200).json({
         success: false,
-        message: "Set with this name already present in current auction, please try with different name",
+        message: "Set with name '" + name + "' already present in current auction, please try with different name",
       });
     } else {
 
-      let highestOrderDoc = await AuctionSetModel
-        .findOne()                      // Find one document
-        .sort({ order: -1 })             // Sort by 'order' in descending order (highest first)
-        .exec();
-      if (!highestOrderDoc) {
-        highestOrderDoc = { order: 0 };
-      }
-      var newAuctionSet = new AuctionSetModel({
+      let newAuctionSet = new AuctionSetModel({
         name: name,
-        order: highestOrderDoc.order + 1,
         auction: auction._id,
       })
 
@@ -505,7 +587,7 @@ exports.removeNewAuctionSet = async (req, res) => {
         message: "Set id is required",
       });
     }
-    var existing_player_with_set = await AuctionPlayerModel.findOne({ auctionSet: set._id });
+    let existing_player_with_set = await AuctionPlayerModel.findOne({ auctionSet: set._id });
     if (existing_player_with_set) {
       return res.status(200).json({
         success: false,
@@ -544,7 +626,7 @@ exports.createNewAuctionPlayer = async (req, res) => {
     if (existing_auction) {
       players.forEach(async (player) => {
         try {
-          var newPlayer = new AuctionPlayerModel({
+          let newPlayer = new AuctionPlayerModel({
             auction: auction._id,
             ...player
           })
@@ -580,25 +662,25 @@ exports.updateNewAuctionPlayer = async (req, res) => {
         message: "Player is required",
       });
     }
-
-    for (var i = 0; i < players.length; i++) {
-      var player = players[i];
-
-
-      if (player.auctionSet == "sold") {
-        let oldPlayer = await AuctionPlayerModel.findOne({ _id: player._id });
-        if (oldPlayer.auctionSet != "sold") {
-          var x = await AuctionPlayerModel.findOne({ country_id: 10 }).sort('-soldNumber').exec();
-          player.soldNumber = parse(x.soldNumber)+1;
+    for (let i = 0; i < players.length; i++) {
+      let player = players[i];
+      try {
+        let updatedPlayer = await AuctionPlayerModel.updateOne({ _id: player._id }, { $set: player }, { upsert: false });
+        if (player.team) {
+          await _updateRemainingBudget(player.team);
+        }
+      } catch (error) {
+        console.error(error);
+        if (error.type === 'ValidationError') {
+          console.error('Validation Error:', error);
+          return res.status(400).json({ success: false, message: error.message });
+        } else {
+          res.status(500).json({
+            success: false,
+            message: "internal server error : " + e,
+          });
         }
       }
-
-
-      let updatedPlayer = await AuctionPlayerModel.updateOne({ _id: player._id }, player, { upsert: false });
-      if (player.team) {
-        await _updateRemainingBudget(player.team);
-      }
-
     }
 
 
@@ -617,14 +699,14 @@ exports.updateNewAuctionPlayer = async (req, res) => {
 
 async function _updateRemainingBudget(teamId) {
   console.log("_updateRemainingBudget", teamId);
-  var teamPlayers = await AuctionPlayerModel.find({ team: teamId });
-  var spentBudget = 0;
+  let teamPlayers = await AuctionPlayerModel.find({ team: teamId });
+  let spentBudget = 0;
   teamPlayers.forEach(element => {
     spentBudget += element.soldPrice;
   });
   const team = await AuctionTeamModel.findOne({ _id: teamId });
   if (team) {
-    var remainingBudget = team.budget - spentBudget;
+    let remainingBudget = team.budget - spentBudget;
     await AuctionTeamModel.updateOne({ _id: teamId }, { remainingBudget: remainingBudget }, { upsert: false });
     console.log("_updateRemainingBudget moddel", teamId);
   }
@@ -668,12 +750,12 @@ exports.getAuctionDetails = async (req, res) => {
         message: "auction id is required",
       });
     }
-    var auction = await AuctionModel.findOne({ _id: auctionId });
+    let auction = await AuctionModel.findOne({ _id: auctionId });
     if (auction) {
-      var teams = await AuctionTeamModel.find({ auction: auctionId });
-      var players = await AuctionPlayerModel.find({ auction: auctionId });
-      var sets = await AuctionSetModel.find({ auction: auctionId });
-
+      let teams = await AuctionTeamModel.find({ auction: auctionId });
+      let players = await AuctionPlayerModel.find({ auction: auctionId });
+      let sets = await AuctionSetModel.find({ auction: auctionId });
+      auction.password = undefined;
       return res.status(200).json({
         success: true,
         message: "Action details available",

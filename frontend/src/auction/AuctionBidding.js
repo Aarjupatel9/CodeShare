@@ -6,7 +6,7 @@ import * as xlsx from 'xlsx';
 import "./auction.css";
 import { undoIcons } from "../assets/svgs"
 import { io } from "socket.io-client";
-var SOCKET_ADDRESS = process.env.REACT_APP_SOCKET_ADDRESS;
+const SOCKET_ADDRESS = process.env.REACT_APP_SOCKET_ADDRESS;
 
 //auctionStatus : idle, bidding, sold, unsold
 const tabName = ["Marquee", "AR1", "AR2", "AR3", "BA1", "BA2", "BA3", "WK1", "WK2",]
@@ -23,7 +23,7 @@ export default function AuctionBidding(props) {
     const [currentSet, setCurrentSet] = useState({});
     const [auctionDetails, setAuctionDetails] = useState({});
     const [socket, setSocket] = useState(null);
-
+    const [isAPICallInProgress, setIsAPICallInProgress] = useState(null);
 
     const { auctionId } = useParams();
     const navigate = useNavigate();
@@ -39,6 +39,7 @@ export default function AuctionBidding(props) {
     }, [])
 
     const getAuctionData = () => {
+        setIsAPICallInProgress(true);
         AuctionService.getAuctionDetails({ auctionId: auctionId }).then((res) => {
             console.log("getAuctionData", res);
             if (res.auction) {
@@ -47,15 +48,15 @@ export default function AuctionBidding(props) {
             if (res.teams) {
                 setTeams(res.teams);
             } if (res.sets) {
-                var orderedSet = res.sets.sort((s1, s2) => { return s1.order - s2.order });
+                let orderedSet = res.sets.sort((s1, s2) => { return s1.order - s2.order });
                 setSets(orderedSet);
             }
             if (res.players && res.players.length > 0) {
                 setPlayers(res.players);
             }
             if (res.sets && res.players) {
-                var data = [];
-                var map = {};
+                let data = [];
+                let map = {};
                 res.players.forEach(element => {
                     if (!map[element.auctionSet]) {
                         map[element.auctionSet] = [];
@@ -65,12 +66,14 @@ export default function AuctionBidding(props) {
                 Object.keys(map).map((key) => {
                     data.push({ set: key, players: map[key] });
                 })
-                console.log("setSetPlayerMap", data);
                 setSetPlayerMap(data);
             }
             if (res.teams && res.players) {
-                var data = [];
-                var map = {};
+                let data = [];
+                let map = {};
+                res.teams && res.teams.forEach((t) => {
+                    map[t._id] = [];
+                })
                 res.players.forEach(element => {
                     if (!map[element.team]) {
                         map[element.team] = [];
@@ -79,7 +82,7 @@ export default function AuctionBidding(props) {
                 });
                 Object.keys(map).map((key) => {
                     if (key != "null") {
-                        var rb = map[key].reduce((total, p) => {
+                        let rb = map[key].reduce((total, p) => {
                             return total + parseInt(p.soldPrice);
                         }, 0);
                         rb = getTeamBudget(key, res.teams) - rb;
@@ -93,7 +96,9 @@ export default function AuctionBidding(props) {
             if (error == "TokenExpiredError") {
                 navigate("/auth/login")
             }
-            toast.error(error);
+            toast.error(error, { duration: 3000 });
+        }).finally(() => {
+            setIsAPICallInProgress(false);
         });
     }
 
@@ -109,7 +114,6 @@ export default function AuctionBidding(props) {
         setSocket(socket);
     }
     useEffect(() => {
-        console.log(setPlayerMap, sets)
         if (sets && sets.length > 0 && setPlayerMap && setPlayerMap.length > 0) {
             updateAuctionDetails();
         }
@@ -117,30 +121,30 @@ export default function AuctionBidding(props) {
 
     useEffect(() => {
         if (teamPlayerMap && teamPlayerMap.length > 0) {
-            var isAuctionOver = true;
-            for (var i = 0; i < teamPlayerMap.length; i++) {
-                var m = teamPlayerMap[i];
+            let isAuctionOver = true;
+            for (let i = 0; i < teamPlayerMap.length; i++) {
+                let m = teamPlayerMap[i];
                 if (m.players.length < 13) {
                     isAuctionOver = false;
                 }
             }
             if (isAuctionOver) {
-                toast.success("Auction is completed, no team can bid now, thank you!!")
+                toast.success("Auction is completed, no team can bid now, thank you!!", { duration: 3000 })
             } else {
-                console.log("auction is running");
+                console.debug("auction is running");
             }
         }
     }, [teamPlayerMap]);
 
     const getIdlePlayer = (set) => {
-        var mapping = setPlayerMap.find((m) => { return m.set == set._id });
+        let mapping = setPlayerMap.find((m) => { return m.set == set._id });
 
-        var playerArray = mapping ? mapping.players : undefined;
+        let playerArray = mapping ? mapping.players : undefined;
         if (!playerArray) { return; }
-        var biddingPlayers = playerArray.filter((p) => {
+        let biddingPlayers = playerArray.filter((p) => {
             return p.auctionStatus == "bidding"
         })
-        var idlePlayers = playerArray.filter((p) => {
+        let idlePlayers = playerArray.filter((p) => {
             return p.auctionStatus == "idle"
         })
 
@@ -152,25 +156,21 @@ export default function AuctionBidding(props) {
     }
 
     function checkSetComplete(runningSet, setPlayerMap) {
-        console.log("checkSetComplete", runningSet, setPlayerMap)
-        var mapping = setPlayerMap.find((m) => { return m.set == runningSet._id });
-        var players = mapping ? mapping.players : [];
-        var px = players.find((p) => { return (p.auctionStatus == "bidding" || p.auctionStatus == "idle") });
+        let mapping = setPlayerMap.find((m) => { return m.set == runningSet._id });
+        let players = mapping ? mapping.players : [];
+        let px = players.find((p) => { return (p.auctionStatus == "bidding" || p.auctionStatus == "idle") });
         return px ? false : true;
     }
 
     const updateAuctionDetails = () => {
-
-        console.log("updateAuctionDetails start");
-
         const runningSet = getRunningSet(sets);
-        console.log("updateAuctionDetails runningSet ", runningSet);
+        console.debug("updateAuctionDetails runningSet ", runningSet);
 
         if (runningSet) {
             setCurrentSet(runningSet);
 
-            var data = getIdlePlayer(runningSet);
-            var remainingPlayers;
+            let data = getIdlePlayer(runningSet);
+            let remainingPlayers;
             if (data && data.idlePlayers && data.idlePlayers.length > 0) {
                 remainingPlayers = data.idlePlayers.length;
             }
@@ -197,15 +197,17 @@ export default function AuctionBidding(props) {
         if (runningSet) {
 
             const isCompleted = checkSetComplete(runningSet, setPlayerMap);
-            console.log("updateAuctionDetails isCompleted ", isCompleted);
+            console.debug("updateAuctionDetails isCompleted ", isCompleted);
 
             if (isCompleted) {
+                setIsAPICallInProgress(true);
                 AuctionService.updateAuctionSet({ set: { _id: runningSet._id, state: "completed" }, auction: auction }).then((res) => {
-                    toast.success("Set is completed, please select next set for bidding");
+                    toast.success("Set is completed, please select next set for bidding", { duration: 3000 });
                 }).catch((err) => {
-                    toast.error(err);
-                    console.log(err);
+                    toast.error(err, { duration: 3000 });
+                    console.error(err);
                 }).finally(() => {
+                    setIsAPICallInProgress(false);
                     getAuctionData();
                 });
 
@@ -219,8 +221,8 @@ export default function AuctionBidding(props) {
             }
 
 
-            var setDetails = getIdlePlayer(runningSet);
-            if (setDetails.biddingPlayers && setDetails.biddingPlayers.length > 0) {
+            let setDetails = getIdlePlayer(runningSet);
+            if (setDetails && setDetails.biddingPlayers && setDetails.biddingPlayers.length > 0) {
                 setPlayer(setDetails.biddingPlayers[0]);
                 setAuctionDetails((old) => {
                     old = structuredClone(old);
@@ -239,45 +241,44 @@ export default function AuctionBidding(props) {
     }
 
     useEffect(() => {
-        console.log("player details changed ", player);
         if (socket) {
             socket.emit("newPlayerBiddingUpdate", player);
         }
     }, [player])
     useEffect(() => {
-        // console.log("auctionDetails.state  changed ",auctionDetails.state );
         // if (auctionDetails.state == "ended") {
-        //     toast.success("Bidding for all player is completed");
+        //     toast.success("Bidding for all player is completed", { duration: 3000 });
         // }
     }, [auctionDetails.state])
 
     const pickUpRandomPlayer = () => {
-        console.log("Idelpayer List " + JSON.stringify(auctionDetails));
-        var playerArray = setPlayerMap.find((m) => { return m.set == auctionDetails.currentSet._id }).players;
+        console.debug("Idel payers list ", auctionDetails);
+        let playerArray = setPlayerMap.find((m) => { return m.set == auctionDetails.currentSet._id }).players;
         const idlePlayer = playerArray.filter((p) => {
             if (p.auctionStatus == "idle") {
                 return p;
             }
         })
         if (idlePlayer.length == 0) {
-            toast.error("idlePlayer undefined bug in pickup randome player");
+            toast.error("idlePlayer undefined bug in pickup randome player", { duration: 3000 });
             return;
         }
-        console.log("idlePlayer", idlePlayer)
-        var randomPlayer = idlePlayer[getRandomNumber(0, idlePlayer.length - 1)];
-        console.log("randomPlayer", randomPlayer);
+        console.debug("idlePlayer", idlePlayer)
+        let randomPlayer = idlePlayer[getRandomNumber(0, idlePlayer.length - 1)];
+        console.debug("randomPlayer", randomPlayer);
+        setIsAPICallInProgress(true);
         AuctionService.updateAuctionPlayer({ players: [{ _id: randomPlayer._id, auctionStatus: "bidding" }] }).then((res) => {
-            toast.success("start bidding for player " + randomPlayer.name + " at base price " + randomPlayer.basePrice)
+            toast.success("Start bidding for player " + randomPlayer.name + " at base price " + randomPlayer.basePrice, { duration: 3000 })
         }).catch((err) => {
             toast.error(err);
-            console.log(err);
+            console.error(err);
         }).finally(() => {
+            setIsAPICallInProgress(false);
             getAuctionData();
         });
 
     }
     function getRandomNumber(min, max) {
-        console.log(min, max)
         return Math.floor(Math.random() * (max - min + 1) + min);
     }
     function getNextPrice(lastPrice) {
@@ -293,10 +294,9 @@ export default function AuctionBidding(props) {
         }
     }
     function canTeamBid(teamId) {
-        console.log("teamPlayerMap", teamPlayerMap);
-        for (var i = 0; i < teamPlayerMap.length; i++) {
-            var m = teamPlayerMap[i];
-            if (m.team == teamId && m.players.length < 13) {
+        for (let i = 0; i < teamPlayerMap.length; i++) {
+            let m = teamPlayerMap[i];
+            if (m.team == teamId && m.players.length < auction.maxTeamMember) {
                 return true;
             }
         }
@@ -304,20 +304,19 @@ export default function AuctionBidding(props) {
     }
 
     const handleTeamClick = (team) => {
-        console.log(team);
         if (!canTeamBid(team._id)) {
-            // toast.error("Team have maximum players");
+            // toast.error("Team have maximum players", { duration: 3000 });
             return;
         }
         if (player && Object.keys(player).length > 0 && player.auctionStatus == "bidding") {
 
             const newBiddingState = structuredClone(player.bidding);
             if (newBiddingState.length > 0 && newBiddingState[newBiddingState.length - 1].team == team._id) {
-                toast.error("Can not bid repeatativelly");
+                toast.error("Can not bid repeatativelly", { duration: 2000 });
                 return;
             }
 
-            var nextBid;
+            let nextBid;
             if (newBiddingState.length > 0) {
                 const lastBid = newBiddingState[newBiddingState.length - 1].price;
                 nextBid = getNextPrice(lastBid)
@@ -325,7 +324,7 @@ export default function AuctionBidding(props) {
                 nextBid = player.basePrice;
             }
             if (nextBid > team.remainingBudget) {
-                toast.error("Not enough purse to bid the player");
+                toast.error("Not enough purse to bid the player", { duration: 3000 });
                 return;
             }
 
@@ -337,18 +336,21 @@ export default function AuctionBidding(props) {
             })
 
             newBiddingState.sort((b1, b2) => { return b1.price - b2.price });
+            setIsAPICallInProgress(true);
             AuctionService.updateAuctionPlayer({ players: [{ _id: player._id, bidding: newBiddingState }] }).then((res) => {
-                toast.success("Current bid at " + nextBid + " of team " + team.name);
+                let toastId = toast.success("Current bid at " + nextBid + " of team " + team.name, { duration: 3000 });
+                console.log("toastId", toastId)
             }).catch((err) => {
-                toast.error(err);
+                toast.error(err.toString(), { duration: 3000 });
                 console.error(err);
             }).finally(() => {
+                setIsAPICallInProgress(false);
                 // getAuctionData();
             });
         }
     }
     const getTeamName = (teamId) => {
-        var team = teams.find((t) => { return t._id == teamId });
+        let team = teams.find((t) => { return t._id == teamId });
         if (team) {
             return team.name;
         } else {
@@ -356,7 +358,7 @@ export default function AuctionBidding(props) {
         }
     }
     const getTeamBudget = (teamId, teams) => {
-        var team = teams.find((t) => { return t._id == teamId });
+        let team = teams.find((t) => { return t._id == teamId });
         if (team) {
             return parseInt(team.budget);
         } else {
@@ -364,8 +366,8 @@ export default function AuctionBidding(props) {
         }
     }
     const getTeamPlayerCount = (team) => {
-        for (var i = 0; i < teamPlayerMap.length; i++) {
-            var m = teamPlayerMap[i];
+        for (let i = 0; i < teamPlayerMap.length; i++) {
+            let m = teamPlayerMap[i];
             if (m.team == team._id) {
                 return m.players.length;
             }
@@ -378,7 +380,7 @@ export default function AuctionBidding(props) {
 
             const newBiddingState = structuredClone(player.bidding);
             if (newBiddingState.length == 0) {
-                toast.error("Can not undo for unbidded player");
+                toast.error("Can not undo for unbidded player", { duration: 3000 });
                 return;
             }
 
@@ -391,12 +393,14 @@ export default function AuctionBidding(props) {
             })
 
             newBiddingState.sort((b1, b2) => { return b1.price - b2.price });
+            setIsAPICallInProgress(true);
             AuctionService.updateAuctionPlayer({ players: [{ _id: player._id, bidding: newBiddingState }] }).then((res) => {
-                toast.success("Undo last bid from team " + getTeamName(popedBid.team));
+                toast.success("Undo last bid from team " + getTeamName(popedBid.team), { duration: 3000 });
             }).catch((err) => {
-                toast.error(err);
-                console.log(err);
+                toast.error(err, { duration: 3000 });
+                console.error(err);
             }).finally(() => {
+                setIsAPICallInProgress(false);
                 getAuctionData();
             });
         }
@@ -404,9 +408,8 @@ export default function AuctionBidding(props) {
 
     const getBiddingView = () => {
         if (player && Object.keys(player).length > 0 && player.bidding.length > 0) {
-            var x = structuredClone(player.bidding);
+            let x = structuredClone(player.bidding);
             x.reverse();
-            console.log("x", player.bidding, x);
             return x.map((b, index) => {
                 return (
                     <div className={`${index == 0 ? "bg-green-400" : "bg-slate-300"} flex flex-row justify-center    rounded p-2 `}>
@@ -422,7 +425,7 @@ export default function AuctionBidding(props) {
         }
     }
     const getProfilePicture = (player) => {
-        var name = player.name;
+        let name = player.name;
         name = name.split(" ");
         let sn = name[0][0];
         if (name[1]) {
@@ -485,12 +488,11 @@ export default function AuctionBidding(props) {
                     <button
                         onClick={() => {
                             if (confirmText.trim()) {
-                                console.log(`confirmText action ${confirmText}`);
                                 if (confirmText == "confirm") {
                                     handlePlayerSold();
                                     toast.dismiss(t.id);
                                 } else {
-                                    toast.error("please enter 'confirm' for continue")
+                                    toast.error("please enter 'confirm' for continue", { duration: 3000 })
                                 }
                             }
                         }}
@@ -500,36 +502,40 @@ export default function AuctionBidding(props) {
                     </button>
                 </div>
             </div>
-        ), { duration: 4000000, });
+        ), { duration: 60000 });
     }
 
     const handlePlayerSold = () => {
         if (player) {
             if (player.bidding.length == 0) {
+                setIsAPICallInProgress(true);
                 AuctionService.updateAuctionPlayer({ players: [{ _id: player._id, auctionStatus: "unsold" }] }).then((res) => {
-                    toast.success("Player - " + player.name + " is unsold")
+                    toast.success("Player - " + player.name + " is unsold", { duration: 3000 })
                     socket.emit("playerSoldUpdate", "Player - " + player.name + " is unsold");
                     setPlayer({});
                 }).catch((err) => {
-                    toast.error(err);
-                    console.log(err);
+                    toast.error(err, { duration: 3000 });
+                    console.error(err);
                 }).finally(() => {
+                    setIsAPICallInProgress(false);
                     getAuctionData();
                 });
             } else {
-                var biddingState = structuredClone(player.bidding);
+                let biddingState = structuredClone(player.bidding);
                 biddingState.sort((b1, b2) => { return b1.price - b2.price });
-                var team = biddingState[biddingState.length - 1].team;
-                var soldPrice = biddingState[biddingState.length - 1].price;
+                let team = biddingState[biddingState.length - 1].team;
+                let soldPrice = biddingState[biddingState.length - 1].price;
+                setIsAPICallInProgress(true);
                 AuctionService.updateAuctionPlayer({ players: [{ _id: player._id, auctionStatus: "sold", bidding: biddingState, team: team, soldPrice: soldPrice }] }).then((res) => {
-                    let message = "Player - " + player.name + " is sold to team - " + getTeamName(biddingState[biddingState.length - 1].team) + " at price" + getTeamBudgetForView(biddingState[biddingState.length - 1].price);
-                    toast.success(message);
+                    let message = "" + player.name + " is sold to team - " + getTeamName(biddingState[biddingState.length - 1].team) + " at price " + getTeamBudgetForView(biddingState[biddingState.length - 1].price);
+                    toast.success(message, { duration: 5000 });
                     socket.emit("playerSoldUpdate", message);
                     setPlayer({});
                 }).catch((err) => {
-                    toast.error(err);
-                    console.log(err);
+                    toast.error(err, { duration: 3000 });
+                    console.error(err);
                 }).finally(() => {
+                    setIsAPICallInProgress(false);
                     getAuctionData();
                 });
             }
@@ -537,21 +543,23 @@ export default function AuctionBidding(props) {
     }
 
     const handleSelectNextSet = (set, t) => {
+        setIsAPICallInProgress(true);
         AuctionService.updateAuctionSet({ set: { _id: set._id, state: "running" }, auction: auction }).then((res) => {
-            toast.success("Please start bidding for set - " + set.name);
+            toast.success("Please start bidding for set - " + set.name, { duration: 3000 });
         }).catch((err) => {
-            toast.error(err);
-            console.log(err);
+            toast.error(err, { duration: 3000 });
+            console.error(err);
         }).finally(() => {
+            setIsAPICallInProgress(false);
             toast.dismiss(t.id);
             getAuctionData();
         });
     }
 
     const selectNextSet = () => {
-        var selectableSet = sets.filter((s) => { return s.state == "idle" });
+        let selectableSet = sets.filter((s) => { return s.state == "idle" });
         if (!selectableSet) {
-            console.log("selectableSet", selectableSet);
+            console.debug("selectableSet", selectableSet);
             return;
         }
         toast.custom((t) => (
@@ -566,11 +574,13 @@ export default function AuctionBidding(props) {
                     <label htmlFor="newTitle" className="text-gray-700">
                         Select Player set to continue
                     </label>
-                    {selectableSet && selectableSet.length > 0 && selectableSet.map((set, index) => {
-                        return (<div>
-                            <button className='button bg-slate-300 cursor-pointer rounded p-2' onClick={() => { handleSelectNextSet(set, t) }}> {set.name}</button>
-                        </div>)
-                    })}
+                    <div className='flex flex-row flex-wrap max-w-400px overflow-auto gap-3'>
+                        {selectableSet && selectableSet.length > 0 && selectableSet.map((set, index) => {
+                            return (<div className=''>
+                                <button className='button bg-slate-300 cursor-pointer rounded p-2' onClick={() => { handleSelectNextSet(set, t) }}> {set.name}</button>
+                            </div>)
+                        })}
+                    </div>
                 </div>
                 <div className="flex flex-row gap-4 justify-center w-full">
                     <button
@@ -583,7 +593,7 @@ export default function AuctionBidding(props) {
                     </button>
                 </div>
             </div>
-        ));
+        ), { duration: 60000 });
     }
 
     const getTeamBudgetForView = (number) => {
@@ -611,7 +621,7 @@ export default function AuctionBidding(props) {
                             </div>}
 
                             {player && Object.keys(player).length > 0 && <div onClick={() => { confirmPlayerSoldUnsold() }} className='button cursor-pointer rounded bg-gray-400 px-2 p-1'>
-                                {player.bidding.length == 0 ? "Un Sold" : "Make Sold"}
+                                {player.bidding.length == 0 ? "Un sold" : "Sold to " + getTeamName(player.bidding[player.bidding.length - 1].team)}
                             </div>}
                         </div>
                         <div className='flex-1 flex flex-row w-full justify-center items-center overflow-auto'>

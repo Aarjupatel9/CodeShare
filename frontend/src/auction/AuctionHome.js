@@ -13,25 +13,25 @@ export default function AuctionHome(props) {
   const saveAndStartAuction = (data) => {
     AuctionService.createAuction(data).then((res) => {
       if (res.result && res.result._id) {
-        toast.success("Auction is creaed, Please start ongoing auction")
-        // navigate("/t/auction/" + res.result._id);
+        toast.success("Auction is creaed, Please start ongoing auction.", { duration: 3000 })
       }
       console.log(res);
     }).catch((error) => {
-      toast.error(error)
+      toast.error(error, { duration: 3000 })
       console.log(error);
     });
   }
-  const joinOngoingAuctionHandler = (data) => {
+  const joinOngoingAuctionHandler = (data, toastId) => {
     AuctionService.getAuction(data).then((res) => {
-      toast.success(res.message);
+      toast.dismiss(toastId)
+      toast.success(res.message, { duration: 2000 });
       if (res.auction && res.auction._id) {
         localStorage.setItem("currentAuction", JSON.stringify(res.auction));
         navigate("/t/auction/" + res.auction._id);
       }
       console.log(res);
     }).catch((error) => {
-      toast.error(error)
+      toast.error(error, { duration: 3000 })
       console.log(error);
     });
   }
@@ -40,16 +40,16 @@ export default function AuctionHome(props) {
       return false;
     }
     if (!data.name || data.name.length < 2) {
-      toast.error("name must be atleast 3 charactor");
+      toast.error("name must be atleast 3 charactor", { duration: 3000 });
       return false;
     }
     if (!data.organizer || data.organizer.length < 2) {
-      toast.error("organizer name must be atleast 3 charactor");
+      toast.error("organizer name must be atleast 3 charactor", { duration: 3000 });
 
       return false;
     }
     if (!data.password || data.password.length < 2) {
-      toast.error("name must be atleast 3 charactor");
+      toast.error("name must be atleast 3 charactor", { duration: 3000 });
       return false;
     }
     return true;
@@ -67,11 +67,8 @@ export default function AuctionHome(props) {
             organizer: newOrganizer.trim(),
             password: newPassword.trim(),
           }
-          console.log(`Joining action ${JSON.stringify(data)}`);
-
           if (validateNewAuctionData(data)) {
-            joinOngoingAuctionHandler(data);
-            toast.dismiss(t.id);
+            joinOngoingAuctionHandler(data, t.id);
           }
         }
       }} className="z-[1000] bg-gray-100 border border-gray-200 p-6 rounded w-[350px] h-auto flex flex-col justify-center items-center space-y-4 shadow-md">
@@ -127,7 +124,6 @@ export default function AuctionHome(props) {
   const createNewAuction = () => {
     let newTitle = "";
     let newPassword = "";
-    let newBudget = "";
     let newOrganizer = "";
     toast.custom((t) => (
       <div className="z-[1000] bg-gray-100 border border-gray-200 p-6 rounded w-[350px] h-auto flex flex-col justify-center items-center space-y-4 shadow-md">
@@ -158,12 +154,6 @@ export default function AuctionHome(props) {
             placeholder="Auction password"
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             onChange={(e) => (newPassword = e.target.value)}
-          /> <input
-            id="newBudget"
-            type="number"
-            placeholder="Per Team total budget"
-            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            onChange={(e) => (newBudget = e.target.value)}
           />
         </div>
         <div className="flex flex-row gap-4 justify-center w-full">
@@ -181,11 +171,8 @@ export default function AuctionHome(props) {
                 var data = {
                   name: newTitle.trim(),
                   organizer: newOrganizer.trim(),
-                  password: newPassword.trim(),
-                  budgetPerTeam: newBudget.trim()
+                  password: newPassword.trim()
                 }
-                console.log(`Creating action ${JSON.stringify(data)}`);
-
                 if (validateNewAuctionData(data)) {
                   saveAndStartAuction(data);
                   toast.dismiss(t.id);
