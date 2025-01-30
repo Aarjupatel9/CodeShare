@@ -3,28 +3,29 @@ const userModel = require('../models/userModels');
 
 module.exports = () => {
     return async (req, res, next) => {
-        const token = req.cookies.token;
-        if (!req.cookies.token && req.body && req.body.isPublic) {
-            const data = {
-                _id: '',
-                username: 'username',
-                password: 'password',
-                email: 'email',
-                anonymous: true
-            };
-            const token = genJWTToken(data, 'register');
-            res.cookie('token', token, {
-                httpOnly: true,
-                secure: false,
-                maxAge: 3600000000000
-            });
-            return next();
-        }
-
-        if (!token) {
-            return res.status(401).json({ success: false, message: "TokenExpiredError", details: "Token not found" });
-        }
         try {
+            const token = req.cookies.token;
+            if (!req.cookies.token && req.body && req.body.isPublic) {
+                const data = {
+                    _id: '',
+                    username: 'username',
+                    password: 'password',
+                    email: 'email',
+                    anonymous: true
+                };
+                const token = genJWTToken(data, 'register');
+                res.cookie('token', token, {
+                    httpOnly: true,
+                    secure: false,
+                    maxAge: 3600000000000
+                });
+                return next();
+            }
+
+            if (!token) {
+                return res.status(401).json({ success: false, message: "TokenExpiredError", details: "Token not found" });
+            }
+
             const { _id, anonymous } = verifyJWTToken(token);
             if (_id == '' && anonymous) {
                 req.user = null;

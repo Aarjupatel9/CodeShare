@@ -2,9 +2,9 @@ import React, { useEffect, useContext, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import AuctionService from '../services/auctionService';
 import toast from 'react-hot-toast';
-import { Dropdown } from "flowbite-react";
-import { dropdownTheme } from "./auction.theams";
 import * as xlsx from 'xlsx';
+import { downArrowIcon } from '../assets/svgs';
+import { generatePDF } from './generatePdf';
 
 const requiredPlayerColumnForDisplay = ["playerNumber", "name", "team", "auctionStatus", "basePrice", "soldPrice", "auctionSet", "role", "bowlingHand", "bowlingType", "battingHand", "battingPossition", "battingType", "commnets"];
 const filterFields = ["auctionSet", "team", "auctionStatus"];
@@ -13,18 +13,26 @@ const requiredTeamColumnForDisplay = ["name", "budget", "remainingBudget"];
 
 export default function AuctionDetailsManage(props) {
     const [auction, setAuction] = useState({});
+    const [auctionEditable, setAuctionEditable] = useState({});
     const [teams, setTeams] = useState([]);
     const [players, setPlayers] = useState([]);
     const [sets, setSets] = useState([]);
+    const [view, setView] = useState({ player: false, team: false, set: false, auctionDetails: false, exportTeamList: false });
     const [playersCopy, setPlayersCopy] = useState([]);
-    const [view, setView] = useState({ player: false, team: false, set: false });
     const [setPlayerMap, setSetPlayerMap] = useState([]);
     const [teamPlayerMap, setTeamPlayerMap] = useState([]);
+    const [auctionData, setAuctionData] = useState({});
 
     const [playerListFilters, setPlayerListFilters] = useState({
         auctionStatus: [],
         team: [],
         auctionSet: []
+    });
+
+    const [selectedPlayerListFilters, setSelectedPlayerListFilters] = useState({
+        auctionStatus: null,
+        team: null,
+        auctionSet: null
     });
 
     const { auctionId } = useParams();
@@ -33,79 +41,13 @@ export default function AuctionDetailsManage(props) {
     useEffect(() => {
         getAuctionData();
     }, [])
+
     const getAuctionData = () => {
         AuctionService.getAuctionDetails({ auctionId: auctionId }).then((res) => {
-            console.log(res);
-            if (res.auction) {
-                setAuction(res.auction);
-            }
-            if (res.teams) {
-                setTeams(res.teams);
-            } if (res.sets) {
-                setSets(res.sets);
-            }
-            if (res.players && res.players.length > 0) {
-                var statusUniqueValues = new Set();
-
-                const updatedPlayers = res.players.map(element => {
-                    statusUniqueValues.add(element.auctionStatus);
-                    element.isSelected = false;
-                    return element;
-                });
-                const auctionStatus = [];
-                statusUniqueValues.forEach((t) => {
-                    auctionStatus.push(t);
-                });
-                const team = res.teams.map((t) => t.name);
-                const auctionSet = res.sets.map((t) => t.name);
-
-                setPlayerListFilters({
-                    auctionStatus: auctionStatus ? auctionStatus : [],
-                    auctionSet: auctionSet ? auctionSet : [],
-                    team: team ? team : []
-                })
-
-                updatedPlayers.sort((p1, p2) => p1.playerNumber - p2.playerNumber);
-                setPlayers(updatedPlayers);
-                setPlayersCopy(updatedPlayers);
-            }
-            if (res.sets && res.players) {
-                var data = [];
-                var map = {};
-                res.players.forEach(element => {
-                    if (!map[element.auctionSet]) {
-                        map[element.auctionSet] = [];
-                    }
-                    map[element.auctionSet].push(element);
-                });
-                Object.keys(map).map((key) => {
-                    data.push({ set: key, players: map[key] });
-                })
-                console.log("setSetPlayerMap", data);
-                setSetPlayerMap(data);
-            }
-            if (res.teams && res.players) {
-                var data = [];
-                var map = {};
-                res.players.forEach(element => {
-                    if (!map[element.team]) {
-                        map[element.team] = [];
-                    }
-                    map[element.team].push(element);
-                });
-                Object.keys(map).map((key) => {
-                    if (key != "null") {
-                        var rb = map[key].reduce((total, p) => {
-                            return total + parseInt(p.soldPrice);
-                        }, 0);
-                        rb = getTeamBudget(key, res.teams) - rb;
-                        data.push({ team: key, players: map[key], remainingBudget: rb });
-                    }
-                })
-                setTeamPlayerMap(data);
-            }
+            console.debug("getAuctionDetails", res);
+            setAuctionData(res);
         }).catch((error) => {
-            console.log(error);
+            console.error(error);
             if (error == "TokenExpiredError") {
                 navigate("/auth/login")
             }
@@ -114,9 +56,112 @@ export default function AuctionDetailsManage(props) {
     }
 
     useEffect(() => {
-        console.log("playerListFilters", playerListFilters);
-        console.log("playerListFilters", playerListFilters.auctionSet[0]);
+        // console.debug("playerListFilters", playerListFilters);
     }, [playerListFilters])
+
+    useEffect(() => {
+        var auctionStatus = selectedPlayerListFilters.auctionStatus
+        var team = selectedPlayerListFilters.team
+        var auctionSet = selectedPlayerListFilters.auctionSet
+
+        if (auctionData.players && auctionData.players.length > 0) {
+
+            playersCopy.sort((p1, p2) => p1.playerNumber - p2.playerNumber);
+            var filterdPlayers = playersCopy.filter((p) => {
+                var shouldDisplay = true;
+                if (auctionStatus) {
+                    shouldDisplay = (shouldDisplay && (p.auctionStatus == auctionStatus));
+                }
+                if (team) {
+                    shouldDisplay = (shouldDisplay && (p.team == team));
+                }
+                if (auctionSet) {
+                    shouldDisplay = (shouldDisplay && p.auctionSet == auctionSet);
+                }
+                return shouldDisplay;
+            });
+            setPlayers(filterdPlayers);
+        }
+
+
+    }, [selectedPlayerListFilters])
+
+    useEffect(() => {
+        if (auctionData.auction) {
+            setAuction(auctionData.auction);
+            setAuctionEditable(auctionData.auction);
+        }
+        if (auctionData.teams) {
+            setTeams(auctionData.teams);
+        } if (auctionData.sets) {
+            setSets(auctionData.sets);
+        }
+        if (auctionData.players && auctionData.players.length > 0) {
+            var statusUniqueValues = new Set();
+
+            const updatedPlayers = auctionData.players.map(element => {
+                statusUniqueValues.add(element.auctionStatus);
+                element.isSelected = false;
+                return element;
+            });
+            const auctionStatus = [];
+            statusUniqueValues.forEach((t) => {
+                auctionStatus.push({ value: t, displayValue: t });
+            });
+            const team = auctionData.teams.map((t) => { return { value: t._id, displayValue: t.name } });
+            const auctionSet = auctionData.sets.map((t) => { return { value: t._id, displayValue: t.name } });
+
+            setPlayerListFilters({
+                auctionStatus: auctionStatus ? auctionStatus : [],
+                auctionSet: auctionSet ? auctionSet : [],
+                team: team ? team : []
+            })
+
+            updatedPlayers.sort((p1, p2) => p1.playerNumber - p2.playerNumber);
+            setPlayers(updatedPlayers);
+            setPlayersCopy(updatedPlayers);
+        }
+        if (auctionData.sets && auctionData.players) {
+            var data = [];
+            var map = {};
+            auctionData.players.forEach(element => {
+                if (!map[element.auctionSet]) {
+                    map[element.auctionSet] = [];
+                }
+                map[element.auctionSet].push(element);
+            });
+            Object.keys(map).map((key) => {
+                data.push({ set: key, players: map[key] });
+            })
+            setSetPlayerMap(data);
+        }
+        if (auctionData.teams && auctionData.players) {
+            var data = [];
+            var map = {};
+            auctionData.teams && auctionData.teams.forEach((t) => {
+                map[t._id] = [];
+            })
+            auctionData.players.forEach(element => {
+                if (!map[element.team]) {
+                    map[element.team] = [];
+                }
+                map[element.team].push(element);
+            });
+            Object.keys(map).map((key) => {
+                if (key != "null") {
+                    map[key] = map[key].sort((a, b) => a.soldNumber - b.soldNumber);
+                    var rb = map[key].reduce((total, p) => {
+                        return total + parseInt(p.soldPrice);
+                    }, 0);
+
+                    rb = getTeamBudget(key, auctionData.teams) - rb;
+                    data.push({ team: key, players: map[key], remainingBudget: rb });
+                }
+            })
+            setTeamPlayerMap(data);
+        }
+    }, [auctionData])
+
     const getTeamBudget = (teamId, teams) => {
         var team = teams.find((t) => { return t._id == teamId });
         if (team) {
@@ -143,7 +188,6 @@ export default function AuctionDetailsManage(props) {
     }
 
     const handlePlayerSelectChange = (_id, isSelected) => {
-        console.log("called=" + _id + " :" + isSelected)
         if (_id == null) {
             setPlayers((old) => {
                 const updatedPlayers = old.map(element => {
@@ -169,14 +213,12 @@ export default function AuctionDetailsManage(props) {
         players.forEach(element => {
             data.push({ _id: element._id, auctionSet: set._id });
         });
-        console.log(`set assign `, data);
         if (data.length > 0) {
             AuctionService.updateAuctionPlayer({ players: data }).then((res) => {
-                toast.success(res.message);
-                console.log(res);
+                toast.success(res.message, { duration: 3000 });
             }).catch((error) => {
+                console.error(error);
                 toast.error(error)
-                console.log(error);
             }).finally(() => {
                 getAuctionData();
             })
@@ -186,9 +228,13 @@ export default function AuctionDetailsManage(props) {
         number = parseInt(number);
         return (number / 100000) + " L";
     }
+
     const handlePlayerSetAssign = () => {
         const selectedPlayers = players.filter(player => player.isSelected);
-        console.log(selectedPlayers);
+        if (selectedPlayers.length <= 0) {
+            toast.error("please select atleast 1 player", { duration: 2000 })
+            return;
+        }
         toast.custom((t) => (
             <div className="z-[1000] bg-gray-100 border border-gray-200 p-6 rounded w-[350px] h-auto flex flex-col justify-center items-center space-y-4 shadow-md">
                 <div
@@ -201,11 +247,13 @@ export default function AuctionDetailsManage(props) {
                     <label htmlFor="newTitle" className="text-gray-700">
                         Select Player set to assign
                     </label>
-                    {sets && sets.length > 0 && sets.map((set, index) => {
-                        return (<div>
-                            <button className='button bg-slate-300 rounded p-2' onClick={() => { handleSetAssign(selectedPlayers, set) }}> {set.name}</button>
-                        </div>)
-                    })}
+                    <div className='flex flex-row flex-wrap max-w-400px overflow-auto gap-3'>
+                        {sets && sets.length > 0 && sets.map((set, index) => {
+                            return (<div>
+                                <button className='button bg-slate-300 rounded p-2' onClick={() => { handleSetAssign(selectedPlayers, set) }}> {set.name}</button>
+                            </div>)
+                        })}
+                    </div>
                 </div>
                 <div className="flex flex-row gap-4 justify-center w-full">
                     <button
@@ -220,10 +268,94 @@ export default function AuctionDetailsManage(props) {
             </div>
         ));
     }
+    const handlePlayerTeamAssign = () => {
+        const selectedPlayers = players.filter(player => player.isSelected);
+        if (selectedPlayers.length != 1) {
+            toast.error("please select only 1 player", { duration: 2000 })
+            return;
+        }
+        let player = selectedPlayers[0];
+        let newSoldPrice = "";
+        let newTeam = "";
+        toast.custom((t) => (
+            <div className="z-[1000] bg-gray-100 border border-gray-200 p-6 rounded w-[350px] h-auto flex flex-col justify-center items-center space-y-4 shadow-md">
+                <div
+                    className={`text-gray-800 text-lg font-semibold ${t.visible ? "animate-enter" : "animate-leave"
+                        }`}
+                >
+                    Assign Team to {player.name}
+                </div>
+                <div className="flex flex-col items-start w-full space-y-2">
+                    <select
+                        id="newTeam"
+                        type="number"
+                        placeholder="Set team"
+                        defaultValue={"-"}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        onChange={(e) => (newTeam = e.target.value)}
+                    >
+                        <option value={"-"}>-</option>
+                        {teams.map((t, _index) => {
+                            return <option value={t._id}>{t.name}</option>
+                        })}
+                    </select>
+                    <input
+                        id="newSoldPrice"
+                        type="number"
+                        placeholder="Set sold price"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        onChange={(e) => (newSoldPrice = e.target.value)}
+                    />
+                </div>
+                <div className="flex flex-row gap-4 justify-center w-full">
+                    <button
+                        onClick={() => {
+                            toast.dismiss(t.id);
+                        }}
+                        className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault()
+                            if (newTeam == "-" || newTeam == "") {
+                                toast.error("please select team", { duration: 2000 });
+                                return;
+                            }
+                            if (newSoldPrice == "" || newSoldPrice < player.basePrice) {
+                                toast.error("please select sold price atlest of base price", { duration: 2000 });
+                                return;
+                            }
+                            var data = [{ _id: player._id, soldPrice: newSoldPrice, team: newTeam, bidding: [{ team: newTeam, price: newSoldPrice }], auctionStatus: "sold", }];
+                            if (data.length > 0) {
+                                AuctionService.updateAuctionPlayer({ players: data }).then((res) => {
+                                    toast.success("Player " + player.name + " is assign to for price " + newSoldPrice, { duration: 3000 })
+                                }).catch((e) => {
+                                    console.error(e);
+                                    toast.success("Error in assigning player " + player.name + " to team - " + e.toString(), { duration: 3000 })
+                                }).finally(() => {
+                                    toast.dismiss(t.id)
+                                    getAuctionData();
+                                })
+                            }
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+                    >
+                        Save
+                    </button>
+                </div>
+            </div >
+        ), { duration: 60000 });
+    }
+
 
     const handlePlayerPermenentRemove = () => {
         const selectedPlayers = players.filter(player => player.isSelected);
-        console.log(selectedPlayers);
+        if (selectedPlayers.length <= 0) {
+            toast.error("please select atleast 1 player", { duration: 2000 })
+            return;
+        }
         let confirmText = "";
         toast.custom((t) => (
             <div className="z-[1000] bg-gray-100 border border-gray-200 p-6 rounded w-[350px] h-auto flex flex-col justify-center items-center space-y-4 shadow-md">
@@ -257,14 +389,12 @@ export default function AuctionDetailsManage(props) {
                     <button
                         onClick={() => {
                             if (confirmText.trim()) {
-                                console.log(`Renamed page to: ${confirmText}`);
                                 if (confirmText == "remove") {
                                     AuctionService.removeAuctionPlayer({ players: selectedPlayers }).then((res) => {
-                                        toast.success(res.message);
-                                        console.log(res);
+                                        toast.success(res.message, { duration: 3000 });
                                     }).catch((error) => {
                                         toast.error(error)
-                                        console.log(error);
+                                        console.error(error);
                                     }).finally(() => {
                                         toast.dismiss(t.id);
                                         getAuctionData();
@@ -281,7 +411,6 @@ export default function AuctionDetailsManage(props) {
         ));
     }
     const handleTeamPermenentRemove = (team) => {
-        console.log(team);
         let confirmText = "";
         toast.custom((t) => (
             <div className="z-[1000] bg-gray-100 border border-gray-200 p-6 rounded w-[350px] h-auto flex flex-col justify-center items-center space-y-4 shadow-md">
@@ -315,72 +444,12 @@ export default function AuctionDetailsManage(props) {
                     <button
                         onClick={() => {
                             if (confirmText.trim()) {
-                                console.log(`Renamed page to: ${confirmText}`);
                                 if (confirmText == "remove") {
                                     AuctionService.removeAuctionTeam({ team: team }).then((res) => {
-                                        toast.success(res.message);
-                                        console.log(res);
+                                        toast.success(res.message, { duration: 2000 });
                                     }).catch((error) => {
-                                        toast.error(error)
-                                        console.log(error);
-                                    }).finally(() => {
-                                        toast.dismiss(t.id);
-                                        getAuctionData();
-                                    })
-                                }
-                            }
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-                    >
-                        Remove
-                    </button>
-                </div>
-            </div>
-        ));
-    }
-    const handleSetPermenentRemove = (set) => {
-        console.log(set);
-        let confirmText = "";
-        toast.custom((t) => (
-            <div className="z-[1000] bg-gray-100 border border-gray-200 p-6 rounded w-[350px] h-auto flex flex-col justify-center items-center space-y-4 shadow-md">
-                <div
-                    className={`text-gray-800 text-lg font-semibold ${t.visible ? "animate-enter" : "animate-leave"
-                        }`}
-                >
-                    Confirm Remove
-                </div>
-                <div className="flex flex-col items-start w-full space-y-2">
-                    <label htmlFor="newTitle" className="text-gray-700">
-                        Enter 'remove' to Remove
-                    </label>
-                    <input
-                        id="newTitle"
-                        type="text"
-                        placeholder=""
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        onChange={(e) => (confirmText = e.target.value)}
-                    />
-                </div>
-                <div className="flex flex-row gap-4 justify-center w-full">
-                    <button
-                        onClick={() => {
-                            toast.dismiss(t.id);
-                        }}
-                        className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={() => {
-                            if (confirmText.trim()) {
-                                console.log(`Renamed page to: ${confirmText}`);
-                                if (confirmText == "remove") {
-                                    AuctionService.removeAuctionSet({ set: set }).then((res) => {
-                                        toast.success(res.message);
-                                        console.log(res);
-                                    }).catch((error) => {
-                                        toast.error(error)
-                                        console.log(error);
+                                        toast.error(error, { duration: 2000 })
+                                        console.error(error);
                                     }).finally(() => {
                                         toast.dismiss(t.id);
                                         getAuctionData();
@@ -397,14 +466,68 @@ export default function AuctionDetailsManage(props) {
         ));
     }
 
+    const handleSetPermenentRemove = (set) => {
+        let confirmText = "";
+        toast.custom((t) => (
+            <div className="z-[1000] bg-gray-100 border border-gray-200 p-6 rounded w-[350px] h-auto flex flex-col justify-center items-center space-y-4 shadow-md">
+                <div
+                    className={`text-gray-800 text-lg font-semibold ${t.visible ? "animate-enter" : "animate-leave"
+                        }`}
+                >
+                    Confirm Remove
+                </div>
+                <div className="flex flex-col items-start w-full space-y-2">
+                    <label htmlFor="newTitle" className="text-gray-700">
+                        Enter 'remove' to Remove
+                    </label>
+                    <input
+                        id="newTitle"
+                        type="text"
+                        placeholder=""
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        onChange={(e) => (confirmText = e.target.value)}
+                    />
+                </div>
+                <div className="flex flex-row gap-4 justify-center w-full">
+                    <button
+                        onClick={() => {
+                            toast.dismiss(t.id);
+                        }}
+                        className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={() => {
+                            if (confirmText.trim()) {
+                                if (confirmText == "remove") {
+                                    AuctionService.removeAuctionSet({ set: set }).then((res) => {
+                                        toast.success(res.message, { duration: 3000 });
+                                    }).catch((error) => {
+                                        toast.error(error)
+                                        console.error(error);
+                                    }).finally(() => {
+                                        toast.dismiss(t.id);
+                                        getAuctionData();
+                                    })
+                                }
+                            }
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+                    >
+                        Remove
+                    </button>
+                </div>
+            </div>
+        ));
+    }
 
     const addNewSet = (data) => {
         AuctionService.createAuctionSet(data).then((res) => {
-            toast.success(res.message);
-            console.log(res);
+            toast.success(res.message, { duration: 3000 });
         }).catch((error) => {
             toast.error(error)
-            console.log(error);
+            console.error(error);
         }).finally(() => {
             getAuctionData();
         });
@@ -444,12 +567,10 @@ export default function AuctionDetailsManage(props) {
                                 name: newSetName.trim(),
                                 auction: auction
                             }
-                            console.log(`Creating set ${JSON.stringify(data)}`);
                             if (data.name && data.name.length > 2) {
                                 addNewSet(data);
                                 toast.dismiss(t.id);
                             }
-
                         }}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
                     >
@@ -503,12 +624,10 @@ export default function AuctionDetailsManage(props) {
                                 owner: newTeamOwner.trim(),
                                 auction: auction
                             }
-                            console.log(`Creating team ${JSON.stringify(data)}`);
                             if (validateNewTeamData(data)) {
                                 addNewTeam(data);
                                 toast.dismiss(t.id);
                             }
-
                         }}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
                     >
@@ -518,6 +637,7 @@ export default function AuctionDetailsManage(props) {
             </div>
         ));
     }
+
     const validateNewTeamData = (data) => {
         if (!data.name || data.name.length < 2) {
             toast.error("Name must be atleast 3 charactor");
@@ -532,23 +652,21 @@ export default function AuctionDetailsManage(props) {
 
     const addNewTeam = (data) => {
         AuctionService.createAuctionTeam(data).then((res) => {
-            toast.success(res.message);
-            console.log(res);
+            toast.success(res.message, { duration: 3000 });
         }).catch((error) => {
             toast.error(error)
-            console.log(error);
+            console.error(error);
         }).finally(() => {
             getAuctionData();
         });
     }
 
-    const handleAuctionDataSetup = (tabsData) => {
-        var importpromise = AuctionService.auctionDataImports({ tabsData: tabsData, auction: auction }).then((res) => {
-            // toast.success(res.message);
-            console.log(res);
+    const handleAuctionDataSetup = (playerData) => {
+        var importpromise = AuctionService.auctionDataImports({ playerData: playerData, auction: auction }).then((res) => {
+            toast.success(res.message, { duration: 3000 });
         }).catch((error) => {
             toast.error(error)
-            console.log(error);
+            console.error(error);
         }).finally(() => {
             getAuctionData();
         });
@@ -557,7 +675,6 @@ export default function AuctionDetailsManage(props) {
             success: "Details successfully added",
             error: "Something went wrong"
         })
-
     }
 
     const getMSExelForPlayerAdd = () => {
@@ -592,7 +709,7 @@ export default function AuctionDetailsManage(props) {
     }
 
     const readUploadFile = (e, t) => {
-        const tabName = ["TEAM_NAMES", "AR1", "AR2", "AR3", "BA1", "BA2", "BA3", "WK1", "WK2", "Marquee"];
+        const tabName = ["main"];
         toast.dismiss(t.id);
         e.preventDefault();
         if (e.target.files) {
@@ -600,27 +717,17 @@ export default function AuctionDetailsManage(props) {
             reader.onload = (e) => {
                 const data = e.target.result;
                 const workbook = xlsx.read(data, { type: "array" });
-                console.log("workbook", workbook)
+                console.debug("workbook", workbook)
                 // const sheetName = workbook.SheetNames[0];
                 // const worksheet = workbook.Sheets[sheetName];
-                var tabsData = [];
+                var tabsData = {};
                 tabName.forEach((tab) => {
                     var tabData = xlsx.utils.sheet_to_json(workbook.Sheets[tab]);
-                    // if (tab == "TEAM_NAMES") {
-                    //     tabData = ["Midnight Marauders",
-                    //         "Sunrise Sentinels",
-                    //         "Moonlight Mavericks",
-                    //         "Twilight Titans",
-                    //         "Noon Nomads",
-                    //         "Sunset Strikers",
-                    //         "Golden Hour Heroes",
-                    //         "Dawn Defenders"];
-                    // }
-                    tabsData.push({ tab: tab, tabData: tabData });
+                    tabsData[tab] = tabData;
                 })
                 if (tabsData) {
+                    console.debug("tabsData", tabsData);
                     handleAuctionDataSetup(tabsData);
-                    console.log("tabsData", tabsData);
                 }
             };
             reader.readAsArrayBuffer(e.target.files[0]);
@@ -641,14 +748,11 @@ export default function AuctionDetailsManage(props) {
                 battingType: p["BATTING TYPE"],
             }
         })
-        console.log("newPlayer");
-        console.log(newPlayer);
         AuctionService.createAuctionPlayer({ players: newPlayer, auction: auction }).then((res) => {
-            toast.success(res.message);
-            console.log(res);
+            toast.success(res.message, { duration: 3000 });
         }).catch((error) => {
-            toast.error(error)
-            console.log(error);
+            toast.error(error, { duration: 3000 })
+            console.error(error);
         }).finally(() => {
             getAuctionData();
         });
@@ -658,126 +762,137 @@ export default function AuctionDetailsManage(props) {
         return "Select filter";
     }
 
+    const handleSortOrderChange = (key) => {
+
+    }
+
+    const handlePlayerEditBasePrice = () => {
+        const selectedPlayers = players.filter(player => player.isSelected);
+        if (selectedPlayers.length != 1) {
+            toast.error("please select only 1 player", { duration: 2000 })
+            return;
+        }
+        let player = selectedPlayers[0];
+        let newBasePrice = "";
+        toast.custom((t) => (
+            <div className="z-[1000] bg-gray-100 border border-gray-200 p-6 rounded w-[350px] h-auto flex flex-col justify-center items-center space-y-4 shadow-md">
+                <div
+                    className={`text-gray-800 text-lg font-semibold ${t.visible ? "animate-enter" : "animate-leave"
+                        }`}
+                >
+                    Edit Base Price for {player.name}
+                </div>
+                <div className="flex flex-col items-start w-full space-y-2">
+                    <input
+                        id="newBasePrice"
+                        type="number"
+                        placeholder="Set Base Price"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        onChange={(e) => (newBasePrice = e.target.value)}
+                    />
+                </div>
+                <div className="flex flex-row gap-4 justify-center w-full">
+                    <button
+                        onClick={() => {
+                            toast.dismiss(t.id);
+                        }}
+                        className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={(e) => {
+                            e.preventDefault()
+                            var data = [{ _id: player._id, basePrice: newBasePrice }];
+                            if (data.length > 0) {
+                                AuctionService.updateAuctionPlayer({ players: data }).then((res) => {
+                                    toast.success("Base price of " + player.name + " is updated to " + newBasePrice, { duration: 3000 })
+                                }).catch((e) => {
+                                    console.error(e);
+                                    toast.success("Error in updating base price of " + player.name + ",  error: " + e.toString(), { duration: 3000 })
+                                }).finally(() => {
+                                    getAuctionData();
+                                })
+                            }
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+                    >
+                        Save
+                    </button>
+                </div>
+            </div >
+        ));
+    }
+    const exportFinalTeamList = (id) => {
+        generatePDF(id);
+    }
+
     return (
         <>
-            <div className='flex flex-col w-full h-full max-h-full p-1 text-sx gap-2'>
-                <div className='header flex flex-row  gap-2'>
-                    <div onClick={() => { navigate("/t/auction/" + auctionId) }} type="button" className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer" >Auction Home</div>
-                    <button onClick={() => { getMSExelForPlayerAdd() }} type="button" className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+            <div className='flex flex-col w-full max-w-full h-full overflow-x-hidden overflow-y-auto p-1 text-sx gap-2'>
+                <div className='header flex flex-row justify-center gap-2'>
+                    <button onClick={() => { navigate("/t/auction/" + auctionId) }} type="button" className=" px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer" >Auction Home</button>
+                    <button onClick={() => {
+                        setView((old) => {
+                            old = structuredClone(old);
+                            old.exportTeamList = !old.exportTeamList;
+                            return old;
+                        })
+                    }} type="button" className=" px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer" >Export Teams List</button>
+                    <button onClick={() => {
+                        setView((old) => {
+                            old = structuredClone(old);
+                            old.auctionDetails = !old.auctionDetails;
+                            return old;
+                        })
+                    }} type="button" className=" px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer" >
+                        Update Auction</button>
+                    <button onClick={() => { getMSExelForPlayerAdd() }} type="button" className=" px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
                         Import Auction Details
                     </button>
 
                     {/* <div className='button rounded p-1 px-2 bg-gray-300 cursor-pointer' onClick={() => { }}>Add Player</div> */}
                 </div>
-                <div className='flex flex-col gap-2'>
-
-                    {/* set */}
-                    <section className="bg-gray-100 dark:bg-gray-900 py-3 sm:py-2 w-full h-auto max-h-[100vh] overflow-auto">
-                        <div className="px-4 mx-auto max-w-screen-2xl lg:px-12 p-1">
-                            <div className="relative overflow-hidden bg-white shadow-md dark:bg-gray-800 sm:rounded-lg px-3">
-                                <div className="flex flex-col px-4 py-3 space-y-3 lg:flex-row lg:items-center lg:justify-between lg:space-y-0 lg:space-x-4">
-                                    <div className="flex items-center flex-1 space-x-4">
-                                        <h5>
-                                            <span className="text-gray-500">All Sets:</span>
-                                            <span className="dark:text-white">{sets.length}</span>
-                                        </h5>
-                                    </div>
-                                    <div className="flex flex-col flex-shrink-0 space-y-3 md:flex-row md:items-center lg:justify-end md:space-y-0 md:space-x-3">
-                                        {/* <button onClick={() => { createNewAuctionSet() }} type="button" className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                                                Add Set
-                                            </button> */}
-                                        <button onClick={() => {
-                                            setView((old) => {
-                                                old = structuredClone(old);
-                                                old.set = !old.set
-                                                return old;
-                                            })
-                                        }} type="button" className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                                            Hide / Show
-                                        </button>
-                                    </div>
-                                </div>
-                                {view.set && <div className="overflow-x-auto">
-                                    <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                                        <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                                            <tr>
-                                                {sets && sets.length > 0 && Object.keys(sets[0]).map(key => {
-                                                    if (requiredSetColumnForDisplay.includes(key)) {
-                                                        return (<th scope="col" className="px-4 py-3">{key}</th>)
-                                                    }
-                                                    return null;
-                                                    // return (<th scope="col" className="px-4 py-3">{key}</th>)
-                                                })}
-                                                {/* <th scope="col" className="p-4">
-                                                        <div className="flex items-center">
-                                                            <label htmlFor="checkbox-all" className="sr-only bg-red-700">Remove</label>
-                                                        </div>
-                                                    </th> */}
-                                            </tr>
-                                        </thead>
-                                        <tbody className='h-full overflow-auto'>
-                                            {sets && sets.length > 0 && sets.map((set, rowIndex) => {
-                                                return (
-                                                    <tr key={"sets-" + rowIndex} className="border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                                        {Object.keys(set).map((key, colIndex) => {
-                                                            if (requiredSetColumnForDisplay.includes(key)) {
-                                                                var value = set[key];
-                                                                return (
-                                                                    <td key={"player-" + rowIndex + "-" + colIndex} className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white">{value}</td>
-                                                                )
-                                                            }
-                                                            return null;
-                                                        })}
-                                                        {/* <td key={"sets-" + rowIndex + "remove"} className="w-4 px-4 py-3">
-                                                                <div onClick={() => { handleSetPermenentRemove(set) }} className="flex items-center cursor-pointer ">
-                                                                    Remove
-                                                                </div>
-                                                            </td> */}
-                                                    </tr>
-                                                )
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </div>}
-                            </div>
-                        </div>
-                    </section>
-
+                {!view.auctionDetails && !view.exportTeamList && <div className='flex-grow flex flex-col gap-2'>
 
                     {/* player */}
-                    <section className="bg-gray-100 dark:bg-gray-900 py-3 sm:py-2 w-full h-auto max-h-[100vh]  overflow-auto">
-                        <div className="px-4 mx-auto max-w-screen-2xl lg:px-12 p-1">
-                            <div className="relative overflow-hidden bg-white shadow-md dark:bg-gray-800 sm:rounded-lg px-3">
-                                <div className="flex flex-col px-4 py-3 space-y-3 lg:flex-row lg:items-center lg:justify-between lg:space-y-0 lg:space-x-4">
-                                    <div className="flex items-center flex-1 space-x-4">
-                                        <h5>
-                                            <span className="text-gray-500">All Players:</span>
-                                            <span className="dark:text-white">{players.length}</span>
-                                        </h5>
-                                    </div>
-                                    <div className="flex flex-col flex-shrink-0 space-y-3 md:flex-row md:items-center lg:justify-end md:space-y-0 md:space-x-3">
-                                        {/* <button onClick={() => { getMSExelForPlayerAdd() }} type="button" className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                                                Add Players
-                                            </button>  <button onClick={() => { handlePlayerSetAssign() }} type="button" className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                                                Add to Set
-                                            </button>
-                                            <button onClick={() => { handlePlayerPermenentRemove() }} type="button" className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                                                Remove from auction
-                                            </button> */}
-
-                                        <button onClick={() => {
-                                            setView((old) => {
-                                                old = structuredClone(old);
-                                                old.player = !old.player
-                                                return old;
-                                            })
-                                        }} type="button" className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                                            Hide / Show
-                                        </button>
-                                    </div>
+                    <section className="bg-gray-100 dark:bg-gray-900 py-3 sm:py-2 w-full h-auto max-h-[100vh] px-4 mx-auto max-w-[100vw] lg:px-12 p-1 overflow-auto">
+                        {/* <div className="px-4 mx-auto max-w-screen-2xl h-full lg:px-12 p-1"> */}
+                        <div className="flex flex-col h-full mx-h-full mx-w-full bg-white shadow-md dark:bg-gray-800 sm:rounded-lg px-3">
+                            <div className="flex flex-col px-4 py-3 space-y-3 lg:flex-row lg:items-center lg:justify-between lg:space-y-0 lg:space-x-4">
+                                <div className="flex items-center flex-1 space-x-4">
+                                    <h5>
+                                        <span className="text-gray-900">{`Players: ${playersCopy.length} || Selected players: ${players.length}`}</span>
+                                    </h5>
                                 </div>
-                                {view.player && players && players.length > 0 && <div className="overflow-x-auto">
-                                    <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                                <div className="flex flex-col flex-wrap space-x-2 space-y-2 md:flex-row md:items-center sm:justify-end md:space-y-0 md:space-x-3">
+                                    <button onClick={() => { handlePlayerTeamAssign() }} type="button" className="px-2 py-1 md:px-3 md:py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                                        Add to Team
+                                    </button>
+                                    <button onClick={() => { handlePlayerEditBasePrice() }} type="button" className=" px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                                        Edit Base Price
+                                    </button>
+                                    <button onClick={() => { handlePlayerSetAssign() }} type="button" className=" px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                                        Add to Set
+                                    </button>
+                                    <button onClick={() => { handlePlayerPermenentRemove() }} type="button" className=" px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                                        Remove from auction
+                                    </button>
+
+                                    <button onClick={() => {
+                                        setView((old) => {
+                                            old = structuredClone(old);
+                                            old.player = !old.player
+                                            return old;
+                                        })
+                                    }} type="button" className=" px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                                        Hide / Show
+                                    </button>
+                                </div>
+                            </div>
+                            {view.player && players &&
+                                <div className="relative w-full h-full overflow-auto">
+                                    <table className="w-full max-w-full text-sm text-left h-full overflow-auto text-gray-500 dark:text-gray-400">
                                         <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                                             <tr>
                                                 <th scope="col" className="px-4 py-1">
@@ -787,34 +902,49 @@ export default function AuctionDetailsManage(props) {
                                                     </div>
                                                 </th>
                                                 {requiredPlayerColumnForDisplay.map(key => {
-                                                    return (<th scope="col" className="px-4 py-1">{key}</th>)
+                                                    return (<th scope="col" className="px-4 py-1"><div className='flex flex-row items-center gap-2'><div>{key}</div><div className='cursor-pointer' onClick={() => { handleSortOrderChange(key) }}> {downArrowIcon}</div></div></th>)
                                                 })}
                                             </tr>
 
                                             {/* filters */}
                                             <tr className='pb-2' >
-                                                <th scope="col" className="px-4 py-1"></th>
+                                                <th scope="col" className="px-4 py-1">
+                                                    <div className="flex items-center bg-green-400 p-1 rounded cursor-pointer" onClick={() => {
+                                                        setSelectedPlayerListFilters({})
+                                                    }}> Clear
+                                                    </div>
+                                                </th>
                                                 {requiredPlayerColumnForDisplay.map(key => {
                                                     if (filterFields.includes(key)) {
                                                         return (<th scope="col" className="px-1 py-1 w-full">
-                                                            <div class="relative w-full min-w-12">
-                                                                {/* <span class="absolute inset-y-0 left-3 flex items-center cursor-pointer pointer-events-none">
+                                                            <div className="relative w-full min-w-12">
+                                                                {/* <span className="absolute inset-y-0 left-3 flex items-center cursor-pointer pointer-events-none">
                                                                     {getFilterFieldDisplayText(key)}
                                                                 </span> */}
-                                                                <select 
-                                                                    name="cars"
-                                                                    id="cars"
-                                                                    class=" min-w-48 border border-gray-300 rounded-md py-1 px-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+                                                                <select
+                                                                    onChange={(e) => {
+                                                                        var val = e.target.value;
+                                                                        val = val == "" ? null : val;
+                                                                        setSelectedPlayerListFilters((old) => {
+                                                                            old = structuredClone(old);
+                                                                            old[key] = val;
+                                                                            return old;
+                                                                        })
+                                                                    }}
+                                                                    name={key + "_filter_select_element"}
+                                                                    id={key + "_filter_select_element"}
+                                                                    defaultValue={""}
+                                                                    className=" min-w-48 border border-gray-300 rounded-md py-1 px-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                                                                 >
-                                                                    <option className='min-w-48 text-black' selected={true} value={"-"} >-</option>
+                                                                    <option className='min-w-48 text-black' value={""}>-</option>
 
-                                                                    {playerListFilters && playerListFilters[key] && playerListFilters[key].length > 0 && playerListFilters[key].map((opt) => {
+                                                                    {playerListFilters && playerListFilters[key] && playerListFilters[key].length > 0 && playerListFilters[key].map((opt, _index) => {
                                                                         return (
-                                                                            <option className='flex items-center min-w-48 text-black' value={opt} >
-                                                                                <input onChange={(e) => { }} checked={"true"} id="checkbox-table-search-1" type="checkbox" className="bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" />
-                                                                                <label htmlFor="checkbox-table-search-1" className="sr-only">{opt}</label>
-
-                                                                                </option>
+                                                                            <option className='flex items-center min-w-48 text-black' key={key + "_filter_select_element_option_" + _index} value={opt.value} >
+                                                                                {/* <input onChange={(e) => { }} checked={true} id="checkbox-table-search-1" type="checkbox" className="bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" /> */}
+                                                                                {/* <label htmlFor="checkbox-table-search-1" className="sr-only">{opt.displayValue}</label> */}
+                                                                                {opt.displayValue}
+                                                                            </option>
                                                                         )
                                                                     })}
                                                                 </select>
@@ -826,8 +956,8 @@ export default function AuctionDetailsManage(props) {
                                                 })}
                                             </tr>
                                         </thead>
-                                        <tbody className='h-full overflow-auto'>
-                                            {players.map((player, rowIndex) => {
+                                        <tbody className='overflow-auto'>
+                                            {players.length > 0 && players.map((player, rowIndex) => {
                                                 return (
                                                     <tr key={"player-" + rowIndex} className="border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
                                                         <td key={"player-" + rowIndex + "-checkbox"} className="w-4 px-4 py-3">
@@ -854,6 +984,79 @@ export default function AuctionDetailsManage(props) {
                                             })}
                                         </tbody>
                                     </table>
+                                </div>
+                            }
+                        </div>
+                        {/* </div> */}
+                    </section>
+
+                    {/* set */}
+                    <section className="bg-gray-100 dark:bg-gray-900 py-3 sm:py-2 w-full h-auto max-h-[100vh] overflow-auto">
+                        <div className="px-4 mx-auto max-w-screen-2xl h-full lg:px-12 p-1">
+                            <div className="relative overflow-hidden h-full bg-white shadow-md dark:bg-gray-800 sm:rounded-lg px-3">
+                                <div className="flex flex-col px-4 py-3 space-y-3 lg:flex-row lg:items-center lg:justify-between lg:space-y-0 lg:space-x-4">
+                                    <div className="flex items-center flex-1 space-x-4">
+                                        <h5>
+                                            <span className="text-gray-500">All Sets:</span>
+                                            <span className="dark:text-white">{sets.length}</span>
+                                        </h5>
+                                    </div>
+                                    <div className="flex flex-col flex-wrap space-x-2 space-y-2 md:flex-row md:items-center sm:justify-end md:space-y-0 md:space-x-3">
+                                        <button onClick={() => { createNewAuctionSet() }} type="button" className=" px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                                            Add Set
+                                        </button>
+                                        <button onClick={() => {
+                                            setView((old) => {
+                                                old = structuredClone(old);
+                                                old.set = !old.set
+                                                return old;
+                                            })
+                                        }} type="button" className=" px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                                            Hide / Show
+                                        </button>
+                                    </div>
+                                </div>
+                                {view.set && <div className="overflow-x-auto">
+                                    <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                                        <thead className=" text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                                            <tr>
+                                                {sets && sets.length > 0 && Object.keys(sets[0]).map(key => {
+                                                    if (requiredSetColumnForDisplay.includes(key)) {
+                                                        return (<th scope="col" className="px-4 py-3">{key}</th>)
+                                                    }
+                                                    return null;
+                                                    // return (<th scope="col" className="px-4 py-3">{key}</th>)
+                                                })}
+                                                <th scope="col" className="p-4">
+                                                    <div className="flex items-center">
+                                                        <label htmlFor="checkbox-all" className="sr-only bg-red-700">Remove</label>
+                                                    </div>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className='h-full overflow-auto'>
+                                            {sets && sets.length > 0 && sets.map((set, rowIndex) => {
+                                                return (
+                                                    <tr key={"sets-" + rowIndex} className="border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                                        {Object.keys(set).map((key, colIndex) => {
+                                                            if (requiredSetColumnForDisplay.includes(key)) {
+                                                                var value = set[key];
+                                                                return (
+                                                                    <td key={"player-" + rowIndex + "-" + colIndex} className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white">{value}</td>
+                                                                )
+                                                            }
+                                                            return null;
+                                                        })}
+                                                        <td key={"sets-" + rowIndex + "remove"} className="w-4 px-4 py-3">
+                                                            <div onClick={() => { handleSetPermenentRemove(set) }} className="flex items-center cursor-pointer bg-red-500 rounded px-2 p-1 text-black ">
+                                                                Remove
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                )
+                                            })}
+                                        </tbody>
+                                    </table>
                                 </div>}
                             </div>
                         </div>
@@ -861,8 +1064,8 @@ export default function AuctionDetailsManage(props) {
 
                     {/* team */}
                     <section className="bg-gray-100 dark:bg-gray-900 py-3 sm:py-2 w-full h-auto max-h-[100vh] overflow-auto">
-                        <div className="px-4 mx-auto max-w-screen-2xl lg:px-12 p-1">
-                            <div className="relative overflow-hidden bg-white shadow-md dark:bg-gray-800 sm:rounded-lg px-3">
+                        <div className="px-4 mx-auto max-w-screen-2xl lg:px-12 p-1 h-full">
+                            <div className="relative overflow-hidden bg-white h-full shadow-md dark:bg-gray-800 sm:rounded-lg px-3">
                                 <div className="flex flex-col px-4 py-3 space-y-3 lg:flex-row lg:items-center lg:justify-between lg:space-y-0 lg:space-x-4">
                                     <div className="flex items-center flex-1 space-x-4">
                                         <h5>
@@ -870,42 +1073,55 @@ export default function AuctionDetailsManage(props) {
                                             <span className="dark:text-white">{teams.length}</span>
                                         </h5>
                                     </div>
-                                    <div className="flex flex-col flex-shrink-0 space-y-3 md:flex-row md:items-center lg:justify-end md:space-y-0 md:space-x-3">
-                                        {/* <button onClick={() => { addTeam() }} type="button" className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
-                                                Add Team
-                                            </button> */}
+                                    <div className="flex flex-col flex-wrap space-x-2 space-y-2 md:flex-row md:items-center sm:justify-end md:space-y-0 md:space-x-3">
+                                        <button onClick={() => { addTeam() }} type="button" className=" px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                                            Add Team
+                                        </button>
                                         <button onClick={() => {
                                             setView((old) => {
                                                 old = structuredClone(old);
                                                 old.team = !old.team
                                                 return old;
                                             })
-                                        }} type="button" className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
+                                        }} type="button" className=" px-3 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700">
                                             Hide / Show
                                         </button>
                                     </div>
                                 </div>
                                 {view.team && <div className="overflow-x-auto">
                                     <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                                        <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                                        <thead className=" text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                                             <tr>
+                                                <th scope="col" className="p-4">
+                                                    <div className="flex items-center">
+                                                        <label htmlFor="checkbox-all" className="sr-only bg-red-700">Logo</label>
+                                                    </div>
+                                                </th>
                                                 {teams && teams.length > 0 && Object.keys(teams[0]).map(key => {
                                                     if (requiredTeamColumnForDisplay.includes(key)) {
                                                         return (<th scope="col" className="px-4 py-3">{key}</th>)
                                                     }
                                                     return null;
                                                 })}
-                                                {/* <th scope="col" className="p-4">
-                                                        <div className="flex items-center">
-                                                            <label htmlFor="checkbox-all" className="sr-only bg-red-700">Remove</label>
-                                                        </div>
-                                                    </th> */}
+                                                <th scope="col" className="p-4">
+                                                    <div className="flex items-center">
+                                                        <label htmlFor="checkbox-all" className="sr-only bg-red-700">Remove</label>
+                                                    </div>
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody className='h-full overflow-auto'>
                                             {teams && teams.length > 0 && teams.map((team, rowIndex) => {
                                                 return (
                                                     <tr key={"teams-" + rowIndex} className="border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                                        <td key={"teams-" + rowIndex + "-checkbox"} className="w-4 px-4 py-3">
+                                                            <div onClick={() => { }} className="flex items-center cursor-pointer rounded px-2 p-1 text-black ">
+                                                                <img src={team.logo?.url} onError={(e) => {
+                                                                    e.target.src = ""
+                                                                }}>
+                                                                </img>
+                                                            </div>
+                                                        </td>
                                                         {Object.keys(team).map((key, colIndex) => {
                                                             if (requiredTeamColumnForDisplay.includes(key)) {
                                                                 var value = team[key];
@@ -918,11 +1134,11 @@ export default function AuctionDetailsManage(props) {
                                                             }
                                                             return null;
                                                         })}
-                                                        {/* <td key={"teams-" + rowIndex + "-checkbox"} className="w-4 px-4 py-3">
-                                                                <div onClick={() => { handleTeamPermenentRemove(team) }} className="flex items-center cursor-pointer ">
-                                                                    Remove
-                                                                </div>
-                                                            </td> */}
+                                                        <td key={"teams-" + rowIndex + "-checkbox"} className="w-4 px-4 py-3">
+                                                            <div onClick={() => { handleTeamPermenentRemove(team) }} className="flex items-center cursor-pointer bg-red-500 rounded px-2 p-1 text-black ">
+                                                                Remove
+                                                            </div>
+                                                        </td>
                                                     </tr>
                                                 )
                                             })}
@@ -933,7 +1149,240 @@ export default function AuctionDetailsManage(props) {
                         </div>
                     </section>
 
-                </div>
+                </div>}
+                {view.auctionDetails && <div className='flex-grow flex flex-col gap-2'>
+                    <div
+                        className={`text-gray-800 text-lg font-semibold}`}
+                    >
+                        Edit Auction Details
+                    </div>
+                    <div className="flex flex-col justify-center items-center w-full space-x-2 space-y-2">
+                        <div className="flex flex-row justify-start items-center w-full space-x-2 space-y-2 px-2">
+                            <label htmlFor="budgetPerTeam">
+                                Budget per Team :
+                            </label>
+                            <input
+                                id="budgetPerTeam"
+                                type="number"
+                                placeholder="Set Team Budget"
+                                value={auctionEditable.budgetPerTeam}
+                                className="w-auto min-w-200px px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                onChange={(e) => {
+                                    setAuctionEditable((old) => {
+                                        old = structuredClone(old);
+                                        old.budgetPerTeam = e.target.value;
+                                        return old;
+                                    })
+                                }}
+                            />
+                        </div><div className="flex flex-row justify-start items-center w-full space-x-2 space-y-2 px-2">
+                            <label htmlFor="maxTeamMember">
+                                Maximum member per team :
+                            </label>
+                            <input
+                                id="maxTeamMember"
+                                type="number"
+                                placeholder="Maximum member per team"
+                                value={auctionEditable.maxTeamMember}
+                                className="w-auto min-w-200px px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                onChange={(e) => {
+                                    setAuctionEditable((old) => {
+                                        old = structuredClone(old);
+                                        old.maxTeamMember = e.target.value;
+                                        return old;
+                                    })
+                                }}
+                            />
+                        </div>
+                        <div className="flex flex-row justify-start items-center w-full space-x-2 space-y-2 px-2">
+                            <label htmlFor="minTeamMember">
+                                Minimum member per team :
+                            </label>
+                            <input
+                                id="minTeamMember"
+                                type="number"
+                                placeholder="Minimum member per team"
+                                value={auctionEditable.minTeamMember}
+                                className="w-auto min-w-200px px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                onChange={(e) => {
+                                    setAuctionEditable((old) => {
+                                        old = structuredClone(old);
+                                        old.minTeamMember = e.target.value;
+                                        return old;
+                                    })
+                                }}
+                            />
+                        </div>
+                        <div className="flex flex-row justify-start items-center w-full space-x-2 space-y-2 px-2">
+                            <label htmlFor="auctionLiveEnabled">
+                                Live Link Enabled :
+                            </label>
+                            <input
+                                id="auctionLiveEnabled"
+                                type="checkbox"
+                                checked={auctionEditable.auctionLiveEnabled}
+                                className="w-auto min-w-200px px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                onChange={(e) => {
+                                    setAuctionEditable((old) => {
+                                        old = structuredClone(old);
+                                        old.auctionLiveEnabled = e.target.checked;
+                                        return old;
+                                    })
+                                }}
+                            />
+                        </div>
+                    </div>
+                    <div className="flex flex-row gap-4 justify-center w-full">
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault()
+                                var payload = {
+                                    _id: auction._id,
+                                    maxTeamMember: auctionEditable.maxTeamMember,
+                                    minTeamMember: auctionEditable.minTeamMember,
+                                    budgetPerTeam: auctionEditable.budgetPerTeam,
+                                    auctionLiveEnabled: auctionEditable.auctionLiveEnabled
+                                }
+                                if (isNaN(payload.budgetPerTeam) || isNaN(payload.minTeamMember) || isNaN(payload.minTeamMember)) {
+                                    toast.error("Please enter valid numbers", { duration: 3000 });
+                                    return;
+                                }
+                                AuctionService.updateAuction({ auction: payload }).then((res) => {
+                                    toast.success("Auction details updated successfully", { duration: 3000 })
+                                }).catch((e) => {
+                                    console.error(e);
+                                    toast.success("Error while updating auction details - " + e.toString(), { duration: 3000 })
+                                }).finally(() => {
+                                    getAuctionData();
+                                })
+                            }
+                            }
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+                        >
+                            Update
+                        </button>
+                    </div>
+                </div>}
+                {view.exportTeamList &&
+                    <div className='flex flex-col gap-4 w-full'>
+                        <div className='flex flex-row justify-end px-4 gap-4'>
+                            <button onClick={() => { exportFinalTeamList("finalTeamListView") }} type="button" className=" px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer" >Export as pdf</button>
+                        </div>
+                        <div className='border rounded-lg border-gray-600'>
+                            <div id="finalTeamListView" className='flex flex-col gap-6 w-full'>
+                                <div className="text-gray-900 text-2xl font-bold">
+                                    {auction.name}
+                                </div>
+                                <div className="text-gray-900 text-xl font-bold">
+                                    Final Team List
+                                </div>
+
+                                <div className="flex flex-row flex-wrap  gap-4 justify-center w-full">
+                                    {teamPlayerMap && teamPlayerMap.map((map, _mapIndex) => {
+                                        return (<div className='flex min-w-[23%] flex-col shadow rounded bg-gray-100 justify-start items-center gap-4'>
+                                            <div className='flex flex-col justify-center font-bold text-lg'>
+                                                {getTeamName(map.team)}
+                                            </div>
+                                            <div className='flex flex-col justify-center'>
+                                                <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                                                    <thead className=" text-xs text-gray-700 uppercase dark:bg-gray-700 dark:text-gray-400">
+                                                        <tr className='border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'>
+                                                            <th className='px-4 py-2 text-md font-bold text-gray-900 whitespace-nowrap dark:text-white'>N0.</th>
+                                                            <th className='px-4 py-2 text-md font-bold text-gray-900 whitespace-nowrap dark:text-white'>Name</th>
+                                                            <th className='px-4 py-2 text-md font-bold text-gray-900 whitespace-nowrap dark:text-white'>Sold Price</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className='h-full'>
+                                                        {map.players && map.players.map((p, _playerIndex) => {
+                                                            return (
+                                                                <tr key={"row-" + _mapIndex + "-" + _playerIndex} className="border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                                                    <td className='px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white'>
+                                                                        {p.playerNumber}
+                                                                    </td><td className='px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white'>
+                                                                        {p.name}
+                                                                    </td>
+                                                                    <td className='px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white'>
+                                                                        {p.soldPrice}
+                                                                    </td>
+                                                                </tr>
+                                                            )
+                                                        })}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>)
+                                    })}
+                                    {teamPlayerMap && teamPlayerMap.map((map, _mapIndex) => {
+                                        return (<div className='flex min-w-[23%] flex-col shadow rounded bg-gray-100 justify-start items-center gap-4'>
+                                            <div className='flex flex-col justify-center font-bold text-lg'>
+                                                {getTeamName(map.team)}
+                                            </div>
+                                            <div className='flex flex-col justify-center'>
+                                                <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                                                    <thead className=" text-xs text-gray-700 uppercase dark:bg-gray-700 dark:text-gray-400">
+                                                        <tr className='border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'>
+                                                            <th className='px-4 py-2 text-md font-bold text-gray-900 whitespace-nowrap dark:text-white'>N0.</th>
+                                                            <th className='px-4 py-2 text-md font-bold text-gray-900 whitespace-nowrap dark:text-white'>Name</th>
+                                                            <th className='px-4 py-2 text-md font-bold text-gray-900 whitespace-nowrap dark:text-white'>Sold Price</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className='h-full'>
+                                                        {map.players && map.players.map((p, _playerIndex) => {
+                                                            return (
+                                                                <tr key={"row-" + _mapIndex + "-" + _playerIndex} className="border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                                                    <td className='px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white'>
+                                                                        {p.playerNumber}
+                                                                    </td><td className='px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white'>
+                                                                        {p.name}
+                                                                    </td>
+                                                                    <td className='px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white'>
+                                                                        {p.soldPrice}
+                                                                    </td>
+                                                                </tr>
+                                                            )
+                                                        })}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>)
+                                    })}{teamPlayerMap && teamPlayerMap.map((map, _mapIndex) => {
+                                        return (<div className='flex min-w-[23%] flex-col shadow rounded bg-gray-100 justify-start items-center gap-4'>
+                                            <div className='flex flex-col justify-center font-bold text-lg'>
+                                                {getTeamName(map.team)}
+                                            </div>
+                                            <div className='flex flex-col justify-center'>
+                                                <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                                                    <thead className=" text-xs text-gray-700 uppercase dark:bg-gray-700 dark:text-gray-400">
+                                                        <tr className='border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'>
+                                                            <th className='px-4 py-2 text-md font-bold text-gray-900 whitespace-nowrap dark:text-white'>N0.</th>
+                                                            <th className='px-4 py-2 text-md font-bold text-gray-900 whitespace-nowrap dark:text-white'>Name</th>
+                                                            <th className='px-4 py-2 text-md font-bold text-gray-900 whitespace-nowrap dark:text-white'>Sold Price</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className='h-full'>
+                                                        {map.players && map.players.map((p, _playerIndex) => {
+                                                            return (
+                                                                <tr key={"row-" + _mapIndex + "-" + _playerIndex} className="border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                                                    <td className='px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white'>
+                                                                        {p.playerNumber}
+                                                                    </td><td className='px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white'>
+                                                                        {p.name}
+                                                                    </td>
+                                                                    <td className='px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white'>
+                                                                        {p.soldPrice}
+                                                                    </td>
+                                                                </tr>
+                                                            )
+                                                        })}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>)
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    </div>}
             </div>
         </>
     )

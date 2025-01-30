@@ -460,7 +460,7 @@ class AuctionService {
   auctionDataImports(data) {
     // const host = process.env.REACT_APP_SERVER_PATH;
     const server_host = process.env.REACT_APP_SERVER_PATH;
-
+    console.log("auctionDataImports",data)
     return new Promise(function (resolve, reject) {
       const fetchPostOptions = {
         method: "POST",
@@ -473,23 +473,21 @@ class AuctionService {
         },
         body: JSON.stringify(data),
       };
-      if (!data.owner) {
-        fetch(server_host + "/api/auction/dataImports", fetchPostOptions)
-          .then((response) => {
-            return response.json();
-          })
-          .then((res) => {
-            if (res.success) {
-              resolve(res);
-            } else {
-              reject(res.message);
-            }
-          })
-          .catch((e) => {
-            console.error("error : ", e);
-            reject(e.toString());
-          });
-      }
+      fetch(server_host + "/api/auction/dataImports", fetchPostOptions)
+        .then((response) => {
+          return response.json();
+        })
+        .then((res) => {
+          if (res.success) {
+            resolve(res);
+          } else {
+            reject(res.message);
+          }
+        })
+        .catch((e) => {
+          console.error("error : ", e);
+          reject(e.toString());
+        });
     });
   }
 

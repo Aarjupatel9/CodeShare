@@ -23,7 +23,7 @@ export default function AuctionMain(props) {
     }, [])
     const getAuctionData = () => {
         AuctionService.getAuctionDetails({ auctionId: auctionId }).then((res) => {
-            console.log(res);
+            console.info("auction details", res);
             if (res.auction) {
                 setAuction(res.auction);
             }
@@ -37,13 +37,16 @@ export default function AuctionMain(props) {
             if (res.teams && res.players) {
                 var data = [];
                 var map = {};
+                res.teams && res.teams.forEach((t) => {
+                    map[t._id] = [];
+                })
                 res.players.forEach(element => {
                     if (!map[element.team]) {
                         map[element.team] = [];
                     }
                     map[element.team].push(element);
                 });
-                console.log("map", map)
+
                 Object.keys(map).map((key) => {
                     if (key != "null") {
                         var rb = map[key].reduce((total, p) => {
@@ -53,31 +56,25 @@ export default function AuctionMain(props) {
                         data.push({ team: key, players: map[key], remainingBudget: rb });
                     }
                 })
-                console.log("setTeamPlayerMap", data);
                 setTeamPlayerMap(data);
             }
 
         }).catch((error) => {
-            console.log(error);
+            console.error(error);
             if (error == "TokenExpiredError") {
                 navigate("/auth/login")
             }
-            toast.error(error);
+            toast.error(error, { duration: 3000 });
         });
     }
 
-    useEffect(() => {
-        console.log("auction changed ", teamPlayerMap);
-    }, [teamPlayerMap])
-
     const canStartAuction = () => {
-        console.log("called");
         if (auction || auction.state == "setup") {
             AuctionService.updateAuction({ auction: { _id: auctionId, state: "running" } }).then((res) => {
                 navigate(window.location.pathname + "/bidding");
             }).catch((err) => {
-                toast.error(err);
-                console.log(err);
+                toast.error(err, { duration: 3000 });
+                console.error(err);
             })
             return false;
         } else if (auction.state == "running") {
@@ -92,7 +89,6 @@ export default function AuctionMain(props) {
         }
     }
     const openManagementBoard = () => {
-        console.log(window.location.pathname);
         navigate(window.location.pathname + "/manage");
     }
 
@@ -121,7 +117,6 @@ export default function AuctionMain(props) {
         navigate("/t/auction/" + auctionId + "/live");
     }
     const getTeamLogo = (team) => {
-        console.log(team)
         let name = getTeamName(team);
         name = name.split(" ");
         if (name.length >= 2) {
@@ -139,7 +134,6 @@ export default function AuctionMain(props) {
         if (player && Object.keys(player).length > 0 && player.bidding.length > 0) {
             var x = structuredClone(player.bidding);
             x.reverse();
-            console.log("x", player.bidding, x);
             return x.map((b, index) => {
                 return (
                     <div className={`${index == 0 ? "bg-green-400" : "bg-slate-300"} flex flex-row justify-center    rounded p-2 `}>
@@ -197,18 +191,18 @@ export default function AuctionMain(props) {
                 {currentTeamPlayerMap ? getTeamName(currentTeamPlayerMap.team) : "Teams"}
             </div>
 
-            {!currentTeamPlayerMap && <div className='flex flex-row gap-2 w-auto h-auto max-h-full flex-wrap mx-auto'>
+            {!currentTeamPlayerMap && <div className='flex flex-row gap-2 w-full h-auto max-h-full flex-wrap mx-auto'>
                 {(teamPlayerMap && teamPlayerMap.length) > 0 ? teamPlayerMap.map((map, index) => {
                     return (<div onClick={() => { setCurrentTeamPlayerMap(map) }} key={"team_" + index}
                         className={`flex lg:w-[32.7%] md:w-[49%] sm:w-[100%]  gap-4 p-4 flex-row items-start bg-gray-200 cursor-pointer rounded-lg  ${currentTeamPlayerMap && currentTeamPlayerMap.team == map.team ? "bg-gray-400" : "bg-gray-200"}`}>
-                        <div class="w-24 h-24 rounded-full bg-gray-300 flex items-center justify-center text-xl font-bold text-dark">
+                        <div className="w-24 h-24 rounded-full bg-gray-300 flex items-center justify-center text-xl font-bold text-dark">
                             {/* <img
                                             src="user-image-url.jpg"
                                             alt="User Image"
-                                            class="w-full h-full rounded-full object-cover hidden"
+                                            className="w-full h-full rounded-full object-cover hidden"
                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
                                         /> */}
-                            <span class="flex ">
+                            <span className="flex ">
                                 {getTeamLogo(map.team)}
                             </span>
                         </div>

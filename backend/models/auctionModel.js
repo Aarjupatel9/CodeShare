@@ -24,9 +24,23 @@ const auctionSchema = new mongoose.Schema(
         budgetPerTeam: {
             type: Number,
             required: false,
-            default:0
+            default: 0
         },
-
+        maxTeamMember: {
+            type: Number,
+            required: false,
+            default: 0
+        },
+        minTeamMember: {
+            type: Number,
+            required: false,
+            default: 0
+        },
+        auctionLiveEnabled: {
+            type: Number,
+            required: false,
+            default: false
+        }
     },
     { timestamps: true }
 );

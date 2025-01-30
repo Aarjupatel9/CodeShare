@@ -19,9 +19,15 @@ const teamSchema = new mongoose.Schema(
         budget: {
             type: Number,
             required: false,
+            default: 0
         },
         remainingBudget: {
             type: Number,
+            required: false,
+            default: 0
+        },
+        logo: {
+            type: Object,
             required: false,
         }
     },

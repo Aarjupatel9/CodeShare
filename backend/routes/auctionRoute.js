@@ -2,14 +2,14 @@ const express = require("express");
 const DataModel = require("../models/dataModels");
 const router = express.Router();
 const authenticateUser = require('../middleware/Authmiddleware');
-const { auctionLogin, createNewAuctionTeam, updateNewAuction, updateNewAuctionSet, auctionDataImports, createNewAuction, getAuctionDetails, createNewAuctionPlayer, removeNewAuctionPlayer, updateNewAuctionPlayer, createNewAuctionSet, removeNewAuctionTeam, removeNewAuctionSet } = require("../controllers/auctionController");
+const { checkPublicAvailability, auctionLogin, createNewAuctionTeam, updateNewAuction, updateNewAuctionSet, auctionDataImports, createNewAuction, getAuctionDetails, createNewAuctionPlayer, removeNewAuctionPlayer, updateNewAuctionPlayer, createNewAuctionSet, removeNewAuctionTeam, removeNewAuctionSet } = require("../controllers/auctionController");
 const { multerUpload } = require("../services/s3BucketService");
 const authenticateAuction = require('../middleware/AuctionMiddleware');
 
 
 router.route("/login").post(authenticateUser(), auctionLogin);
 
-router.route("/public/get").post(getAuctionDetails);
+router.route("/public/get").post(checkPublicAvailability(),getAuctionDetails);
 router.route("/get").post(authenticateUser(), authenticateAuction(), getAuctionDetails);
 router.route("/dataImports").post(authenticateUser(), authenticateAuction(), auctionDataImports);
 
