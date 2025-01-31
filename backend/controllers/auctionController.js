@@ -96,7 +96,7 @@ exports.auctionLogin = async function (req, res) {
       });
 
   } catch (e) {
-    console.log("error", e);
+    console.error("error", e);
     res
       .status(500)
       .json({
@@ -136,11 +136,11 @@ exports.auctionDataImports = async function (req, res) {
           let playerPrefferedSet = await _createSet(player["PREFFERED SET"], auction, false);
           let newPlayer = await _createPlayer(player, auction, playerPrefferedSet)
         } else {
-          console.log("player already exist, not updating the player: " + player["PLAYER NAME"]);
+          console.debug("player already exist, not updating the player: " + player["PLAYER NAME"]);
         }
       }
     } catch (e) {
-      console.log(e);
+      console.error(e);
       return res.status(200).json({
         success: false,
         message: "Player import error: " + e.toString(),
@@ -153,125 +153,13 @@ exports.auctionDataImports = async function (req, res) {
     });
 
   } catch (e) {
-    console.log(e);
+    console.error(e);
     res.status(500).json({
       success: false,
       message: "internal server error : " + e,
     });
   }
 };
-
-// exports.auctionDataImports = async function (req, res) {
-//   try {
-//     const { tabsData, auction } = req.body;
-
-//     if (typeof tabsData != "object" || tabsData.length < 1) {
-//       return res.status(200).json({
-//         success: false,
-//         message: "Invalid tabsData found",
-//       });
-//     } else if (!auction || !auction._id) {
-//       return res.status(200).json({
-//         success: false,
-//         message: "Invalid Auction ID",
-//       });
-//     }
-
-//     //creating team;
-//     let teams = [];
-//     try {
-//       let teamsData = tabsData[0].tabData; // 0 must be team list
-//       for (let i = 0; i < teamsData.length; i++) {
-//         let team = await _createTeam(teamsData[i]["TEAM NAME"], auction);
-//         if (team) {
-//           teams.push(team);
-//         } else {
-//           throw new Error("team create fails");
-//         }
-//       }
-//     } catch (e) {
-//       console.log(e);
-//       return res.status(200).json({
-//         success: false,
-//         message: "Team create error: " + e.toString(),
-//       });
-//     }
-
-//     for (let i = 1; i < (tabsData.length - 1); i++) {
-//       console.log("processing for set ", i, tabsData[i].tabData.length);
-//       try {
-//         let tabData = tabsData[i];
-//         let newSet = await _createSet(tabData.tab, auction, false);
-//         let playerList = tabData.tabData;
-
-//         for (let j = 0; j < playerList.length; j++) {
-//           let playerData = playerList[j];
-//           let existing_player = await _lookUpPlayer(playerData["PLAYER No."], auction);
-
-//           if (!existing_player) {
-//             let newPlayer = await _createPlayer(playerData, auction, newSet)
-//           } else {
-//             console.log("player already exist, so not create");
-//           }
-//         }
-//       } catch (e) {
-//         console.log(e);
-//         return res.status(200).json({
-//           success: false,
-//           message: "Set create for " + i + ", error: " + e.toString(),
-//         });
-//       }
-//     }
-
-//     // for marquee set
-//     let tabData = tabsData[tabsData.length - 1];
-//     let newSet = await _createSet(tabData.tab, auction, true);
-//     // if (!newSet) {
-//     //   throw new Error("Set createion faild")
-//     // }
-//     let playerList = tabData.tabData;
-
-//     for (let i = 0; i < playerList.length; i++) {
-//       try {
-//         let playerData = playerList[i];
-//         let existing_player = await _lookUpPlayer(playerData["PLAYER No."], auction);
-//         if (existing_player) {
-//           let player = await AuctionPlayerModel.updateOne({ playerNumber: existing_player.playerNumber, auction: auction._id }, {
-//             marquee: true, auctionSet: newSet._id
-
-//           }, { upsert: false });
-//           console.log("markiee player updated");
-//         } else {
-//           console.log("markiee player not exits");
-//         }
-//       } catch (e) {
-//         console.log(e);
-//         return res.status(200).json({
-//           success: false,
-//           message: "Marquee set create for " + i + ", error: " + e.toString(),
-//         });
-//       }
-//     }// end marquee
-
-//     teams.forEach(async (team) => {
-//       console.log("_updateRemainingBudget", team._id);
-//       await _updateRemainingBudget(team._id);
-//     })
-
-//     res.status(200).json({
-//       success: true,
-//       message: "Auction data imported",
-//     });
-
-//   } catch (e) {
-//     console.log(e);
-//     res.status(500).json({
-//       success: false,
-//       message: "internal server error : " + e,
-//     });
-//   }
-// };
-
 
 async function _createTeam(teamName, auction) {
   let team = await AuctionTeamModel.findOne({ name: teamName, auction: auction._id });
@@ -431,7 +319,7 @@ exports.updateNewAuctionSet = async (req, res) => {
     if (!set || !set._id || !auction || !auction._id) {
       return res.status(200).json({
         success: false,
-        message: "Invalid payload is required",
+        message: "Invalid payload",
       });
     }
 
@@ -442,16 +330,14 @@ exports.updateNewAuctionSet = async (req, res) => {
       let flag = true;
       for (let k = 0; k < sets.length; k++) {
         let s = sets[k];
-        console.log("set", s.name, s.state);
 
         if (sets[k].state != "completed" || sets[k].name == "unsold") {
-          console.log("making false");
           flag = false;
           break;
         }
       }
       if (flag) {
-        console.log("creating unsold set");
+        console.debug("creating unsold set");
         let unsoldSet = await _createSet("unsold", auction, false);
         // let unsoldPlayers = AuctionPlayerModel.find({ auctionStatus: "unsold", auction: auction._id });
         await AuctionPlayerModel.updateMany({ auctionStatus: "unsold", auction: auction._id }, { auctionStatus: "idle", auctionSet: unsoldSet._id })
@@ -533,7 +419,7 @@ exports.removeNewAuctionTeam = async (req, res) => {
       });
     }
   } catch (e) {
-    console.log(e);
+    console.error(e);
     res.status(500).json({
       success: false,
       message: "internal server error : " + e,
@@ -632,7 +518,7 @@ exports.createNewAuctionPlayer = async (req, res) => {
           })
           newPlayer = await newPlayer.save();
         } catch (err) {
-          console.log(err);
+          console.error(err);
         }
       });
 
@@ -698,7 +584,6 @@ exports.updateNewAuctionPlayer = async (req, res) => {
 };
 
 async function _updateRemainingBudget(teamId) {
-  console.log("_updateRemainingBudget", teamId);
   let teamPlayers = await AuctionPlayerModel.find({ team: teamId });
   let spentBudget = 0;
   teamPlayers.forEach(element => {
@@ -708,9 +593,7 @@ async function _updateRemainingBudget(teamId) {
   if (team) {
     let remainingBudget = team.budget - spentBudget;
     await AuctionTeamModel.updateOne({ _id: teamId }, { remainingBudget: remainingBudget }, { upsert: false });
-    console.log("_updateRemainingBudget moddel", teamId);
   }
-  console.log("_updateRemainingBudget end", teamId);
 }
 
 exports.removeNewAuctionPlayer = async (req, res) => {

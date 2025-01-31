@@ -134,7 +134,6 @@ const playerSchema = new mongoose.Schema(
 
 // Pre 'save' Middleware for Direct Saves
 playerSchema.pre('save', async function (next) {
-    console.log("running pre save function ")
 
     if (!this.isModified('auctionStatus')) {
         return next();
@@ -155,7 +154,6 @@ playerSchema.pre('save', async function (next) {
 
 // Pre 'findOneAndUpdate' Middleware for Update Methods
 playerSchema.pre('findOneAndUpdate', async function (next) {
-    console.log("running pre find and update function ")
 
     const update = this.getUpdate();
 
@@ -183,13 +181,9 @@ playerSchema.pre('findOneAndUpdate', async function (next) {
 
 // Pre 'updateOne' Middleware (Optional)
 playerSchema.pre('updateOne', async function (next) {
-    console.log("running pre updateOne function ")
 
     const update = this.getUpdate();
     const query = this.getQuery(); // Access the query filter
-
-    console.log('running pre updateOne function Update Payload:', update); // Debugging
-    console.log('running pre updateOne function Query Filter:', query);   // Debugging
 
     const docToUpdate = await this.model.findOne(query).lean();
 
@@ -206,7 +200,6 @@ playerSchema.pre('updateOne', async function (next) {
     }
 
     // Check if auctionStatus is being updated to 'sold'
-    console.log("running pre updateOne function auctionStatus", update.$set?.auctionStatus);
     if (update.$set?.auctionStatus === 'sold') {
 
         const maxSoldNumberPlayer = await this.model.findOne({
@@ -218,7 +211,6 @@ playerSchema.pre('updateOne', async function (next) {
             .lean();
 
         const maxSoldNumber = maxSoldNumberPlayer ? maxSoldNumberPlayer.soldNumber : 0;
-        console.log("running pre updateOne function maxSoldNumber", maxSoldNumberPlayer.soldNumber);
 
         // Add the incremented soldNumber to the update query
         update.$set.soldNumber = maxSoldNumber + 1;

@@ -41,7 +41,7 @@ export default function AuctionBidding(props) {
     const getAuctionData = () => {
         setIsAPICallInProgress(true);
         AuctionService.getAuctionDetails({ auctionId: auctionId }).then((res) => {
-            console.log("getAuctionData", res);
+            console.error("getAuctionData", res);
             if (res.auction) {
                 setAuction(res.auction);
             }
@@ -103,15 +103,18 @@ export default function AuctionBidding(props) {
     }
 
     function createAuctionSocket() {
-        const socket = new io(SOCKET_ADDRESS, {
+        if (socket) {
+            socket.disconnect();
+        }
+        const newSocket = new io(SOCKET_ADDRESS, {
             query: { slug: "auction-" + auctionId },
             path: "/auction/", // Custom path for Socket.IO
         });
-        socket.emit("newPlayerBiddingUpdate", player);
-        socket.on("getPlayerBiddingUpdate", () => {
-            socket.emit("newPlayerBiddingUpdate", player);
+        newSocket.emit("newPlayerBiddingUpdate", player);
+        newSocket.on("getPlayerBiddingUpdate", () => {
+            newSocket.emit("newPlayerBiddingUpdate", player);
         });
-        setSocket(socket);
+        setSocket(newSocket);
     }
     useEffect(() => {
         if (sets && sets.length > 0 && setPlayerMap && setPlayerMap.length > 0) {
@@ -339,7 +342,6 @@ export default function AuctionBidding(props) {
             setIsAPICallInProgress(true);
             AuctionService.updateAuctionPlayer({ players: [{ _id: player._id, bidding: newBiddingState }] }).then((res) => {
                 let toastId = toast.success("Current bid at " + nextBid + " of team " + team.name, { duration: 3000 });
-                console.log("toastId", toastId)
             }).catch((err) => {
                 toast.error(err.toString(), { duration: 3000 });
                 console.error(err);
@@ -412,7 +414,7 @@ export default function AuctionBidding(props) {
             x.reverse();
             return x.map((b, index) => {
                 return (
-                    <div className={`${index == 0 ? "bg-green-400" : "bg-slate-300"} flex flex-row justify-center    rounded p-2 `}>
+                    <div className={`${index == 0 ? "bg-green-400" : "bg-slate-300"} flex flex-row justify-center w-full  rounded p-2 `}>
                         <div >
                             {getTeamName(b.team)} -  {getTeamBudgetForView(b.price)}
                         </div>
@@ -431,19 +433,19 @@ export default function AuctionBidding(props) {
         if (name[1]) {
             sn += name[1][0];
         }
-        return (<div className='flex flex-col justify-center items-center text-6xl min-w-[200px] min-h-[200px] capitalize'>{sn}</div>)
+        return (<div className='flex flex-col justify-center items-center text-6xl  w-[125px] h-[125px] max-w-[125px] max-h-[125px] md:w-[150px] md:h-[150px] md:max-w-[150px] md:max-h-[150px] lg:w-[200px] lg:h-[200px] lg:max-w-[200px] lg:max-h-[200px] capitalize'>{sn}</div>)
     }
     const getPlayerCard = (player) => {
         if (player && Object.keys(player).length > 0) {
             return (
-                <div className={` flex flex-row justify-center  items-center gap-4 rounded p-2 `}>
+                <div className={`flex flex-row justify-center items-center sm:gap-1 md:gap-1 lg:gap-2  rounded sm:p-1 md:p-2 `}>
 
-                    <div className="bg-slate-200  max-w-[400px] rounded-full">
+                    <div className="bg-slate-200 sm:max-w-[200px] md:max-w-[300px] lg:max-w-[300px] rounded-full">
                         {getProfilePicture(player)}
                     </div>
 
-                    <div className='flex flex-col justify-start items-start '>
-                        <div className='font-medium'>Player No. - {player.playerNumber}</div>
+                    <div className='flex flex-col sm:text-xs md:text-sm lg:text-lg text-start justify-start items-start '>
+                        <div className='font-medium '>Player No. - {player.playerNumber}</div>
                         <div className='font-bold'>Name - {player.name}</div>
                         <div className='font-medium'>Role - {player.role}</div>
                         {player.bowlingHand && <div className='font-medium'>Bowl  -<span className='lowercase'> {player.bowlingHand} Arm - {player.bowlingType} </span></div>}
@@ -612,7 +614,7 @@ export default function AuctionBidding(props) {
 
                     <div className={`${"PlayerPannel-1"}   flex flex-col gap-2 w-full overflow-auto `}>
                         <div className='bg-gray-300 py-3 flex  flex-row justify-between items-center font-medium px-3 normal-case '>
-                            <div className='font-medium'>{(auctionDetails && auctionDetails.currentSet && Object.keys(auctionDetails.currentSet).length > 0 && auctionDetails.currentSet.name) ? (`Current set -  ${auctionDetails.currentSet.name} ${auctionDetails.remainingPlayerInCurrentSet && (", Remaining player - " + auctionDetails.remainingPlayerInCurrentSet)}`) : ("Please select next set to continue")} </div>
+                            <div className='font-medium'>{(auctionDetails && auctionDetails.currentSet && Object.keys(auctionDetails.currentSet).length > 0 && auctionDetails.currentSet.name) ? (`Current set -  ${auctionDetails.currentSet.name} , Remaining player - ${auctionDetails.remainingPlayerInCurrentSet ? auctionDetails.remainingPlayerInCurrentSet : "0"}`) : ("Please select next set to continue")} </div>
                             {auctionDetails && auctionDetails.selectSet && <div onClick={() => { selectNextSet() }} className='button cursor-pointer rounded bg-gray-400 px-2 p-1'>
                                 Select next set
                             </div>}
@@ -624,12 +626,13 @@ export default function AuctionBidding(props) {
                                 {player.bidding.length == 0 ? "Un sold" : "Sold to " + getTeamName(player.bidding[player.bidding.length - 1].team)}
                             </div>}
                         </div>
-                        <div className='flex-1 flex flex-row w-full justify-center items-center overflow-auto'>
-                            {!auctionDetails.shouldNext ? <> <div className='PlayerProfile flex flex-col w-[50%]'>
-                                {getPlayerCard(player)}
-                            </div>
-                                <div className='PlayerProfile flex flex-col w-[50%] max-h-full overflow-auto'>
-                                    {(player.bidding && player.bidding.length > 0) ? <div className='flex max-w-[400px] flex-col gap-[1px] overflow-auto'>
+                        <div className='flex-1 flex flex-col md:flex-row  w-full h-full flex-wrap items-center pt-2 overflow-auto justify-start gap-2 md:justify-center mx-auto'>
+                            {!auctionDetails.shouldNext ? <>
+                                <div className='PlayerProfile flex flex-col w-[100%] md:w-[49%]'>
+                                    {getPlayerCard(player)}
+                                </div>
+                                <div className='PlayerProfile flex flex-col w-[100%] md:w-[49%] max-h-full items-center overflow-auto'>
+                                    {(player.bidding && player.bidding.length > 0) ? <div className='flex max-w-[400px] w-full flex-col gap-[1px] overflow-auto'>
                                         {getBiddingView()}
                                     </div> : <div className='normal-case font-medium'>
                                         Start bidding
@@ -641,7 +644,7 @@ export default function AuctionBidding(props) {
                         </div>
                     </div>
                     <div className={`${"TeamPannel-1"}TeamPannel-1  flex flex-col gap-2 w-full overflow-auto py-3`}>
-                        <div className='flex flex-row justify-center bg-gray-200 gap-2 p-2'>
+                        <div className='flex flex-row justify-center flex-wrap bg-gray-200 gap-2 p-2'>
                             {teams && teams.length && teams.map((team, index) => {
                                 return (<div onClick={() => { handleTeamClick(team) }} className={`${canTeamBid(team._id) ? "bg-blue-200 cursor-pointer" : "bg-green-500 cursor-not-allowed"} rounded p-3 `}>
                                     <div className='text-md font-medium'>

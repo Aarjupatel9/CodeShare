@@ -15,10 +15,9 @@ export default function AuctionHome(props) {
       if (res.result && res.result._id) {
         toast.success("Auction is creaed, Please start ongoing auction.", { duration: 3000 })
       }
-      console.log(res);
     }).catch((error) => {
       toast.error(error, { duration: 3000 })
-      console.log(error);
+      console.error(error);
     });
   }
   const joinOngoingAuctionHandler = (data, toastId) => {
@@ -29,10 +28,9 @@ export default function AuctionHome(props) {
         localStorage.setItem("currentAuction", JSON.stringify(res.auction));
         navigate("/t/auction/" + res.auction._id);
       }
-      console.log(res);
     }).catch((error) => {
       toast.error(error, { duration: 3000 })
-      console.log(error);
+      console.error(error);
     });
   }
   const validateNewAuctionData = (data) => {
