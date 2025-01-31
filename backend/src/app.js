@@ -65,7 +65,7 @@ app.get('*', (req, res) => {
 
 
 app.use((err, req, res, next) => {
-    console.log(err);
+    console.error(err);
     if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
         return res.status(400).json({ message: 'Invalid JSON payload' });
     }

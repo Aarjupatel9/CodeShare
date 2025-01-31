@@ -66,26 +66,25 @@ export default function AuctionLiveUpdate(props) {
         });
 
         socket.on("playerBiddingUpdate", (player) => {
-            console.log("playerBiddingUpdate comming", player);
             setCurrentPlayer(player);
         });
         socket.on("playerSoldUpdate", (message) => {
-            console.log("playerSoldUpdate comming", message);
             toast.success(message);
         });
 
         setSocket(socket);
     }
     useEffect(() => {
+        console.log("selectedPlayerListFilters", selectedPlayerListFilters)
         var auctionStatus = selectedPlayerListFilters.auctionStatus
         var team = selectedPlayerListFilters.team
         var auctionSet = selectedPlayerListFilters.auctionSet
 
-        if (players && players.length > 0) {
-
-            playersCopy.sort((p1, p2) => p1.playerNumber - p2.playerNumber);
-            var filterdPlayers = playersCopy.filter((p) => {
-                var shouldDisplay = true;
+        if (playersCopy && playersCopy.length > 0) {
+            let allPlayers = structuredClone(playersCopy);
+            allPlayers.sort((p1, p2) => p1.playerNumber - p2.playerNumber);
+            let filterdPlayers = allPlayers.filter((p) => {
+                let shouldDisplay = true;
                 if (auctionStatus) {
                     shouldDisplay = (shouldDisplay && (p.auctionStatus == auctionStatus));
                 }
@@ -103,7 +102,6 @@ export default function AuctionLiveUpdate(props) {
 
     const getAuctionData = () => {
         AuctionService.getPublicAuctionDetails({ auctionId: auctionId }, true).then((res) => {
-            console.log(res);
             if (res.auction) {
                 setAuction(res.auction);
             }
@@ -179,16 +177,12 @@ export default function AuctionLiveUpdate(props) {
             setIsLinkValid(true);
 
         }).catch((error) => {
-            console.log(error);
+            console.error(error);
             toast.error(error);
             setIsLinkValid(false);
             navigate("/t/auction/");
         });
     }
-
-    useEffect(() => {
-        console.log("view ", view);
-    }, [view])
 
     const getTeamName = (teamId) => {
         var team = teams.find((t) => { return t._id == teamId });
@@ -216,10 +210,9 @@ export default function AuctionLiveUpdate(props) {
         if (player && Object.keys(player).length > 0 && player.bidding.length > 0) {
             var x = structuredClone(player.bidding);
             x.reverse();
-            console.log("x", player.bidding, x);
             return x.map((b, index) => {
                 return (
-                    <div className={`${index == 0 ? "bg-green-400" : "bg-slate-300"} flex flex-row justify-center    rounded p-2 `}>
+                    <div key={"getBiddingView" + player.name + "_" + index} className={`${index == 0 ? "bg-green-400" : "bg-slate-300"} flex flex-row justify-center  w-full  rounded p-2 `}>
                         <div >
                             {getTeamName(b.team)} -  {getTeamBudgetForView(b.price)}
                         </div>
@@ -228,24 +221,30 @@ export default function AuctionLiveUpdate(props) {
             })
         }
     }
+
     const getPlayerCard = (player) => {
         if (player && Object.keys(player).length > 0) {
             return (
-                <div className={` flex flex-row justify-center  items-center gap-4 rounded p-2 `}>
+                <div className={`flex flex-row justify-center items-center sm:gap-1 md:gap-1 lg:gap-2  rounded sm:p-1 md:p-2 `}>
 
-                    <div className="bg-slate-200  max-w-[400px] rounded-full">
+                    <div className="bg-slate-200 sm:max-w-[200px] md:max-w-[300px] lg:max-w-[300px] rounded-full">
                         {getProfilePicture(player)}
                     </div>
 
-                    <div className='flex flex-col justify-start items-start '>
-                        <div className='font-medium'>Number - {player.playerNumber}</div>
-                        <div className='font-medium'>Name - {player.name}</div>
+                    <div className='flex flex-col sm:text-xs md:text-sm lg:text-lg text-start justify-start items-start '>
+                        <div className='font-medium '>Player No. - {player.playerNumber}</div>
+                        <div className='font-bold'>Name - {player.name}</div>
+                        <div className='font-medium'>Role - {player.role}</div>
+                        {player.bowlingHand && <div className='font-medium'>Bowl  -<span className='lowercase'> {player.bowlingHand} Arm - {player.bowlingType} </span></div>}
+                        {player.battingHand && <div className='font-medium '>Bat - <span className='lowercase'> {player.battingHand} Arm - {player.battingPossition} order {player.battingType}</span> </div>}
+
                         <div className='font-medium'>Base Price - {getTeamBudgetForView(player.basePrice)}</div>
                     </div>
                 </div>
             )
         }
     }
+
     const getProfilePicture = (player) => {
         var name = player.name;
         name = name.split(" ");
@@ -253,7 +252,7 @@ export default function AuctionLiveUpdate(props) {
         if (name[1]) {
             sn += name[1][0];
         }
-        return (<div className='flex flex-col justify-center items-center text-6xl min-w-[200px] min-h-[200px] capitalize'>{sn}</div>)
+        return (<div className='flex flex-col justify-center items-center text-6xl  w-[125px] h-[125px] max-w-[125px] max-h-[125px] md:w-[150px] md:h-[150px] md:max-w-[150px] md:max-h-[150px] lg:w-[200px] lg:h-[200px] lg:max-w-[200px] lg:max-h-[200px] capitalize'>{sn}</div>)
     }
     const getTeamLogo = (team) => {
         let name = getTeamName(team);
@@ -278,8 +277,8 @@ export default function AuctionLiveUpdate(props) {
 
     return (
         <>
-            <div className='flex flex-col w-full h-full text-sx gap-4 p-2'>
-                <div className='header flex flex-row justify-start gap-2 font-medium capitalize'>
+            <div className='flex flex-col w-full max-w-full h-full text-sx gap-4 p-2'>
+                <div className='header flex flex-row flex-wrap justify-start gap-2 font-medium capitalize'>
                     <div onClick={() => { navigate("/t/auction/" + auctionId) }} type="button" className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer" >Auction Home</div>
                     {!view.liveBidding && <div onClick={() => {
                         setView(() => {
@@ -317,12 +316,13 @@ export default function AuctionLiveUpdate(props) {
                                 Live Bidding Updates
                             </div>
                         </div>
-                        <div className={`flex flex-row w-full h-full items-center pt-2 overflow-auto ${currentPlayer && Object.keys(currentPlayer).length > 0 ? "justify-between" : "justify-center"} mx-auto`} >
-                            {(currentPlayer && Object.keys(currentPlayer).length > 0) ? <> <div className='PlayerProfile flex flex-col w-[50%]'>
-                                {getPlayerCard(currentPlayer)}
-                            </div>
-                                <div className='PlayerProfile flex flex-col w-[50%] max-h-full overflow-auto'>
-                                    {(currentPlayer.bidding && currentPlayer.bidding.length > 0) ? <div className='flex max-w-[400px] flex-col gap-[1px] overflow-auto'>
+                        <div className="flex flex-col md:flex-row  w-full h-full flex-wrap items-center pt-2 overflow-auto justify-start gap-2 md:justify-center mx-auto" >
+                            {(currentPlayer && Object.keys(currentPlayer).length > 0) ? <>
+                                <div className='PlayerProfile flex flex-col w-[100%] md:w-[49%]'>
+                                    {getPlayerCard(currentPlayer)}
+                                </div>
+                                <div className='PlayerProfile flex flex-col w-[100%] md:w-[49%] max-h-full items-center overflow-auto'>
+                                    {(currentPlayer.bidding && currentPlayer.bidding.length > 0) ? <div className='flex max-w-[400px] w-full flex-col gap-[1px] overflow-auto'>
                                         {getBiddingView(currentPlayer)}
                                     </div> : <div className='normal-case font-medium'>
                                         Bidding not start yet
@@ -423,7 +423,7 @@ export default function AuctionLiveUpdate(props) {
                                     <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                                         <tr>
                                             {requiredPlayerColumnForDisplay.map(key => {
-                                                return (<th scope="col" className="px-4 py-1"><div className='flex flex-row items-center gap-2'><div>{key}</div><div className='cursor-pointer' onClick={() => { }}> {downArrowIcon}</div></div></th>)
+                                                return (<th key={"filterColumnHeader_" + key} scope="col" className="px-4 py-1"><div className='flex flex-row items-center gap-2'><div>{key}</div><div className='cursor-pointer' onClick={() => { }}> {downArrowIcon}</div></div></th>)
                                             })}
                                         </tr>
 
@@ -431,7 +431,7 @@ export default function AuctionLiveUpdate(props) {
                                         <tr className='pb-2' >
                                             {requiredPlayerColumnForDisplay.map(key => {
                                                 if (filterFields.includes(key)) {
-                                                    return (<th scope="col" className="px-1 py-1 w-full">
+                                                    return (<th key={"filterColumn_" + key} scope="col" className="px-1 py-1 w-full">
                                                         <div className="relative w-full min-w-12">
                                                             {/* <span className="absolute inset-y-0 left-3 flex items-center cursor-pointer pointer-events-none">
                                                                     {getFilterFieldDisplayText(key)}
@@ -449,13 +449,13 @@ export default function AuctionLiveUpdate(props) {
                                                                 name={key + "_filter_select_element"}
                                                                 id={key + "_filter_select_element"}
                                                                 defaultValue={""}
-                                                                className=" min-w-48 border border-gray-300 rounded-md py-1 px-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+                                                                className=" min-w-24 border border-gray-300 rounded-md py-1 px-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                                                             >
-                                                                <option className='min-w-48 text-black' value={""}>-</option>
+                                                                <option className='min-w-24 text-black' value={""}>-</option>
 
                                                                 {playerListFilters && playerListFilters[key] && playerListFilters[key].length > 0 && playerListFilters[key].map((opt, _index) => {
                                                                     return (
-                                                                        <option className='flex items-center min-w-48 text-black' key={key + "_filter_select_element_option_" + _index} value={opt.value} >
+                                                                        <option className='flex items-center min-w-24 text-black' key={key + "_filter_select_element_option_" + _index} value={opt.value} >
                                                                             {/* <input onChange={(e) => { }} checked={true} id="checkbox-table-search-1" type="checkbox" className="bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" /> */}
                                                                             {/* <label htmlFor="checkbox-table-search-1" className="sr-only">{opt.displayValue}</label> */}
                                                                             {opt.displayValue}
@@ -466,7 +466,7 @@ export default function AuctionLiveUpdate(props) {
                                                         </div>
                                                     </th>)
                                                 } else {
-                                                    return (<th scope="col" className="px-4 py-1"></th>)
+                                                    return (<th key={"filterColumn_" + key} scope="col" className="px-4 py-1"></th>)
                                                 }
                                             })}
                                         </tr>
@@ -480,6 +480,7 @@ export default function AuctionLiveUpdate(props) {
                                                             var value = "";
                                                             if (key == "auctionSet") { value = getSetName(player[key]) }
                                                             else if (key == "team") { if (player[key]) { value = getTeamName(player[key]); } else { value = "-"; } }
+                                                            else if (key == "soldPrice" || key == "basePrice") { value = getTeamBudgetForView(player[key]) }
                                                             else { value = player[key]; }
                                                             return (
                                                                 <td key={"player-" + rowIndex + "-" + colIndex} className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white">{value}</td>

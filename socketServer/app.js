@@ -1,5 +1,9 @@
 const { Server } = require('socket.io');
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
+
+const logFilePath = path.join(__dirname, 'socket_usage.log');
 
 const server = http.createServer();
 
@@ -8,7 +12,8 @@ const io = new Server(server, {
         origin: [
             "http://localhost:3000",
             "http://localhost",
-            "http://43.205.203.95"
+            "http://13.203.114.163/",
+            "https://13.203.114.163/"
         ],
     },
     path: '/socket/'
@@ -19,7 +24,8 @@ const auctionIO = new Server(server, {
         origin: [
             "http://localhost:3000",
             "http://localhost",
-            "http://43.205.203.95"
+            "http://13.203.114.163/",
+            "https://13.203.114.163/",
         ],
     },
     path: '/auction/'
@@ -27,7 +33,7 @@ const auctionIO = new Server(server, {
 
 const port = 8081
 server.listen(port, () => {
-    console.log("Server started at port ", port);
+    console.info("Socket Server running on port ", port);
 })
 
 io.on('connection', (socket) => {
@@ -40,7 +46,7 @@ io.on('connection', (socket) => {
     })
 
     socket.on('disconnect', () => {
-        console.log("on disconnect ", socket.id);
+        console.info("on disconnect ", socket.id);
 
         // const rooms = io.sockets.adapter.rooms;
         // rooms.forEach((room, roomId) => {
@@ -57,11 +63,10 @@ io.on('connection', (socket) => {
     });
 
     socket.on('newPlayerBiddingUpdate', (player) => {
-        console.log("newPlayerBiddingUpdate", player)
         socket.to(room).emit('playerBiddingUpdate', player);
     })
 
-    console.log("on connect ", socket.id, room);
+    console.info("on connect ", socket.id, room);
 })
 
 
@@ -70,7 +75,7 @@ auctionIO.on('connection', (socket) => {
     socket.join(room);
 
     socket.on('disconnect', () => {
-        console.log("on disconnect ", socket.id);
+        console.info("on disconnect ", socket.id);
     })
 
     socket.on("connect", () => {
@@ -90,3 +95,22 @@ auctionIO.on('connection', (socket) => {
 
     console.log("on connect ", socket.id, room);
 })
+
+
+function logToFile(message) {
+    const timestamp = new Date().toISOString();
+    const logMessage = `[${timestamp}] ${message}\n`;
+
+    fs.appendFile(logFilePath, logMessage, (err) => {
+        if (err) console.error("Error writing to log file", err);
+    });
+}
+
+setInterval(() => {
+    const mainIOConnections = io.engine.clientsCount;
+    const auctionIOConnections = auctionIO.engine.clientsCount;
+
+    const logMessage = `Total connections (Main IO): ${mainIOConnections}, Total connections (Auction IO): ${auctionIOConnections}`;
+
+    logToFile(logMessage);    // Save log to file
+}, 10000); // Logs every 5 seconds

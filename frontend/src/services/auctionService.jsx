@@ -460,7 +460,6 @@ class AuctionService {
   auctionDataImports(data) {
     // const host = process.env.REACT_APP_SERVER_PATH;
     const server_host = process.env.REACT_APP_SERVER_PATH;
-    console.log("auctionDataImports",data)
     return new Promise(function (resolve, reject) {
       const fetchPostOptions = {
         method: "POST",

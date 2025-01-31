@@ -249,7 +249,7 @@ export default function AuctionDetailsManage(props) {
                     </label>
                     <div className='flex flex-row flex-wrap max-w-400px overflow-auto gap-3'>
                         {sets && sets.length > 0 && sets.map((set, index) => {
-                            return (<div>
+                            return (<div key={"new_Set_name" + set.name}>
                                 <button className='button bg-slate-300 rounded p-2' onClick={() => { handleSetAssign(selectedPlayers, set) }}> {set.name}</button>
                             </div>)
                         })}
@@ -296,7 +296,7 @@ export default function AuctionDetailsManage(props) {
                     >
                         <option value={"-"}>-</option>
                         {teams.map((t, _index) => {
-                            return <option value={t._id}>{t.name}</option>
+                            return <option key={"neteam_menu_" + t.name} value={t._id}>{t.name}</option>
                         })}
                     </select>
                     <input
@@ -902,7 +902,7 @@ export default function AuctionDetailsManage(props) {
                                                     </div>
                                                 </th>
                                                 {requiredPlayerColumnForDisplay.map(key => {
-                                                    return (<th scope="col" className="px-4 py-1"><div className='flex flex-row items-center gap-2'><div>{key}</div><div className='cursor-pointer' onClick={() => { handleSortOrderChange(key) }}> {downArrowIcon}</div></div></th>)
+                                                    return (<th key={"requiredTeamColumnForDisplay_player_header_" + key} scope="col" className="px-4 py-1"><div className='flex flex-row items-center gap-2'><div>{key}</div><div className='cursor-pointer' onClick={() => { handleSortOrderChange(key) }}> {downArrowIcon}</div></div></th>)
                                                 })}
                                             </tr>
 
@@ -916,7 +916,7 @@ export default function AuctionDetailsManage(props) {
                                                 </th>
                                                 {requiredPlayerColumnForDisplay.map(key => {
                                                     if (filterFields.includes(key)) {
-                                                        return (<th scope="col" className="px-1 py-1 w-full">
+                                                        return (<th key={"requiredTeamColumnForDisplay_player_filter_val_" + key} scope="col" className="px-1 py-1 w-full">
                                                             <div className="relative w-full min-w-12">
                                                                 {/* <span className="absolute inset-y-0 left-3 flex items-center cursor-pointer pointer-events-none">
                                                                     {getFilterFieldDisplayText(key)}
@@ -934,13 +934,13 @@ export default function AuctionDetailsManage(props) {
                                                                     name={key + "_filter_select_element"}
                                                                     id={key + "_filter_select_element"}
                                                                     defaultValue={""}
-                                                                    className=" min-w-48 border border-gray-300 rounded-md py-1 px-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+                                                                    className=" min-w-24 border border-gray-300 rounded-md py-1 px-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                                                                 >
-                                                                    <option className='min-w-48 text-black' value={""}>-</option>
+                                                                    <option className='min-w-24 text-black' value={""}>-</option>
 
                                                                     {playerListFilters && playerListFilters[key] && playerListFilters[key].length > 0 && playerListFilters[key].map((opt, _index) => {
                                                                         return (
-                                                                            <option className='flex items-center min-w-48 text-black' key={key + "_filter_select_element_option_" + _index} value={opt.value} >
+                                                                            <option className='flex items-center min-w-24 text-black' key={key + "_filter_select_element_option_" + _index} value={opt.value} >
                                                                                 {/* <input onChange={(e) => { }} checked={true} id="checkbox-table-search-1" type="checkbox" className="bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" /> */}
                                                                                 {/* <label htmlFor="checkbox-table-search-1" className="sr-only">{opt.displayValue}</label> */}
                                                                                 {opt.displayValue}
@@ -951,7 +951,7 @@ export default function AuctionDetailsManage(props) {
                                                             </div>
                                                         </th>)
                                                     } else {
-                                                        return (<th scope="col" className="px-4 py-1"></th>)
+                                                        return (<th key={"requiredTeamColumnForDisplay_player_filter_val_" + key} scope="col" className="px-4 py-1"></th>)
                                                     }
                                                 })}
                                             </tr>
@@ -971,6 +971,7 @@ export default function AuctionDetailsManage(props) {
                                                                 var value = "";
                                                                 if (key == "auctionSet") { value = getSetName(player[key]) }
                                                                 else if (key == "team") { if (player[key]) { value = getTeamName(player[key]); } else { value = "-"; } }
+                                                                else if (key == "soldPrice" || key == "basePrice") { value = getTeamBudgetForView(player[key]) }
                                                                 else { value = player[key]; }
                                                                 return (
                                                                     <td key={"player-" + rowIndex + "-" + colIndex} className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white">{value}</td>
@@ -978,7 +979,6 @@ export default function AuctionDetailsManage(props) {
                                                             }
                                                             return null;
                                                         })}
-
                                                     </tr>
                                                 )
                                             })}
@@ -1022,7 +1022,7 @@ export default function AuctionDetailsManage(props) {
                                             <tr>
                                                 {sets && sets.length > 0 && Object.keys(sets[0]).map(key => {
                                                     if (requiredSetColumnForDisplay.includes(key)) {
-                                                        return (<th scope="col" className="px-4 py-3">{key}</th>)
+                                                        return (<th key={"requiredTeamColumnForDisplay_sets_val_" + key} scope="col" className="px-4 py-3">{key}</th>)
                                                     }
                                                     return null;
                                                     // return (<th scope="col" className="px-4 py-3">{key}</th>)
@@ -1099,7 +1099,7 @@ export default function AuctionDetailsManage(props) {
                                                 </th>
                                                 {teams && teams.length > 0 && Object.keys(teams[0]).map(key => {
                                                     if (requiredTeamColumnForDisplay.includes(key)) {
-                                                        return (<th scope="col" className="px-4 py-3">{key}</th>)
+                                                        return (<th key={"requiredTeamColumnForDisplay_team_val_" + key} scope="col" className="px-4 py-3">{key}</th>)
                                                     }
                                                     return null;
                                                 })}
@@ -1114,7 +1114,7 @@ export default function AuctionDetailsManage(props) {
                                             {teams && teams.length > 0 && teams.map((team, rowIndex) => {
                                                 return (
                                                     <tr key={"teams-" + rowIndex} className="border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                                        <td key={"teams-" + rowIndex + "-checkbox"} className="w-4 px-4 py-3">
+                                                        <td key={"teams-" + rowIndex + "-checkbox1"} className="w-4 px-4 py-3">
                                                             <div onClick={() => { }} className="flex items-center cursor-pointer rounded px-2 p-1 text-black ">
                                                                 <img src={team.logo?.url} onError={(e) => {
                                                                     e.target.src = ""
@@ -1279,74 +1279,7 @@ export default function AuctionDetailsManage(props) {
 
                                 <div className="flex flex-row flex-wrap  gap-4 justify-center w-full">
                                     {teamPlayerMap && teamPlayerMap.map((map, _mapIndex) => {
-                                        return (<div className='flex min-w-[23%] flex-col shadow rounded bg-gray-100 justify-start items-center gap-4'>
-                                            <div className='flex flex-col justify-center font-bold text-lg'>
-                                                {getTeamName(map.team)}
-                                            </div>
-                                            <div className='flex flex-col justify-center'>
-                                                <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                                                    <thead className=" text-xs text-gray-700 uppercase dark:bg-gray-700 dark:text-gray-400">
-                                                        <tr className='border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'>
-                                                            <th className='px-4 py-2 text-md font-bold text-gray-900 whitespace-nowrap dark:text-white'>N0.</th>
-                                                            <th className='px-4 py-2 text-md font-bold text-gray-900 whitespace-nowrap dark:text-white'>Name</th>
-                                                            <th className='px-4 py-2 text-md font-bold text-gray-900 whitespace-nowrap dark:text-white'>Sold Price</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody className='h-full'>
-                                                        {map.players && map.players.map((p, _playerIndex) => {
-                                                            return (
-                                                                <tr key={"row-" + _mapIndex + "-" + _playerIndex} className="border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                                                    <td className='px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white'>
-                                                                        {p.playerNumber}
-                                                                    </td><td className='px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white'>
-                                                                        {p.name}
-                                                                    </td>
-                                                                    <td className='px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white'>
-                                                                        {p.soldPrice}
-                                                                    </td>
-                                                                </tr>
-                                                            )
-                                                        })}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>)
-                                    })}
-                                    {teamPlayerMap && teamPlayerMap.map((map, _mapIndex) => {
-                                        return (<div className='flex min-w-[23%] flex-col shadow rounded bg-gray-100 justify-start items-center gap-4'>
-                                            <div className='flex flex-col justify-center font-bold text-lg'>
-                                                {getTeamName(map.team)}
-                                            </div>
-                                            <div className='flex flex-col justify-center'>
-                                                <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                                                    <thead className=" text-xs text-gray-700 uppercase dark:bg-gray-700 dark:text-gray-400">
-                                                        <tr className='border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'>
-                                                            <th className='px-4 py-2 text-md font-bold text-gray-900 whitespace-nowrap dark:text-white'>N0.</th>
-                                                            <th className='px-4 py-2 text-md font-bold text-gray-900 whitespace-nowrap dark:text-white'>Name</th>
-                                                            <th className='px-4 py-2 text-md font-bold text-gray-900 whitespace-nowrap dark:text-white'>Sold Price</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody className='h-full'>
-                                                        {map.players && map.players.map((p, _playerIndex) => {
-                                                            return (
-                                                                <tr key={"row-" + _mapIndex + "-" + _playerIndex} className="border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                                                    <td className='px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white'>
-                                                                        {p.playerNumber}
-                                                                    </td><td className='px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white'>
-                                                                        {p.name}
-                                                                    </td>
-                                                                    <td className='px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white'>
-                                                                        {p.soldPrice}
-                                                                    </td>
-                                                                </tr>
-                                                            )
-                                                        })}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>)
-                                    })}{teamPlayerMap && teamPlayerMap.map((map, _mapIndex) => {
-                                        return (<div className='flex min-w-[23%] flex-col shadow rounded bg-gray-100 justify-start items-center gap-4'>
+                                        return (<div key={"exportTeamList_teamPlayerMap_" + _mapIndex} className='flex min-w-[23%] pb-1 mb-2 flex-col shadow rounded bg-gray-100 justify-start items-center gap-4'>
                                             <div className='flex flex-col justify-center font-bold text-lg'>
                                                 {getTeamName(map.team)}
                                             </div>

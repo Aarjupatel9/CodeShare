@@ -2,7 +2,7 @@ const { exec } = require("child_process");
 
 // Replace 'ls' with your desired Linux command
 function runCMD(command) {
-    
+
     exec(command, (error, stdout, stderr) => {
         if (error) {
             console.error(`Error executing command: ${error.message}`);
@@ -14,7 +14,7 @@ function runCMD(command) {
             return;
         }
 
-        console.log(`Command output:\n${stdout}`);
+        console.debug(`Command output:\n${stdout}`);
     });
 }
 const command = "git pull";
