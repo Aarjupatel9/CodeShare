@@ -490,6 +490,69 @@ class AuctionService {
     });
   }
 
+  saveTeamLogo(formData) {
+    // const host = process.env.REACT_APP_SERVER_PATH;
+    const server_host = process.env.REACT_APP_SERVER_PATH;
+
+    return new Promise(function (resolve, reject) {
+      const fetchPostOptions = {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "slug": formData.get("slug"),
+          "filesize": formData.get("fileSize")
+        },
+        body: formData,
+      };
+      fetch(server_host + "/api/auction/team/logo", fetchPostOptions)
+        .then((response) => {
+          return response.json();
+        })
+        .then((res) => {
+          if (res.success) {
+            resolve(res);
+          } else {
+            reject(res.message);
+          }
+        })
+        .catch((e) => {
+          console.error("error : ", e);
+          reject(e.toString());
+        });
+    });
+  }
+
+  auctionLogout() {
+    // const host = process.env.REACT_APP_SERVER_PATH;
+    const server_host = process.env.REACT_APP_SERVER_PATH;
+
+    return new Promise(function (resolve, reject) {
+      const fetchPostOptions = {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+        },
+      };
+      fetch(server_host + "/api/auction/logout", fetchPostOptions)
+        .then((response) => {
+          return response.json();
+        })
+        .then((res) => {
+          if (res.success) {
+            resolve(res);
+          } else {
+            reject(res.message);
+          }
+        })
+        .catch((e) => {
+          console.error("error : ", e);
+          reject(e.toString());
+        });
+    });
+  }
+
 }
 
 export default new AuctionService();

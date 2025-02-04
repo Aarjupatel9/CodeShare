@@ -106,6 +106,27 @@ exports.auctionLogin = async function (req, res) {
   }
 };
 
+exports.auctionLogout = async function (req, res) {
+  try {
+    res.clearCookie("auction_token");
+    res
+      .status(200)
+      .json({
+        message: "Logged out from auction",
+        success: true,
+      });
+
+  } catch (e) {
+    console.error("error", e);
+    res
+      .status(500)
+      .json({
+        message: "Internal server error.",
+        success: false,
+      });
+  }
+};
+
 
 exports.auctionDataImports = async function (req, res) {
   try {
@@ -657,6 +678,57 @@ exports.getAuctionDetails = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "internal server error : " + e,
+    });
+  }
+};
+
+
+exports.saveTeamLogo = async (req, res, next) => {
+  try {
+    const team = req.body.team;
+    if (!team) {
+      return res.status(400).json({
+        success: false,
+        message: "Inavlaid request body",
+      });
+    }
+    var fileObject = {
+      name: req.file.originalname,
+      url: req.file.location,
+      key: req.file.key,
+      type: req.file.mimetype,
+      contentType: req.file.contentType,
+      encoding: req.file.encoding,
+      bucket: req.file.bucket,
+      metadata: req.file.metadata,
+      etag: req.file.etag,
+      acl: req.file.acl,
+    };
+
+    try {
+      const t = await AuctionTeamModel.updateOne(
+        { _id: team },
+        { $set: { logo: fileObject } },
+        { upsert: false }
+      );
+    } catch (e) {
+      console.error(e)
+      return res.status(200).json({
+        success: false,
+        message: `Error team logo uploading, : ${e}`,
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Logo successfully uploaded",
+      result: fileObject,
+    });
+  } catch (err) {
+    console.error(`Internal server error: ${err.message}`);
+    return res.status(500).json({
+      success: false,
+      message: `Internal server error: ${err}`,
     });
   }
 };

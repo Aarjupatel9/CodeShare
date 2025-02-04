@@ -6,6 +6,8 @@ import * as xlsx from 'xlsx';
 import "./auction.css";
 import { undoIcons } from "../assets/svgs"
 import { io } from "socket.io-client";
+import { backArrowIcon, defaultTeamLogo } from "../assets/svgs";
+import { getTeamName, getTeamBudgetForView } from "./Utility";
 const SOCKET_ADDRESS = process.env.REACT_APP_SOCKET_ADDRESS;
 
 //auctionStatus : idle, bidding, sold, unsold
@@ -41,7 +43,7 @@ export default function AuctionBidding(props) {
     const getAuctionData = () => {
         setIsAPICallInProgress(true);
         AuctionService.getAuctionDetails({ auctionId: auctionId }).then((res) => {
-            console.error("getAuctionData", res);
+            console.info("getAuctionData", res);
             if (res.auction) {
                 setAuction(res.auction);
             }
@@ -205,7 +207,7 @@ export default function AuctionBidding(props) {
             if (isCompleted) {
                 setIsAPICallInProgress(true);
                 AuctionService.updateAuctionSet({ set: { _id: runningSet._id, state: "completed" }, auction: auction }).then((res) => {
-                    toast.success("Set is completed, please select next set for bidding", { duration: 3000 });
+                    toast.success("Set is complete, select next set to continue.", { duration: 3000 });
                 }).catch((err) => {
                     toast.error(err, { duration: 3000 });
                     console.error(err);
@@ -271,7 +273,7 @@ export default function AuctionBidding(props) {
         console.debug("randomPlayer", randomPlayer);
         setIsAPICallInProgress(true);
         AuctionService.updateAuctionPlayer({ players: [{ _id: randomPlayer._id, auctionStatus: "bidding" }] }).then((res) => {
-            toast.success("Start bidding for player " + randomPlayer.name + " at base price " + randomPlayer.basePrice, { duration: 3000 })
+            toast.success("Start bidding for player " + randomPlayer.name + " at base price " + getTeamBudgetForView(randomPlayer.basePrice), { duration: 3000 })
         }).catch((err) => {
             toast.error(err);
             console.error(err);
@@ -341,7 +343,7 @@ export default function AuctionBidding(props) {
             newBiddingState.sort((b1, b2) => { return b1.price - b2.price });
             setIsAPICallInProgress(true);
             AuctionService.updateAuctionPlayer({ players: [{ _id: player._id, bidding: newBiddingState }] }).then((res) => {
-                let toastId = toast.success("Current bid at " + nextBid + " of team " + team.name, { duration: 3000 });
+                let toastId = toast.success("Current bid at " + getTeamBudgetForView(nextBid) + " of team " + team.name, { duration: 3000 });
             }).catch((err) => {
                 toast.error(err.toString(), { duration: 3000 });
                 console.error(err);
@@ -414,8 +416,8 @@ export default function AuctionBidding(props) {
             x.reverse();
             return x.map((b, index) => {
                 return (
-                    <div className={`${index == 0 ? "bg-green-400" : "bg-slate-300"} flex flex-row justify-center w-full  rounded p-2 `}>
-                        <div >
+                    <div key={"bidding-updates-" + player.name + "-" + index} className={`${index == 0 ? "bg-green-400" : "bg-slate-300"} flex flex-row justify-center w-full  rounded p-2 `}>
+                        <div className='min-w-[50%] capitalize'>
                             {getTeamName(b.team)} -  {getTeamBudgetForView(b.price)}
                         </div>
                         {index == 0 && <div onClick={() => { handleBidUndo(player) }} className={`bg-gray-200 px-2 rounded ml-auto button cursor-pointer `}>
@@ -444,11 +446,11 @@ export default function AuctionBidding(props) {
                         {getProfilePicture(player)}
                     </div>
 
-                    <div className='flex flex-col sm:text-xs md:text-sm lg:text-lg text-start justify-start items-start '>
+                    <div className='flex flex-col sm:text-xs md:text-sm lg:text-lg text-start justify-start items-start capitalize'>
                         <div className='font-medium '>Player No. - {player.playerNumber}</div>
                         <div className='font-bold'>Name - {player.name}</div>
-                        <div className='font-medium'>Role - {player.role}</div>
-                        {player.bowlingHand && <div className='font-medium'>Bowl  -<span className='lowercase'> {player.bowlingHand} Arm - {player.bowlingType} </span></div>}
+                        <div className='font-medium capitalize'>Role - {player.role}</div>
+                        {player.bowlingHand && <div className='font-medium '>Bowl  -<span className='lowercase'> {player.bowlingHand} Arm - {player.bowlingType} </span></div>}
                         {player.battingHand && <div className='font-medium '>Bat - <span className='lowercase'> {player.battingHand} Arm - {player.battingPossition} order {player.battingType}</span> </div>}
 
                         <div className='font-medium'>Base Price - {getTeamBudgetForView(player.basePrice)}</div>
@@ -598,11 +600,6 @@ export default function AuctionBidding(props) {
         ), { duration: 60000 });
     }
 
-    const getTeamBudgetForView = (number) => {
-        number = parseInt(number);
-        return (number / 100000) + " L";
-    }
-
     return (
         <>
             <div className='flex flex-col w-full h-full p-1 text-sx gap-2'>
@@ -614,7 +611,7 @@ export default function AuctionBidding(props) {
 
                     <div className={`${"PlayerPannel-1"}   flex flex-col gap-2 w-full overflow-auto `}>
                         <div className='bg-gray-300 py-3 flex  flex-row justify-between items-center font-medium px-3 normal-case '>
-                            <div className='font-medium'>{(auctionDetails && auctionDetails.currentSet && Object.keys(auctionDetails.currentSet).length > 0 && auctionDetails.currentSet.name) ? (`Current set -  ${auctionDetails.currentSet.name} , Remaining player - ${auctionDetails.remainingPlayerInCurrentSet ? auctionDetails.remainingPlayerInCurrentSet : "0"}`) : ("Please select next set to continue")} </div>
+                            <div className='font-medium'>{(auctionDetails && auctionDetails.currentSet && Object.keys(auctionDetails.currentSet).length > 0 && auctionDetails.currentSet.name) ? (`Current set -  ${auctionDetails.currentSet.name} , Remaining player - ${auctionDetails.remainingPlayerInCurrentSet ? auctionDetails.remainingPlayerInCurrentSet : "0"}`) : ("Please select next set")} </div>
                             {auctionDetails && auctionDetails.selectSet && <div onClick={() => { selectNextSet() }} className='button cursor-pointer rounded bg-gray-400 px-2 p-1'>
                                 Select next set
                             </div>}
@@ -645,18 +642,35 @@ export default function AuctionBidding(props) {
                     </div>
                     <div className={`${"TeamPannel-1"}TeamPannel-1  flex flex-col gap-2 w-full overflow-auto py-3`}>
                         <div className='flex flex-row justify-center flex-wrap bg-gray-200 gap-2 p-2'>
-                            {teams && teams.length && teams.map((team, index) => {
-                                return (<div onClick={() => { handleTeamClick(team) }} className={`${canTeamBid(team._id) ? "bg-blue-200 cursor-pointer" : "bg-green-500 cursor-not-allowed"} rounded p-3 `}>
-                                    <div className='text-md font-medium'>
-                                        {team.name}
+                            {teams && teams.length && teams.map((team, _index) => {
+                                return (<div key={"teams-" + _index} onClick={() => { handleTeamClick(team) }} className={`flex max-w-[200px] flex-col gap-2 items-center ${canTeamBid(team._id) ? "bg-blue-200 cursor-pointer" : "bg-green-500 cursor-not-allowed"} rounded p-3 `}>
+                                    <div className="w-12 h-12 md:w-24 md:h-24 relative flex flex-col items-center">
+                                        <label className="relative w-full h-full rounded-full overflow-hidden border-2 border-gray-300 cursor-pointer">
+                                            {
+                                                team.logo && team.logo.url ? (
+                                                    <div
+                                                        className="w-full h-full bg-cover bg-center"
+                                                        style={{ backgroundImage: `url(${team.logo.url})` }}
+                                                    ></div>
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                                                        {defaultTeamLogo}
+                                                    </div>
+                                                )
+                                            }
+                                        </label>
                                     </div>
-                                    <div className='text-xs'>
-                                        Remaining - {getTeamBudgetForView(team.remainingBudget)}
+                                    <div className='flex flex-col'>
+                                        <div className='text-md font-medium capitalize'>
+                                            {team.name}
+                                        </div>
+                                        <div className='text-xs'>
+                                            Remaining - {getTeamBudgetForView(team.remainingBudget)}
+                                        </div>
+                                        <div className='text-xs'>
+                                            Total Players - {getTeamPlayerCount(team)}
+                                        </div>
                                     </div>
-                                    <div className='text-xs'>
-                                        Total Players - {getTeamPlayerCount(team)}
-                                    </div>
-
                                 </div>)
                             })}
                         </div>

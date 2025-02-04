@@ -215,6 +215,10 @@ playerSchema.pre('updateOne', async function (next) {
         // Add the incremented soldNumber to the update query
         update.$set.soldNumber = maxSoldNumber + 1;
     }
+    if (update.$set?.auctionSet) {
+        console.debug("auction set is changing updating player state to idle");
+        update.$set.auctionStatus = "idle";
+    }
 
     next();
 });

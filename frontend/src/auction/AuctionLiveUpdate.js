@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import * as xlsx from 'xlsx';
 import { io } from "socket.io-client";
 import { backArrowIcon, downArrowIcon } from '../assets/svgs';
+import AuctionTeamView from './AuctionTeamView';
 
 var SOCKET_ADDRESS = process.env.REACT_APP_SOCKET_ADDRESS;
 var defaultViewSelection = { liveBidding: false, team: false, playerDetails: false };
@@ -316,12 +317,13 @@ export default function AuctionLiveUpdate(props) {
                                 Live Bidding Updates
                             </div>
                         </div>
-                        <div className="flex flex-col md:flex-row  w-full h-full flex-wrap items-center pt-2 overflow-auto justify-start gap-2 md:justify-center mx-auto" >
+                        <div className="flex flex-col md:flex-row max-w-full  w-full h-full flex-wrap items-center pt-2 overflow-auto justify-start gap-2 md:justify-center mx-auto" >
                             {(currentPlayer && Object.keys(currentPlayer).length > 0) ? <>
-                                <div className='PlayerProfile flex flex-col w-[100%] md:w-[49%]'>
+                                <div className='flex flex-col w-[100%] md:w-[49%]'>
                                     {getPlayerCard(currentPlayer)}
                                 </div>
-                                <div className='PlayerProfile flex flex-col w-[100%] md:w-[49%] max-h-full items-center overflow-auto'>
+                                <div className='flex-1 flex flex-col w-[100%] md:w-[49%] max-h-full items-center overflow-auto'>
+                                    <div className='font-medium'> Current Bidding...</div>
                                     {(currentPlayer.bidding && currentPlayer.bidding.length > 0) ? <div className='flex max-w-[400px] w-full flex-col gap-[1px] overflow-auto'>
                                         {getBiddingView(currentPlayer)}
                                     </div> : <div className='normal-case font-medium'>
@@ -335,76 +337,7 @@ export default function AuctionLiveUpdate(props) {
                     </div>}
 
                     {view.team &&
-                        <div className='flex flex-col h-auto h-full rounded gap-2 overflow-auto'>
-                            <div className='flex flex-row justify-center p-2 bg-slate-500 font-bold uppercase'>
-                                {currentTeamPlayerMap && <div onClick={() => { displayTeamBoard() }} className='absolute left-5 cursor-pointer'>
-                                    {backArrowIcon}
-                                </div>}
-                                {currentTeamPlayerMap ? getTeamName(currentTeamPlayerMap.team) : "Teams"}
-                            </div>
-
-                            {!currentTeamPlayerMap && <div className='flex flex-row gap-2 w-full h-auto max-h-full flex-wrap mx-auto'>
-                                {(teamPlayerMap && teamPlayerMap.length) > 0 ? teamPlayerMap.map((map, index) => {
-                                    return (<div onClick={() => { setCurrentTeamPlayerMap(map) }} key={"team_" + index}
-                                        className={`flex lg:w-[32.7%] md:w-[49%] sm:w-[100%]  gap-4 p-4 flex-row items-start bg-gray-200 cursor-pointer rounded-lg  ${currentTeamPlayerMap && currentTeamPlayerMap.team == map.team ? "bg-gray-400" : "bg-gray-200"}`}>
-                                        <div className="w-24 h-24 rounded-full bg-gray-300 flex items-center justify-center text-xl font-bold text-dark">
-                                            {/* <img
-                                                    src="user-image-url.jpg"
-                                                    alt="User Image"
-                                                    className="w-full h-full rounded-full object-cover hidden"
-                                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
-                                                /> */}
-                                            <span className="flex ">
-                                                {getTeamLogo(map.team)}
-                                            </span>
-                                        </div>
-                                        <div className='flex flex-col gap-2 flex-grow flex-start'>
-                                            <div className='text-lg font-bold text-center'>{getTeamName(map.team)}</div>
-                                            <div className='text-xs font-medium text-center'>Total player - {map.players.length}</div>
-                                            <div className='text-xs font-medium text-center'>Remaining Budgert - {getTeamBudgetForView(map.remainingBudget)}</div>
-                                        </div>
-                                    </div>)
-                                }) : <>
-                                    <div className='normal-case font-medium'>
-                                        No team added in the auction
-                                    </div>
-                                </>}
-                            </div>}
-                            {currentTeamPlayerMap && <div className='flex flex-row flex-wrap gap-2 w-full h-full overflow-auto'>
-                                <div className='PlayerPannel flex flex-col gap-2 lg:w-[30%] sm:w-[100%] md:w-[30%] h-full overflow-auto'>
-                                    <div key={"player_" + "title"} className='flex flex-col items-start bg-slate-400 p-2 rounded'>
-                                        <div className='font-bold '>Player List</div>
-                                    </div>
-                                    <div className='flex flex-col gap-2 overflow-auto'>
-                                        {(currentTeamPlayerMap.players.length) > 0 ? currentTeamPlayerMap.players.map((player, index) => {
-                                            return (
-                                                <div onClick={() => { setSelectedPlayer(player) }} key={"player_" + index} className='flex flex-col items-start bg-gray-200 p-2 rounded'>
-                                                    <div className='font-medium '>{player.name}</div>
-                                                    <div className='text-xs'>Role - {player.role}  </div>
-                                                    <div className='text-xs'>Sold - {getTeamBudgetForView(player.soldPrice)}  </div>
-                                                </div>)
-                                        }) : <div className='flex flex-col w-full mt-5 justify-center normal-case font-medium gap-2 w-[50%]'>
-                                            Team has no player
-                                        </div>}
-                                    </div>
-                                </div>
-                                <div className='PlayerPannel flex flex-col gap-2 lg:w-[69%] sm:w-[100%] md:w-[68%]  h-full overflow-auto'>
-                                    <div key={"player_" + "title"} className='flex flex-col items-start bg-slate-400 p-2 rounded'>
-                                        <div className='font-bold '>Player Details</div>
-                                    </div>
-                                    {selectedPlayer ? <div className='flex flex-row flex-wrap h-full gap-1 justify-center overflow-auto'>
-                                        <div className='PlayerProfile flex flex-col lg:w-[80%] lgxl:w-[50%] sm:w-[100%] md:w-[100%]'>
-                                            {getPlayerCard(selectedPlayer)}
-                                        </div>
-                                        <div className='PlayerProfile flex flex-col lg:w-[50%] sm:w-[100%] md:w-[100%] h-full flex-grow max-w-[400px] gap-[1px] overflow-auto'>
-                                            {(selectedPlayer.bidding && selectedPlayer.bidding.length > 0) && getBiddingView(selectedPlayer)}
-                                        </div>
-                                    </div> : <div className='flex flex-col w-full mt-5 justify-center normal-case font-medium gap-2 w-[50%]'>
-                                        Select player to view bidding history
-                                    </div>}
-                                </div>
-                            </div>}
-                        </div>
+                        <AuctionTeamView currentTeamPlayerMap={currentTeamPlayerMap} teamPlayerMap={teamPlayerMap} setCurrentTeamPlayerMap={setCurrentTeamPlayerMap} teams={teams} selectedPlayer={selectedPlayer} setSelectedPlayer={setSelectedPlayer} />
                     }
 
                     {view.playerDetails && <section className="bg-gray-100 dark:bg-gray-900 py-3 sm:py-2 w-full h-auto max-h-[100vh] px-4 mx-auto max-w-[100vw] lg:px-12 p-1 overflow-auto">

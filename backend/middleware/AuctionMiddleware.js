@@ -5,7 +5,7 @@ module.exports = () => {
     return async (req, res, next) => {
         const token = req.cookies.auction_token;
         if (!token) {
-            return res.status(401).json({ success: false, message: "TokenExpiredError", specialMessage: "Not Authorized. Auction Token not found !!!" });
+            return res.status(401).json({ success: false, message: "TokenExpiredError", details: "Not authorized, Session token not found." });
         }
         try {
             const { _id } = verifyJWTToken(token);
@@ -13,19 +13,19 @@ module.exports = () => {
             try {
                 const auction = await AuctionModels.findOne({ _id: _id });
                 if (!auction) {
-                    return res.status(401).json({ success: false, message: "TokenExpiredError", specialMessage: "Auction not found." });
+                    return res.status(401).json({ success: false, message: "TokenExpiredError", details: "Auction not found." });
                 }
                 req.auction = auction;
                 next();
             } catch (error) {
                 console.error(error);
-                return res.status(401).json({ success: false, message: "Internal server error" });
+                return res.status(401).json({ success: false, message: "Internal server error." });
             }
 
         } catch (error) {
             console.error(error);
             if (error.name == "TokenExpiredError") {
-                return res.clearCookie("auction_token").status(401).json({ success: false, message: error.message });
+                return res.clearCookie("auction_token").status(401).json({ success: false, message: error.message, details: "Auction session expired." });
             } else {
                 return res.status(401).json({ success: false, message: error.message });
             }
