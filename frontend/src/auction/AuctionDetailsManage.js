@@ -3,8 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import AuctionService from '../services/auctionService';
 import toast from 'react-hot-toast';
 import * as xlsx from 'xlsx';
-import { downArrowIcon } from '../assets/svgs';
+import { defaultTeamLogo, downArrowIcon } from '../assets/svgs';
 import { generatePDF } from './generatePdf';
+import { getTeamBudgetForView, getTeamName } from './Utility';
 
 const requiredPlayerColumnForDisplay = ["playerNumber", "name", "team", "auctionStatus", "basePrice", "soldPrice", "auctionSet", "role", "bowlingHand", "bowlingType", "battingHand", "battingPossition", "battingType", "commnets"];
 const filterFields = ["auctionSet", "team", "auctionStatus"];
@@ -55,6 +56,36 @@ export default function AuctionDetailsManage(props) {
         });
     }
 
+    const handleImageUpload = async (event, team) => {
+        event.preventDefault();
+        if (!team) {
+            return;
+        }
+
+        const file = event.target.files[0];
+        if (file.size > 4e6) {
+            toast.error("Please upload a file smaller than 2 MB");
+            return false;
+        }
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("fileSize", file.size * 8);
+        formData.append("team", team._id);
+        const toastId = toast.loading("Uploading team logo...");
+        AuctionService.saveTeamLogo(formData).then((res) => {
+            toast.success(res.message, {
+                id: toastId,
+            });
+            getAuctionData();
+        }).catch((error) => {
+            console.error(error);
+            toast.error(error, {
+                id: toastId,
+            });
+        });
+    };
+
     useEffect(() => {
         // console.debug("playerListFilters", playerListFilters);
     }, [playerListFilters])
@@ -82,7 +113,6 @@ export default function AuctionDetailsManage(props) {
             });
             setPlayers(filterdPlayers);
         }
-
 
     }, [selectedPlayerListFilters])
 
@@ -160,6 +190,12 @@ export default function AuctionDetailsManage(props) {
             })
             setTeamPlayerMap(data);
         }
+        //setting default filter values
+        setSelectedPlayerListFilters({
+            auctionStatus: null,
+            team: null,
+            auctionSet: null
+        })
     }, [auctionData])
 
     const getTeamBudget = (teamId, teams) => {
@@ -176,14 +212,6 @@ export default function AuctionDetailsManage(props) {
             return s.name;
         } else {
             return "undefiend set";
-        }
-    }
-    const getTeamName = (teamId) => {
-        var s = teams.find((s) => { return s._id == teamId });
-        if (s) {
-            return s.name;
-        } else {
-            return "undefiend team";
         }
     }
 
@@ -224,10 +252,7 @@ export default function AuctionDetailsManage(props) {
             })
         }
     }
-    const getTeamBudgetForView = (number) => {
-        number = parseInt(number);
-        return (number / 100000) + " L";
-    }
+
 
     const handlePlayerSetAssign = () => {
         const selectedPlayers = players.filter(player => player.isSelected);
@@ -268,6 +293,7 @@ export default function AuctionDetailsManage(props) {
             </div>
         ));
     }
+
     const handlePlayerTeamAssign = () => {
         const selectedPlayers = players.filter(player => player.isSelected);
         if (selectedPlayers.length != 1) {
@@ -330,7 +356,7 @@ export default function AuctionDetailsManage(props) {
                             var data = [{ _id: player._id, soldPrice: newSoldPrice, team: newTeam, bidding: [{ team: newTeam, price: newSoldPrice }], auctionStatus: "sold", }];
                             if (data.length > 0) {
                                 AuctionService.updateAuctionPlayer({ players: data }).then((res) => {
-                                    toast.success("Player " + player.name + " is assign to for price " + newSoldPrice, { duration: 3000 })
+                                    toast.success("Player " + player.name + " is assign to for price " + getTeamBudgetForView(newSoldPrice), { duration: 3000 })
                                 }).catch((e) => {
                                     console.error(e);
                                     toast.success("Error in assigning player " + player.name + " to team - " + e.toString(), { duration: 3000 })
@@ -933,6 +959,7 @@ export default function AuctionDetailsManage(props) {
                                                                     }}
                                                                     name={key + "_filter_select_element"}
                                                                     id={key + "_filter_select_element"}
+                                                                    value={selectedPlayerListFilters[key]}
                                                                     defaultValue={""}
                                                                     className=" min-w-24 border border-gray-300 rounded-md py-1 px-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
                                                                 >
@@ -970,7 +997,7 @@ export default function AuctionDetailsManage(props) {
                                                             if (player.hasOwnProperty(key)) {
                                                                 var value = "";
                                                                 if (key == "auctionSet") { value = getSetName(player[key]) }
-                                                                else if (key == "team") { if (player[key]) { value = getTeamName(player[key]); } else { value = "-"; } }
+                                                                else if (key == "team") { if (player[key]) { value = getTeamName(player[key], teams); } else { value = "-"; } }
                                                                 else if (key == "soldPrice" || key == "basePrice") { value = getTeamBudgetForView(player[key]) }
                                                                 else { value = player[key]; }
                                                                 return (
@@ -1115,11 +1142,28 @@ export default function AuctionDetailsManage(props) {
                                                 return (
                                                     <tr key={"teams-" + rowIndex} className="border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
                                                         <td key={"teams-" + rowIndex + "-checkbox1"} className="w-4 px-4 py-3">
-                                                            <div onClick={() => { }} className="flex items-center cursor-pointer rounded px-2 p-1 text-black ">
-                                                                <img src={team.logo?.url} onError={(e) => {
-                                                                    e.target.src = ""
-                                                                }}>
-                                                                </img>
+                                                            <div className="relative flex flex-col items-center">
+                                                                <label className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-gray-300 cursor-pointer">
+                                                                    {team.logo && team.logo.url ? (
+                                                                        <div
+                                                                            className="w-full h-full bg-cover bg-center"
+                                                                            style={{ backgroundImage: `url(${team.logo.url})` }}
+                                                                        >\
+                                                                            {defaultTeamLogo}
+
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                                                                            {defaultTeamLogo}
+                                                                        </div>
+                                                                    )}
+                                                                    <input
+                                                                        type="file"
+                                                                        accept="image/*"
+                                                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                                        onChange={(e) => { handleImageUpload(e, team) }}
+                                                                    />
+                                                                </label>
                                                             </div>
                                                         </td>
                                                         {Object.keys(team).map((key, colIndex) => {
@@ -1281,7 +1325,7 @@ export default function AuctionDetailsManage(props) {
                                     {teamPlayerMap && teamPlayerMap.map((map, _mapIndex) => {
                                         return (<div key={"exportTeamList_teamPlayerMap_" + _mapIndex} className='flex min-w-[23%] pb-1 mb-2 flex-col shadow rounded bg-gray-100 justify-start items-center gap-4'>
                                             <div className='flex flex-col justify-center font-bold text-lg'>
-                                                {getTeamName(map.team)}
+                                                {getTeamName(map.team, teams)}
                                             </div>
                                             <div className='flex flex-col justify-center'>
                                                 <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
@@ -1295,14 +1339,14 @@ export default function AuctionDetailsManage(props) {
                                                     <tbody className='h-full'>
                                                         {map.players && map.players.map((p, _playerIndex) => {
                                                             return (
-                                                                <tr key={"row-" + _mapIndex + "-" + _playerIndex} className="border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                                                <tr key={"row-" + _mapIndex + "-" + _playerIndex} className="[&:not(:last-child)]:border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
                                                                     <td className='px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white'>
                                                                         {p.playerNumber}
                                                                     </td><td className='px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white'>
                                                                         {p.name}
                                                                     </td>
                                                                     <td className='px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white'>
-                                                                        {p.soldPrice}
+                                                                        {getTeamBudgetForView(p.soldPrice)}
                                                                     </td>
                                                                 </tr>
                                                             )
