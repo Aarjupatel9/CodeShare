@@ -2,31 +2,23 @@ const { Server } = require('socket.io');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-
 const logFilePath = path.join(__dirname, 'socket_usage.log');
+
+let allowedOrigin = process.env.ALLOWED_ORIGIN;
+allowedOrigin = allowedOrigin.split(",");
 
 const server = http.createServer();
 
 const io = new Server(server, {
     cors: {
-        origin: [
-            "http://localhost:3000",
-            "http://localhost",
-            "http://13.203.114.163/",
-            "https://13.203.114.163/"
-        ],
+        origin: allowedOrigin
     },
     path: '/socket/'
 });
 
 const auctionIO = new Server(server, {
     cors: {
-        origin: [
-            "http://localhost:3000",
-            "http://localhost",
-            "http://13.203.114.163/",
-            "https://13.203.114.163/",
-        ],
+        origin: allowedOrigin
     },
     path: '/auction/'
 });
