@@ -49,10 +49,11 @@ export default function AuctionTeamView(props) {
                             <label className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-gray-300 cursor-pointer">
                                 {
                                     getTeamLogo(map.team) ? (
-                                        <div
+                                        <img
                                             className="w-full h-full bg-cover bg-center"
-                                            style={{ backgroundImage: `url(${getTeamLogo(map.team)})` }}
-                                        ></div>
+                                            src={getTeamLogo(map.team)}
+                                            alt="logo"
+                                        />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center bg-gray-100">
                                             {defaultTeamLogo}

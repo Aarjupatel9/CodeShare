@@ -12,8 +12,12 @@ const auctionRoute = require('../routes/auctionRoute');
 
 const app = express();
 
+let allowedOrigin = process.env.ALLOWED_ORIGIN;
+allowedOrigin = allowedOrigin.split(",");
+let hostOriginIp = process.env.HOST_ORIGIN_IP;
+
 // Trust the reverse proxy (Nginx, etc.)
-app.set('trust proxy', 'loopback, 43.205.203.95');
+app.set('trust proxy', 'loopback, ' + hostOriginIp);
 
 // const limiter = rateLimit({
 //     windowMs: 5000, // 15 minutes
@@ -23,8 +27,9 @@ app.set('trust proxy', 'loopback, 43.205.203.95');
 // })
 // app.use(limiter)
 
+
 app.use(cors({
-    origin: ['http://localhost:3000', 'http://localhost', 'http://43.205.203.95'],
+    origin: allowedOrigin,
     credentials: true
 }));
 
@@ -60,7 +65,7 @@ app.use("/api/auction", auctionRoute);
 
 
 app.get('*', (req, res) => {
-    return res.status(404).json({ message: 'Conteng Not found, Check the URL properly !!!' });
+    return res.status(404).json({ message: 'Content not found' });
 })
 
 

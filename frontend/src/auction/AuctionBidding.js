@@ -1,4 +1,4 @@
-import React, { useEffect, useContext, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import AuctionService from '../services/auctionService';
 import toast from 'react-hot-toast';
@@ -8,11 +8,10 @@ import { undoIcons } from "../assets/svgs"
 import { io } from "socket.io-client";
 import { backArrowIcon, defaultTeamLogo } from "../assets/svgs";
 import { getTeamName, getTeamBudgetForView } from "./Utility";
+import heartBeatSound from "../assets/heart-beat-sound.mp3";
 const SOCKET_ADDRESS = process.env.REACT_APP_SOCKET_ADDRESS;
-
 //auctionStatus : idle, bidding, sold, unsold
-const tabName = ["Marquee", "AR1", "AR2", "AR3", "BA1", "BA2", "BA3", "WK1", "WK2",]
-const requiredSetColumnForDisplay = ["name"];
+
 export default function AuctionBidding(props) {
     const [auction, setAuction] = useState({});
     const [teams, setTeams] = useState([]);
@@ -26,6 +25,8 @@ export default function AuctionBidding(props) {
     const [auctionDetails, setAuctionDetails] = useState({});
     const [socket, setSocket] = useState(null);
     const [isAPICallInProgress, setIsAPICallInProgress] = useState(null);
+    const [allowMusic, setAllowMusic] = useState(false);
+
 
     const { auctionId } = useParams();
     const navigate = useNavigate();
@@ -39,6 +40,29 @@ export default function AuctionBidding(props) {
             }
         };
     }, [])
+
+    const audioRef = useRef(new Audio(heartBeatSound));
+
+    useEffect(() => {
+        const audio = audioRef.current;
+        audio.loop = true; // Enable looping
+        console.log("playing stating ")
+        if (allowMusic) {
+            if (player.bidding && player.bidding.length > 0) {
+                audio.play().then(() => { console.log("playing music") }).catch((error) => console.error("Audio play error:", error));
+            } else {
+                audio.pause();
+                audio.currentTime = 0; // Reset audio position
+            }
+        } else {
+            audio.pause();
+            audio.currentTime = 0; // Reset audio position
+        }
+
+        return () => {
+            audio.pause();
+        };
+    }, [allowMusic, player]);
 
     const getAuctionData = () => {
         setIsAPICallInProgress(true);
@@ -605,6 +629,7 @@ export default function AuctionBidding(props) {
             <div className='flex flex-col w-full h-full p-1 text-sx gap-2'>
                 <div className='header flex flex-row justify-start gap-2 bg-gray-50'>
                     <div onClick={() => { navigate("/t/auction/" + auctionId) }} className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer">Auction Home</div>
+                    <div onClick={() => { setAllowMusic(!allowMusic); }} className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer">{`${allowMusic ? "Stop" : "Start"} Sound`} </div>
                 </div>
 
                 <div className='flex flex-col gap-2 h-full max-h-full overflow-auto bg-gray-100 rounded-lg'>
@@ -648,10 +673,10 @@ export default function AuctionBidding(props) {
                                         <label className="relative w-full h-full rounded-full overflow-hidden border-2 border-gray-300 cursor-pointer">
                                             {
                                                 team.logo && team.logo.url ? (
-                                                    <div
+                                                    <img
                                                         className="w-full h-full bg-cover bg-center"
-                                                        style={{ backgroundImage: `url(${team.logo.url})` }}
-                                                    ></div>
+                                                        src={team.logo.url}
+                                                    />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center bg-gray-100">
                                                         {defaultTeamLogo}
