@@ -624,6 +624,22 @@ export default function AuctionBidding(props) {
         ), { duration: 60000 });
     }
 
+    const getTeamLogo = (team) => {
+
+        try {
+            const url = new URL(team.logo.url);
+            const originalHostname = url.hostname; // e.g., codeshare.public-images.s3.ap-south-1.amazonaws.com
+            // Remove the bucket name from the hostname
+            const correctedHostname = originalHostname.replace(`${team.logo.bucket}.`, ""); // Removes "codeshare.public-images."
+            // Construct the new URL
+            return `https://${correctedHostname}/${team.logo.bucket}/${team.logo.key}`;
+
+        } catch (error) {
+            console.error("Error processing logo URL:", error);
+            return null;
+        }
+    }
+
     return (
         <>
             <div className='flex flex-col w-full h-full p-1 text-sx gap-2'>
@@ -675,7 +691,7 @@ export default function AuctionBidding(props) {
                                                 team.logo && team.logo.url ? (
                                                     <img
                                                         className="w-full h-full bg-cover bg-center"
-                                                        src={team.logo.url}
+                                                        src={getTeamLogo(team)}
                                                     />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center bg-gray-100">
