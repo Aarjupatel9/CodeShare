@@ -1,6 +1,7 @@
 const { Server } = require('socket.io');
 const http = require('http');
 const fs = require('fs');
+require("dotenv").config();
 const path = require('path');
 const logFilePath = path.join(__dirname, 'socket_usage.log');
 

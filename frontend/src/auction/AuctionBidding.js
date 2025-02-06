@@ -464,7 +464,7 @@ export default function AuctionBidding(props) {
     const getPlayerCard = (player) => {
         if (player && Object.keys(player).length > 0) {
             return (
-                <div className={`flex flex-row justify-center items-center sm:gap-1 md:gap-1 lg:gap-2  rounded sm:p-1 md:p-2 `}>
+                <div className={`flex max-w-100 flex-row justify-center items-center sm:gap-1 md:gap-1 lg:gap-2  rounded sm:p-1 md:p-2 `}>
 
                     <div className="bg-slate-200 sm:max-w-[200px] md:max-w-[300px] lg:max-w-[300px] rounded-full">
                         {getProfilePicture(player)}
@@ -476,8 +476,8 @@ export default function AuctionBidding(props) {
                         <div className='font-medium capitalize'>Role - {player.role}</div>
                         {player.bowlingHand && <div className='font-medium '>Bowl  -<span className='lowercase'> {player.bowlingHand} Arm - {player.bowlingType} </span></div>}
                         {player.battingHand && <div className='font-medium '>Bat - <span className='lowercase'> {player.battingHand} Arm - {player.battingPossition} order {player.battingType}</span> </div>}
-
                         <div className='font-medium'>Base Price - {getTeamBudgetForView(player.basePrice)}</div>
+                        {player.commnets && <div title={player.commnets} className='text-red-600 max-w-60 font-medium text-xs truncate cursor-pointer'>Note - {player.commnets}</div>}
                     </div>
                 </div>
             )
@@ -668,7 +668,7 @@ export default function AuctionBidding(props) {
                     <div className={`${"TeamPannel-1"}TeamPannel-1  flex flex-col gap-2 w-full overflow-auto py-3`}>
                         <div className='flex flex-row justify-center flex-wrap bg-gray-200 gap-2 p-2'>
                             {teams && teams.length && teams.map((team, _index) => {
-                                return (<div key={"teams-" + _index} onClick={() => { handleTeamClick(team) }} className={`flex max-w-[200px] flex-col gap-2 items-center ${canTeamBid(team._id) ? "bg-blue-200 cursor-pointer" : "bg-green-500 cursor-not-allowed"} rounded p-3 `}>
+                                return (<div key={"teams-" + _index} onClick={() => { handleTeamClick(team) }} className={`flex max-w-[200px] flex-col gap-2 items-center ${canTeamBid(team._id) ? "bg-blue-300 cursor-pointer" : "bg-green-500 cursor-not-allowed"} rounded p-3 `}>
                                     <div className="w-12 h-12 md:w-24 md:h-24 relative flex flex-col items-center">
                                         <label className="relative w-full h-full rounded-full overflow-hidden border-2 border-gray-300 cursor-pointer">
                                             {
@@ -685,14 +685,14 @@ export default function AuctionBidding(props) {
                                             }
                                         </label>
                                     </div>
-                                    <div className='flex flex-col'>
+                                    <div className='flex flex-col gap-1'>
                                         <div className='text-md font-medium capitalize'>
                                             {team.name}
                                         </div>
-                                        <div className='text-xs'>
+                                        <div className='text-xs font-medium'>
                                             Remaining - {getTeamBudgetForView(team.remainingBudget)}
                                         </div>
-                                        <div className='text-xs'>
+                                        <div className='text-xs font-medium'>
                                             Total Players - {getTeamPlayerCount(team)}
                                         </div>
                                     </div>
