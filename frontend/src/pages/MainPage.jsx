@@ -30,7 +30,8 @@ import {
 } from "../common/functions";
 import { HelpMoedal, UserProfileModal } from "../common/Modals";
 
-var SOCKET_ADDRESS = process.env.REACT_APP_SOCKET_ADDRESS;
+
+const backend_socket_url = (await (await fetch('config.json')).json()).backend_socket_url
 
 export default function MainPage(props) {
   const { currUser, setCurrUser } = useContext(UserContext);
@@ -151,11 +152,10 @@ export default function MainPage(props) {
   useEffect(() => {
     if (socketEnabled) {
       if (slug) {
-        const socket = new io(SOCKET_ADDRESS, {
+        const socket = new io(backend_socket_url, {
           query: { slug: slug },
           path: "/socket/", // Custom path for Socket.IO
         });
-
         socket.on("room_message", (room, content) => {
           setIncomingEditorValue(content);
         });
