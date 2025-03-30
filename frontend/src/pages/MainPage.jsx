@@ -156,9 +156,7 @@ export default function MainPage(props) {
           query: { slug: slug },
           path: "/socket/", // Custom path for Socket.IO
         });
-        console.log("connecting")
         socket.on("room_message", (room, content) => {
-          console.log("incoming message")
           setIncomingEditorValue(content);
         });
         setSocket(socket);
