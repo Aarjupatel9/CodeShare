@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import userService from "../services/userService";
-import { useNavigate, useParams } from "react-router-dom";
+import { json, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import flobiteJS from "flowbite/dist/flowbite.min.js";
 import { io } from "socket.io-client";
@@ -30,9 +30,6 @@ import {
 } from "../common/functions";
 import { HelpMoedal, UserProfileModal } from "../common/Modals";
 
-
-const backend_socket_url = (await (await fetch('config.json')).json()).backend_socket_url
-
 export default function MainPage(props) {
   const { currUser, setCurrUser } = useContext(UserContext);
 
@@ -40,6 +37,7 @@ export default function MainPage(props) {
   const navigate = useNavigate();
   const { slug, username } = useParams();
 
+  const [appConfig, setAppConfig] = useState({});
   const [userSlug, setUserSlug] = useState(slug);
   const [socketEnabled, setSocketEnabled] = useState(true);
   const [allVersionData, setAllVersionData] = useState([]);
@@ -150,9 +148,22 @@ export default function MainPage(props) {
   }, [slug]);
 
   useEffect(() => {
-    if (socketEnabled) {
+    const fetchConfig = async () => {
+      try {
+        const res = await fetch('/config.json');
+        const config = await res.json();
+        setAppConfig(config);
+      } catch (error) {
+        console.error("Error fetching config:", error);
+      }
+    };
+    fetchConfig();
+  }, []); 
+
+  useEffect(() => {
+    if (socketEnabled && appConfig.backend_socket_url) {
       if (slug) {
-        const socket = new io(backend_socket_url, {
+        const socket = new io(appConfig.backend_socket_url, {
           query: { slug: slug },
           path: "/socket/", // Custom path for Socket.IO
         });
@@ -170,7 +181,7 @@ export default function MainPage(props) {
         socket.disconnect();
       }
     }
-  }, [slug, socketEnabled]);
+  }, [slug, socketEnabled, appConfig]);
 
   useEffect(() => {
     if (editorRef && editorRef.current) {
