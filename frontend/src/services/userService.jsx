@@ -1,247 +1,242 @@
-import { handleRejectResponse } from "./systemService";
-
+import { handleRejectResponse } from './systemService'
+const backend_url = (await (await fetch('config.json')).json()).backend_url
 
 class UserService {
+  
   getData(slug, time, flag, user) {
-    const server_host = process.env.REACT_APP_SERVER_PATH;
-    var requestPayload = { slug: slug, flag: flag, }
-    requestPayload.userId = user ? user._id : null;
+    var requestPayload = { slug: slug, flag: flag }
+    requestPayload.userId = user ? user._id : null
     if (time) {
-      requestPayload.time = time;
+      requestPayload.time = time
     }
 
     return new Promise(function (resolve, reject) {
       const fetchPostOptions = {
-        method: "POST",
-        credentials: "include",
+        method: 'POST',
+        credentials: 'include',
         headers: {
-          "Content-Type": "application/json;charset=UTF-8",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Method": "GET,POST,PUT,DELETE,OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type,Authorization",
+          'Content-Type': 'application/json;charset=UTF-8',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Method': 'GET,POST,PUT,DELETE,OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type,Authorization',
         },
-        body: JSON.stringify(requestPayload)
-      };
+        body: JSON.stringify(requestPayload),
+      }
       if (!user) {
-        fetch(server_host + "/api/data/getData", fetchPostOptions)
+        fetch(backend_url + '/api/data/getData', fetchPostOptions)
           .then((response) => {
-            return response.json();
+            return response.json()
           })
           .then((res) => {
             if (res) {
-              resolve(res);
+              resolve(res)
             } else {
-              reject(res.message);
+              reject(res.message)
             }
           })
           .catch((e) => {
-            console.error("error : ", e);
-            reject(e.toString());
-          });
+            console.error('error : ', e)
+            reject(e.toString())
+          })
       } else {
-        fetch(server_host + "/api/data/p/getData", fetchPostOptions)
+        fetch(backend_url + '/api/data/p/getData', fetchPostOptions)
           .then((response) => {
-            return response.json();
+            return response.json()
           })
           .then((res) => {
             if (!res.success) {
-              handleRejectResponse(res.message);
+              handleRejectResponse(res.message)
             }
             if (res) {
-              resolve(res);
+              resolve(res)
             } else {
-              reject(res.message);
+              reject(res.message)
             }
           })
           .catch((e) => {
-            console.error("error : ", e);
-            handleRejectResponse(e.toString());
-            reject(e.toString());
-          });
+            console.error('error : ', e)
+            handleRejectResponse(e.toString())
+            reject(e.toString())
+          })
       }
-    });
+    })
   }
 
   saveData(data) {
-    const server_host = process.env.REACT_APP_SERVER_PATH;
     return new Promise(function (resolve, reject) {
       const fetchPostOptions = {
-        method: "POST",
-        credentials: "include",
+        method: 'POST',
+        credentials: 'include',
         headers: {
-          "Content-Type": "application/json;charset=UTF-8",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Method": "GET,POST,PUT,DELETE,OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type,Authorization",
+          'Content-Type': 'application/json;charset=UTF-8',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Method': 'GET,POST,PUT,DELETE,OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type,Authorization',
         },
         body: JSON.stringify(data),
-      };
-      if (!data.owner) {
-        fetch(server_host + "/api/data/saveData/", fetchPostOptions)
-          .then((response) => {
-            return response.json();
-          })
-          .then((res) => {
-            if (res.success) {
-              resolve(res);
-            } else {
-              reject(res.message);
-            }
-          })
-          .catch((e) => {
-            console.error("error : ", e);
-            reject(e.toString());
-          });
-      } else {
-        fetch(server_host + "/api/data/p/saveData/", fetchPostOptions)
-          .then((response) => {
-            return response.json();
-          })
-          .then((res) => {
-            if (res.success) {
-              resolve(res);
-            } else {
-              handleRejectResponse(res.message);
-              reject(res.message);
-            }
-          })
-          .catch((e) => {
-            console.error("error : ", e);
-            handleRejectResponse(e.toString());
-            reject(e.toString());
-          });
       }
-    });
+      if (!data.owner) {
+        fetch(backend_url + '/api/data/saveData/', fetchPostOptions)
+          .then((response) => {
+            return response.json()
+          })
+          .then((res) => {
+            if (res.success) {
+              resolve(res)
+            } else {
+              reject(res.message)
+            }
+          })
+          .catch((e) => {
+            console.error('error : ', e)
+            reject(e.toString())
+          })
+      } else {
+        fetch(backend_url + '/api/data/p/saveData/', fetchPostOptions)
+          .then((response) => {
+            return response.json()
+          })
+          .then((res) => {
+            if (res.success) {
+              resolve(res)
+            } else {
+              handleRejectResponse(res.message)
+              reject(res.message)
+            }
+          })
+          .catch((e) => {
+            console.error('error : ', e)
+            handleRejectResponse(e.toString())
+            reject(e.toString())
+          })
+      }
+    })
   }
 
   saveFile(formData) {
-    // const host = process.env.REACT_APP_SERVER_PATH;
-    const server_host = process.env.REACT_APP_SERVER_PATH;
-
     return new Promise(function (resolve, reject) {
       const fetchPostOptions = {
-        method: "POST",
-        credentials: "include",
+        method: 'POST',
+        credentials: 'include',
         headers: {
-          "Access-Control-Allow-Origin": "*",
-          "slug": formData.get("slug"),
-          "filesize": formData.get("fileSize")
+          'Access-Control-Allow-Origin': '*',
+          slug: formData.get('slug'),
+          filesize: formData.get('fileSize'),
         },
         body: formData,
-      };
-      fetch(server_host + "/api/data/p/saveFile/", fetchPostOptions)
+      }
+      fetch(backend_url + '/api/data/p/saveFile/', fetchPostOptions)
         .then((response) => {
-          return response.json();
+          return response.json()
         })
         .then((res) => {
           if (res.success) {
-            resolve(res);
+            resolve(res)
           } else {
-            reject(res.message);
+            reject(res.message)
           }
         })
         .catch((e) => {
-          console.error("error : ", e);
-          reject(e.toString());
-        });
-    });
+          console.error('error : ', e)
+          reject(e.toString())
+        })
+    })
   }
 
   removeFile(data) {
-    const server_host = process.env.REACT_APP_SERVER_PATH;
     return new Promise(function (resolve, reject) {
       const fetchPostOptions = {
-        method: "POST",
-        credentials: "include",
+        method: 'POST',
+        credentials: 'include',
         headers: {
-          "Content-Type": "application/json;charset=UTF-8",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Method": "GET,POST,PUT,DELETE,OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type,Authorization",
+          'Content-Type': 'application/json;charset=UTF-8',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Method': 'GET,POST,PUT,DELETE,OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type,Authorization',
         },
         body: JSON.stringify(data),
-      };
+      }
       if (!data.currUser) {
-        fetch(server_host + "/api/data/removeFile/", fetchPostOptions)
+        fetch(backend_url + '/api/data/removeFile/', fetchPostOptions)
           .then((response) => {
-            return response.json();
+            return response.json()
           })
           .then((res) => {
             if (res.success) {
-              resolve(res);
+              resolve(res)
             } else {
-              handleRejectResponse(res.message);
-              reject(res.message);
+              handleRejectResponse(res.message)
+              reject(res.message)
             }
           })
           .catch((e) => {
-            console.error("error : ", e);
-            handleRejectResponse(e.toString());
-            reject(e.toString());
-          });
+            console.error('error : ', e)
+            handleRejectResponse(e.toString())
+            reject(e.toString())
+          })
       } else {
-        fetch(server_host + "/api/data/p/removeFile/", fetchPostOptions)
+        fetch(backend_url + '/api/data/p/removeFile/', fetchPostOptions)
           .then((response) => {
-            return response.json();
+            return response.json()
           })
           .then((res) => {
             if (res.success) {
-              resolve(res);
+              resolve(res)
             } else {
-              handleRejectResponse(res.message);
-              reject(res.message);
+              handleRejectResponse(res.message)
+              reject(res.message)
             }
           })
           .catch((e) => {
-            console.error("error : ", e);
-            handleRejectResponse(e.toString());
-            reject(e.toString());
-          });
+            console.error('error : ', e)
+            handleRejectResponse(e.toString())
+            reject(e.toString())
+          })
+      }
+    })
+  }
+
+  removePage(data) {
+    return new Promise(function (resolve, reject) {
+      const fetchPostOptions = {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json;charset=UTF-8',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Method': 'GET,POST,PUT,DELETE,OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+        },
+        body: JSON.stringify(data),
       }
 
-    });
-  }
-  removePage(data) {
-    const server_host = process.env.REACT_APP_SERVER_PATH;
-    return new Promise(function (resolve, reject) {
-      const fetchPostOptions = {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json;charset=UTF-8",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Method": "GET,POST,PUT,DELETE,OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type,Authorization",
-        },
-        body: JSON.stringify(data),
-      };
-
-      fetch(server_host + "/api/data/p/removePage", fetchPostOptions)
+      fetch(backend_url + '/api/data/p/removePage', fetchPostOptions)
         .then((response) => {
-          return response.json();
+          return response.json()
         })
         .then((res) => {
           if (res.success) {
-            resolve(res);
+            resolve(res)
           } else {
-            handleRejectResponse(res.message);
-            reject(res.message);
+            handleRejectResponse(res.message)
+            reject(res.message)
           }
-        }).catch((e) => {
-          console.error("error : ", e);
-          handleRejectResponse(e.toString());
-          reject(e.toString());
-        });
-    });
+        })
+        .catch((e) => {
+          console.error('error : ', e)
+          handleRejectResponse(e.toString())
+          reject(e.toString())
+        })
+    })
   }
 
   getUserPreferTheme() {
-    const localData = localStorage.getItem("getUserPreferTheme");
+    const localData = localStorage.getItem('getUserPreferTheme')
     if (localData == null) {
-      return "white";
+      return 'white'
     }
-    return JSON.parse(localData);
+    return JSON.parse(localData)
   }
 }
 
-export default new UserService();
+export default new UserService()

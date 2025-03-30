@@ -1,8 +1,6 @@
-const server_host = process.env.REACT_APP_SERVER_PATH;
-
+const backend_url = (await (await fetch('config.json')).json()).backend_url
 
 class AuthService {
-
 
     login(requestPayload) {
         return new Promise(function (resolve, reject) {
@@ -17,7 +15,7 @@ class AuthService {
                 },
                 body: JSON.stringify(requestPayload)
             };
-            fetch(server_host + "/api/auth/login", fetchPostOptions)
+            fetch(backend_url + "/api/auth/login", fetchPostOptions)
                 .then((response) => {
                     return response.json();
                 })
@@ -59,7 +57,7 @@ class AuthService {
                 },
                 body: JSON.stringify(requestPayload)
             };
-            fetch(server_host + "/api/auth/checkUserLogInStatus", fetchPostOptions)
+            fetch(backend_url + "/api/auth/checkUserLogInStatus", fetchPostOptions)
                 .then((response) => {
                     return response.json();
                 })
@@ -78,7 +76,6 @@ class AuthService {
         });
     }
 
-
     register(requestPayload) {
         return new Promise(function (resolve, reject) {
             const fetchPostOptions = {
@@ -92,7 +89,7 @@ class AuthService {
                 },
                 body: JSON.stringify(requestPayload)
             };
-            fetch(server_host + "/api/auth/register", fetchPostOptions)
+            fetch(backend_url + "/api/auth/register", fetchPostOptions)
                 .then((response) => {
                     return response.json();
                 })
@@ -110,7 +107,6 @@ class AuthService {
         });
     }
 
-
     forgetPassword(email) {
         return new Promise(function (resolve, reject) {
             const fetchPostOptions = {
@@ -125,7 +121,7 @@ class AuthService {
                 body: JSON.stringify({ email }) // Send the email in the body
             };
 
-            fetch(server_host + "/api/auth/forgetpassword", fetchPostOptions)
+            fetch(backend_url + "/api/auth/forgetpassword", fetchPostOptions)
                 .then((response) => response.json())
                 .then((res) => {
                     if (res.success) {
@@ -140,7 +136,6 @@ class AuthService {
                 });
         });
     }
-
 
     logout() {
         localStorage.removeItem("currentUser")
