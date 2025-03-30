@@ -1,8 +1,9 @@
 import { handleRejectResponse } from './systemService'
-const backend_url = (await (await fetch('config.json')).json()).backend_url
+
+const backend_url = (await (await fetch('/config.json')).json()).backend_url
 
 class UserService {
-  
+
   getData(slug, time, flag, user) {
     var requestPayload = { slug: slug, flag: flag }
     requestPayload.userId = user ? user._id : null

@@ -1,4 +1,4 @@
-const backend_url = (await (await fetch('config.json')).json()).backend_url
+const backend_url = (await (await fetch('/config.json')).json()).backend_url
 
 class AuthService {
 
