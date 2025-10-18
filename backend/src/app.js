@@ -5,10 +5,16 @@ const logger = require('morgan');
 require("dotenv").config();
 var bodyParser = require("body-parser");
 
-// routes
+// Legacy routes
 const userRoute = require('../routes/userRoute');
 const authRoute = require('../routes/authRoute');
 const auctionRoute = require('../routes/auctionRoute');
+
+// New API v1 routes
+const v1Routes = require('../routes/v1');
+
+// Public routes (no authentication)
+const publicRoutes = require('../routes/public.route');
 
 const app = express();
 
@@ -59,6 +65,13 @@ app.get('/', (req, res) => {
 });
 
 
+// Mount public routes (no authentication required)
+app.use("/api/public", publicRoutes);
+
+// Mount v1 API routes (new RESTful API)
+app.use("/api/v1", v1Routes);
+
+// Legacy routes (for backward compatibility)
 app.use("/api/data", userRoute);
 app.use("/api/auth", authRoute);
 app.use("/api/auction", auctionRoute);

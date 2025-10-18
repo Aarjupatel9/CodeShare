@@ -66,11 +66,19 @@ exports.checkPublicAvailability = () => {
 exports.auctionLogin = async function (req, res) {
   try {
     const { name, organizer, password } = req.body;
-    let auction = await AuctionModel.findOne({ name: name, organizer: organizer, password: password });
+    let auction = await AuctionModel.findOne({ name: name, organizer: organizer });
     if (!auction) {
       return res
         .status(400)
         .json({ message: "Auction details invalid.", success: false });
+    }
+
+    // Compare password using model method
+    const isPasswordValid = await auction.comparePassword(password);
+    if (!isPasswordValid) {
+      return res
+        .status(400)
+        .json({ message: "Invalid password.", success: false });
     }
 
     const payload = {
@@ -82,8 +90,8 @@ exports.auctionLogin = async function (req, res) {
 
     res.cookie("auction_token", token, {
       httpOnly: true,
-      secure: false,
-      maxAge: 3600000000000,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
     });
     auction.password = undefined;
 
@@ -100,7 +108,7 @@ exports.auctionLogin = async function (req, res) {
     res
       .status(500)
       .json({
-        message: "An error occurred during registration" + e.toString(),
+        message: "An error occurred during login" + e.toString(),
         success: false,
       });
   }

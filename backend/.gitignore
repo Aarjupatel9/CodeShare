@@ -1,0 +1,4 @@
+
+# Cached team logos (can be regenerated from MongoDB)
+public/uploads/team-logos/*
+!public/uploads/team-logos/.gitkeep

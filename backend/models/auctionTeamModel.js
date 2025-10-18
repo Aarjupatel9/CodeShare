@@ -27,8 +27,30 @@ const teamSchema = new mongoose.Schema(
             default: 0
         },
         logo: {
-            type: Object,
-            required: false,
+            data: {
+                type: String,  // base64 encoded image
+                required: false,
+            },
+            mimeType: {
+                type: String,  // image/webp, image/jpeg, image/png
+                required: false,
+            },
+            filename: {
+                type: String,  // original filename
+                required: false,
+            },
+            size: {
+                type: Number,  // file size in bytes
+                required: false,
+            },
+            publicPath: {
+                type: String,  // public URL path
+                required: false,
+            },
+            uploadedAt: {
+                type: Date,
+                required: false,
+            }
         }
     },
     { timestamps: true }
