@@ -38,7 +38,7 @@ describe('Document API (v1)', () => {
 
       const response = await request(app)
         .post('/api/v1/documents')
-        .set('Cookie', [`token=${userToken}`])
+        .set('Cookie', `token=${userToken}`)
         .send(docData);
 
       expect(response.status).toBe(201);
@@ -61,13 +61,13 @@ describe('Document API (v1)', () => {
       // Create first document
       await request(app)
         .post('/api/v1/documents')
-        .set('Cookie', [`token=${userToken}`])
+        .set('Cookie', `token=${userToken}`)
         .send(docData);
 
       // Try to create duplicate
       const response = await request(app)
         .post('/api/v1/documents')
-        .set('Cookie', [`token=${userToken}`])
+        .set('Cookie', `token=${userToken}`)
         .send(docData);
 
       expect(response.status).toBe(409);
@@ -138,7 +138,7 @@ describe('Document API (v1)', () => {
 
       const response = await request(app)
         .get(`/api/v1/documents/${doc._id}`)
-        .set('Cookie', [`token=${userToken}`]);
+        .set('Cookie', `token=${userToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -164,7 +164,7 @@ describe('Document API (v1)', () => {
 
       const response = await request(app)
         .put(`/api/v1/documents/${doc._id}`)
-        .set('Cookie', [`token=${userToken}`])
+        .set('Cookie', `token=${userToken}`)
         .send({
           slug: doc.unique_name,
           data: updatedData,
@@ -194,7 +194,7 @@ describe('Document API (v1)', () => {
 
       const response = await request(app)
         .put(`/api/v1/documents/${doc._id}`)
-        .set('Cookie', [`token=${userToken}`])
+        .set('Cookie', `token=${userToken}`)
         .send({
           slug: doc.unique_name,
           data: docData.data, // Same data
@@ -221,7 +221,7 @@ describe('Document API (v1)', () => {
 
       const response = await request(app)
         .delete(`/api/v1/documents/${doc._id}`)
-        .set('Cookie', [`token=${userToken}`]);
+        .set('Cookie', `token=${userToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -248,7 +248,7 @@ describe('Document API (v1)', () => {
 
       const response = await request(app)
         .delete(`/api/v1/documents/${doc._id}`)
-        .set('Cookie', [`token=${userToken}`]);
+        .set('Cookie', `token=${userToken}`);
 
       expect(response.status).toBe(404);
       expect(response.body.success).toBe(false);
@@ -272,7 +272,7 @@ describe('Document API (v1)', () => {
 
       const response = await request(app)
         .get(`/api/v1/documents/${doc._id}/versions`)
-        .set('Cookie', [`token=${userToken}`]);
+        .set('Cookie', `token=${userToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);

@@ -84,10 +84,34 @@ app.get('*', (req, res) => {
 
 app.use((err, req, res, next) => {
     console.error(err);
-    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
-        return res.status(400).json({ message: 'Invalid JSON payload' });
+    
+    // Handle Multer file upload errors
+    if (err.name === 'MulterError') {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ 
+                success: false,
+                message: 'File too large. Maximum upload size is 500KB' 
+            });
+        }
+        return res.status(400).json({ 
+            success: false,
+            message: `Upload error: ${err.message}` 
+        });
     }
-    return res.status(500).json({ message: 'Internal Server Error' });
+    
+    // Handle JSON syntax errors
+    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+        return res.status(400).json({ 
+            success: false,
+            message: 'Invalid JSON payload' 
+        });
+    }
+    
+    // Generic error handler
+    return res.status(500).json({ 
+        success: false,
+        message: 'Internal Server Error' 
+    });
 });
 
 module.exports = app;

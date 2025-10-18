@@ -37,7 +37,7 @@ describe('Auction API (v1)', () => {
 
       const response = await request(app)
         .post('/api/v1/auctions')
-        .set('Cookie', [`token=${userToken}`])
+        .set('Cookie', `token=${userToken}`)
         .send(auctionData);
 
       expect(response.status).toBe(201);
@@ -58,13 +58,13 @@ describe('Auction API (v1)', () => {
       // Create first auction
       await request(app)
         .post('/api/v1/auctions')
-        .set('Cookie', [`token=${userToken}`])
+        .set('Cookie', `token=${userToken}`)
         .send(auctionData);
 
       // Try to create duplicate
       const response = await request(app)
         .post('/api/v1/auctions')
-        .set('Cookie', [`token=${userToken}`])
+        .set('Cookie', `token=${userToken}`)
         .send(auctionData);
 
       expect(response.status).toBe(409);
@@ -87,7 +87,7 @@ describe('Auction API (v1)', () => {
 
       const response = await request(app)
         .post(`/api/v1/auctions/${auction._id}/login`)
-        .set('Cookie', [`token=${userToken}`])
+        .set('Cookie', `token=${userToken}`)
         .send({ password: auctionPassword });
 
       expect(response.status).toBe(200);
@@ -104,7 +104,7 @@ describe('Auction API (v1)', () => {
 
       const response = await request(app)
         .post(`/api/v1/auctions/${auction._id}/login`)
-        .set('Cookie', [`token=${userToken}`])
+        .set('Cookie', `token=${userToken}`)
         .send({ password: 'wrong' });
 
       expect(response.status).toBe(401);
@@ -118,7 +118,7 @@ describe('Auction API (v1)', () => {
 
       const response = await request(app)
         .get(`/api/v1/auctions/${auction._id}`)
-        .set('Cookie', [`token=${userToken}`, `auction_token=${auctionToken}`]);
+        .set('Cookie', `token=${userToken}; auction_token=${auctionToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -133,7 +133,7 @@ describe('Auction API (v1)', () => {
 
       const response = await request(app)
         .get(`/api/v1/auctions/${auction._id}`)
-        .set('Cookie', [`token=${userToken}`]); // No auction token
+        .set('Cookie', `token=${userToken}`); // No auction token
 
       expect(response.status).toBe(401);
     });
@@ -150,7 +150,7 @@ describe('Auction API (v1)', () => {
 
       const response = await request(app)
         .put(`/api/v1/auctions/${auction._id}`)
-        .set('Cookie', [`token=${userToken}`, `auction_token=${auctionToken}`])
+        .set('Cookie', `token=${userToken}; auction_token=${auctionToken}`)
         .send(updateData);
 
       expect(response.status).toBe(200);

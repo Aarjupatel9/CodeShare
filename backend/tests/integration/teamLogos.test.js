@@ -56,7 +56,7 @@ describe('Team Logo System', () => {
 
       const response = await request(app)
         .post(`/api/v1/auctions/${auction._id}/teams/${team._id}/logo`)
-        .set('Cookie', [`token=${userToken}`, `auction_token=${auctionToken}`])
+        .set('Cookie', `token=${userToken}; auction_token=${auctionToken}`)
         .attach('file', imageBuffer, 'test-logo.png');
 
       expect(response.status).toBe(200);
@@ -74,7 +74,7 @@ describe('Team Logo System', () => {
 
       await request(app)
         .post(`/api/v1/auctions/${auction._id}/teams/${team._id}/logo`)
-        .set('Cookie', [`token=${userToken}`, `auction_token=${auctionToken}`])
+        .set('Cookie', `token=${userToken}; auction_token=${auctionToken}`)
         .attach('file', imageBuffer, 'test-logo.png');
 
       // Verify in database
@@ -92,7 +92,7 @@ describe('Team Logo System', () => {
 
       await request(app)
         .post(`/api/v1/auctions/${auction._id}/teams/${team._id}/logo`)
-        .set('Cookie', [`token=${userToken}`, `auction_token=${auctionToken}`])
+        .set('Cookie', `token=${userToken}; auction_token=${auctionToken}`)
         .attach('file', imageBuffer, 'test-logo.png');
 
       // Check if file exists in public folder
@@ -108,7 +108,7 @@ describe('Team Logo System', () => {
 
       const response = await request(app)
         .post(`/api/v1/auctions/${auction._id}/teams/${team._id}/logo`)
-        .set('Cookie', [`token=${userToken}`, `auction_token=${auctionToken}`])
+        .set('Cookie', `token=${userToken}; auction_token=${auctionToken}`)
         .attach('file', largeBuffer, 'large-logo.png');
 
       expect(response.status).toBe(400);
@@ -131,7 +131,7 @@ describe('Team Logo System', () => {
 
       const response = await request(app)
         .post(`/api/v1/auctions/${auction._id}/teams/${team._id}/logo`)
-        .set('Cookie', [`token=${userToken}`]) // No auction token
+        .set('Cookie', `token=${userToken}`) // No auction token
         .attach('file', imageBuffer, 'test-logo.png');
 
       expect(response.status).toBe(401);

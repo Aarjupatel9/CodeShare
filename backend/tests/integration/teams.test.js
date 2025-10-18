@@ -44,7 +44,7 @@ describe('Team Management API (v1)', () => {
 
       const response = await request(app)
         .post(`/api/v1/auctions/${auction._id}/teams`)
-        .set('Cookie', [`token=${userToken}`, `auction_token=${auctionToken}`])
+        .set('Cookie', `token=${userToken}; auction_token=${auctionToken}`)
         .send(teamData);
 
       expect(response.status).toBe(201);
@@ -61,13 +61,13 @@ describe('Team Management API (v1)', () => {
       // Create first team
       await request(app)
         .post(`/api/v1/auctions/${auction._id}/teams`)
-        .set('Cookie', [`token=${userToken}`, `auction_token=${auctionToken}`])
+        .set('Cookie', `token=${userToken}; auction_token=${auctionToken}`)
         .send(teamData);
 
       // Try to create duplicate
       const response = await request(app)
         .post(`/api/v1/auctions/${auction._id}/teams`)
-        .set('Cookie', [`token=${userToken}`, `auction_token=${auctionToken}`])
+        .set('Cookie', `token=${userToken}; auction_token=${auctionToken}`)
         .send(teamData);
 
       expect(response.status).toBe(409);
@@ -87,7 +87,7 @@ describe('Team Management API (v1)', () => {
 
       const response = await request(app)
         .get(`/api/v1/auctions/${auction._id}/teams`)
-        .set('Cookie', [`token=${userToken}`, `auction_token=${auctionToken}`]);
+        .set('Cookie', `token=${userToken}; auction_token=${auctionToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -109,7 +109,7 @@ describe('Team Management API (v1)', () => {
 
       const response = await request(app)
         .put(`/api/v1/auctions/${auction._id}/teams/${team._id}`)
-        .set('Cookie', [`token=${userToken}`, `auction_token=${auctionToken}`])
+        .set('Cookie', `token=${userToken}; auction_token=${auctionToken}`)
         .send(updateData);
 
       expect(response.status).toBe(200);
@@ -126,7 +126,7 @@ describe('Team Management API (v1)', () => {
 
       const response = await request(app)
         .delete(`/api/v1/auctions/${auction._id}/teams/${team._id}`)
-        .set('Cookie', [`token=${userToken}`, `auction_token=${auctionToken}`]);
+        .set('Cookie', `token=${userToken}; auction_token=${auctionToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -149,7 +149,7 @@ describe('Team Management API (v1)', () => {
 
       const response = await request(app)
         .delete(`/api/v1/auctions/${auction._id}/teams/${team._id}`)
-        .set('Cookie', [`token=${userToken}`, `auction_token=${auctionToken}`]);
+        .set('Cookie', `token=${userToken}; auction_token=${auctionToken}`);
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);

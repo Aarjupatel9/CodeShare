@@ -43,7 +43,7 @@ describe('Player Management API (v1)', () => {
 
       const response = await request(app)
         .post(`/api/v1/auctions/${auction._id}/players`)
-        .set('Cookie', [`token=${userToken}`, `auction_token=${auctionToken}`])
+        .set('Cookie', `token=${userToken}; auction_token=${auctionToken}`)
         .send(playersData);
 
       expect(response.status).toBe(201);
@@ -66,7 +66,7 @@ describe('Player Management API (v1)', () => {
 
       const response = await request(app)
         .post(`/api/v1/auctions/${auction._id}/players`)
-        .set('Cookie', [`token=${userToken}`, `auction_token=${auctionToken}`])
+        .set('Cookie', `token=${userToken}; auction_token=${auctionToken}`)
         .send(playersData);
 
       // Should create first, fail second
@@ -85,7 +85,7 @@ describe('Player Management API (v1)', () => {
 
       const response = await request(app)
         .get(`/api/v1/auctions/${auction._id}/players`)
-        .set('Cookie', [`token=${userToken}`, `auction_token=${auctionToken}`]);
+        .set('Cookie', `token=${userToken}; auction_token=${auctionToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -107,7 +107,7 @@ describe('Player Management API (v1)', () => {
 
       const response = await request(app)
         .get(`/api/v1/auctions/${auction._id}/players?status=sold`)
-        .set('Cookie', [`token=${userToken}`, `auction_token=${auctionToken}`]);
+        .set('Cookie', `token=${userToken}; auction_token=${auctionToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body.data.length).toBe(1);
@@ -131,7 +131,7 @@ describe('Player Management API (v1)', () => {
 
       const response = await request(app)
         .put(`/api/v1/auctions/${auction._id}/players`)
-        .set('Cookie', [`token=${userToken}`, `auction_token=${auctionToken}`])
+        .set('Cookie', `token=${userToken}; auction_token=${auctionToken}`)
         .send(updateData);
 
       expect(response.status).toBe(200);
@@ -157,7 +157,7 @@ describe('Player Management API (v1)', () => {
 
       const response = await request(app)
         .delete(`/api/v1/auctions/${auction._id}/players`)
-        .set('Cookie', [`token=${userToken}`, `auction_token=${auctionToken}`])
+        .set('Cookie', `token=${userToken}; auction_token=${auctionToken}`)
         .send(deleteData);
 
       expect(response.status).toBe(200);
@@ -179,7 +179,7 @@ describe('Player Management API (v1)', () => {
 
       const response = await request(app)
         .post(`/api/v1/auctions/${auction._id}/players/import`)
-        .set('Cookie', [`token=${userToken}`, `auction_token=${auctionToken}`])
+        .set('Cookie', `token=${userToken}; auction_token=${auctionToken}`)
         .send(importData);
 
       expect(response.status).toBe(200);
@@ -199,13 +199,13 @@ describe('Player Management API (v1)', () => {
       // Import first time
       await request(app)
         .post(`/api/v1/auctions/${auction._id}/players/import`)
-        .set('Cookie', [`token=${userToken}`, `auction_token=${auctionToken}`])
+        .set('Cookie', `token=${userToken}; auction_token=${auctionToken}`)
         .send(importData);
 
       // Import again (should skip)
       const response = await request(app)
         .post(`/api/v1/auctions/${auction._id}/players/import`)
-        .set('Cookie', [`token=${userToken}`, `auction_token=${auctionToken}`])
+        .set('Cookie', `token=${userToken}; auction_token=${auctionToken}`)
         .send(importData);
 
       expect(response.status).toBe(200);
