@@ -145,7 +145,7 @@ describe('Team Logo System', () => {
       
       await request(app)
         .post(`/api/v1/auctions/${auction._id}/teams/${team._id}/logo`)
-        .set('Cookie', [`token=${userToken}`, `auction_token=${auctionToken}`])
+        .set('Cookie', `token=${userToken}; auction_token=${auctionToken}`)
         .attach('file', imageBuffer, 'test-logo.png');
     });
 
@@ -217,7 +217,7 @@ describe('Team Logo System', () => {
       
       await request(app)
         .post(`/api/v1/auctions/${auction._id}/teams/${team._id}/logo`)
-        .set('Cookie', [`token=${userToken}`, `auction_token=${auctionToken}`])
+        .set('Cookie', `token=${userToken}; auction_token=${auctionToken}`)
         .attach('file', imageBuffer, 'test-logo.png');
 
       // Delete cache to force DB fetch

@@ -166,7 +166,7 @@ describe('Authentication API (v1)', () => {
 
       const response = await request(app)
         .post('/api/v1/auth/verify-token')
-        .set('Cookie', [`token=${token}`])
+        .set('Cookie', `token=${token}`)
         .send({ email: user.email });
 
       expect(response.status).toBe(200);
@@ -177,7 +177,7 @@ describe('Authentication API (v1)', () => {
     it('should reject invalid token', async () => {
       const response = await request(app)
         .post('/api/v1/auth/verify-token')
-        .set('Cookie', ['token=invalid-token'])
+        .set('Cookie', 'token=invalid-token')
         .send({ email: 'test@example.com' });
 
       expect(response.status).toBe(401);
@@ -200,7 +200,7 @@ describe('Authentication API (v1)', () => {
 
       const response = await request(app)
         .post('/api/v1/auth/logout')
-        .set('Cookie', [`token=${token}`]);
+        .set('Cookie', `token=${token}`);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);

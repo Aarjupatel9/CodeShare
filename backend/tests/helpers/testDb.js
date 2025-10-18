@@ -47,10 +47,13 @@ class TestDatabase {
     try {
       const collections = mongoose.connection.collections;
 
-      for (const key in collections) {
+      // Clear all collections in parallel
+      const clearPromises = Object.keys(collections).map(async (key) => {
         const collection = collections[key];
         await collection.deleteMany({});
-      }
+      });
+
+      await Promise.all(clearPromises);
 
       console.log('🧹 Test database cleared');
     } catch (error) {

@@ -166,8 +166,12 @@ describe('Auction API (v1)', () => {
   describe('GET /api/v1/auctions/public/:id', () => {
     it('should get public auction details when enabled', async () => {
       const { auction } = await authHelper.createAuthenticatedAuction({
-        auctionLiveEnabled: 1,
+        auctionLiveEnabled: true,
       });
+
+      // Verify auction was saved with correct value
+      const savedAuction = await AuctionModel.findById(auction._id);
+      expect(savedAuction.auctionLiveEnabled).toBe(true);
 
       const response = await request(app)
         .get(`/api/v1/auctions/public/${auction._id}`);
@@ -179,7 +183,7 @@ describe('Auction API (v1)', () => {
 
     it('should reject public access when not enabled', async () => {
       const { auction } = await authHelper.createAuthenticatedAuction({
-        auctionLiveEnabled: 0,
+        auctionLiveEnabled: false,
       });
 
       const response = await request(app)

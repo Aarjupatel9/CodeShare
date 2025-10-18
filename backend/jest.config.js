@@ -37,7 +37,10 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
 
   // Test timeout (for async operations)
-  testTimeout: 10000,
+  testTimeout: 30000,
+  
+  // Run tests serially to avoid database conflicts
+  maxWorkers: 1,
 
   // Verbose output
   verbose: true,

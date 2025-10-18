@@ -37,7 +37,7 @@ const auctionSchema = new mongoose.Schema(
             default: 0
         },
         auctionLiveEnabled: {
-            type: Number,
+            type: Boolean,
             required: false,
             default: false
         }

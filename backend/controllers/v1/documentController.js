@@ -3,6 +3,8 @@ const UserModel = require("../../models/userModels");
 const s3BucketService = require("../../services/s3BucketService");
 const mongoose = require("mongoose");
 
+const ObjectId = mongoose.Types.ObjectId;
+
 const max_file_size = process.env.MAX_FILE_SIZE;
 const allowed_for_slug = process.env.ALLOW_FILE_LIMIT;
 
@@ -194,10 +196,16 @@ exports.updateDocument = async (req, res) => {
       user: user?._id,
     };
 
+    // Match by _id if it's a valid ObjectId, otherwise by unique_name (slug)
     const matchCondition = {
-      unique_name: identifier,
       isDeleted: { $ne: true }
     };
+
+    if (mongoose.Types.ObjectId.isValid(identifier)) {
+      matchCondition._id = identifier;
+    } else {
+      matchCondition.unique_name = identifier;
+    }
 
     if (user) {
       matchCondition.owner = user._id;

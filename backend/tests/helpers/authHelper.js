@@ -12,9 +12,11 @@ class AuthHelper {
    * Create a test user
    */
   async createTestUser(userData = {}) {
+    const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
     const defaultUser = {
-      username: userData.username || `testuser_${Date.now()}`,
-      email: userData.email || `test_${Date.now()}@example.com`,
+      username: userData.username || `testuser_${uniqueId}`,
+      email: userData.email || `test_${uniqueId}@example.com`,
       password: await generateHashPassword(userData.password || 'password123'),
       isVerified: true,
     };
@@ -58,13 +60,17 @@ class AuthHelper {
    * Create test auction
    */
   async createTestAuction(auctionData = {}) {
+    const uniqueId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
     const defaultAuction = {
-      name: auctionData.name || `Test Auction ${Date.now()}`,
-      organizer: auctionData.organizer || 'test_organizer',
+      name: auctionData.name || `Test_Auction_${uniqueId}`,
+      organizer: auctionData.organizer || `organizer_${uniqueId}`,
       password: auctionData.password || 'test123',
       budgetPerTeam: auctionData.budgetPerTeam || 100000000,
       maxTeamMember: auctionData.maxTeamMember || 15,
       minTeamMember: auctionData.minTeamMember || 11,
+      // Spread auctionData last to override defaults (including auctionLiveEnabled)
+      ...auctionData,
     };
 
     const auction = new AuctionModel(defaultAuction);
