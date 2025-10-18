@@ -19,7 +19,10 @@ exports.getAuctions = async (req, res) => {
       });
     }
 
-    const auctions = await AuctionModel.find({ organizer: user._id })
+    // Find auctions by user ID (stored as string)
+    const auctions = await AuctionModel.find({ 
+      organizer: user._id.toString()
+    })
       .select('-password')
       .sort({ createdAt: -1 });
 
@@ -147,18 +150,22 @@ exports.createAuction = async (req, res) => {
       });
     }
 
-    const existingAuction = await AuctionModel.findOne({ name });
+    // Check if auction with same name exists for this organizer
+    const existingAuction = await AuctionModel.findOne({ 
+      name,
+      organizer: user._id.toString()
+    });
 
     if (existingAuction) {
       return res.status(409).json({
         success: false,
-        message: "Auction with this name already exists",
+        message: "You already have an auction with this name. Please choose a different name.",
       });
     }
 
     const newAuction = new AuctionModel({
       name,
-      organizer: user._id,
+      organizer: user._id.toString(), // Store as string for consistency
       password, // Will be hashed by model pre-save hook
     });
 

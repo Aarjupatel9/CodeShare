@@ -2,6 +2,7 @@ const AuctionModel = require("../models/auctionModel");
 const AuctionTeamModel = require("../models/auctionTeamModel");
 const AuctionPlayerModel = require("../models/auctionPlayerModel");
 const AuctionSetModel = require("../models/auctionSetModel");
+const UserModel = require('../models/userModels');
 
 const {
   genJWTToken,
@@ -66,7 +67,26 @@ exports.checkPublicAvailability = () => {
 exports.auctionLogin = async function (req, res) {
   try {
     const { name, organizer, password } = req.body;
-    let auction = await AuctionModel.findOne({ name: name, organizer: organizer });
+    const user = req.user;
+    
+    // For backward compatibility: accept organizer as string (username) or use authenticated user
+    let query = { name: name };
+    
+    if (organizer) {
+      // If organizer is provided as username, try to find by username first
+      const organizerUser = await UserModel.findOne({ username: organizer });
+      if (organizerUser) {
+        query.organizer = organizerUser._id;
+      } else {
+        // Fallback: try as direct match (for old data)
+        query.organizer = organizer;
+      }
+    } else if (user) {
+      // Use authenticated user's ID
+      query.organizer = user._id;
+    }
+    
+    let auction = await AuctionModel.findOne(query);
     if (!auction) {
       return res
         .status(400)
@@ -281,17 +301,27 @@ async function _lookUpPlayer(playerNumber, auction) {
 
 exports.createNewAuction = async function (req, res) {
   try {
-    const { name, organizer, password } = req.body;
-    let auction = await AuctionModel.findOne({ name: name });
+    const { name, password } = req.body;
+    const user = req.user;
+    
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+    
+    // Check if auction with same name exists for this organizer
+    let auction = await AuctionModel.findOne({ name: name, organizer: user._id.toString() });
     if (auction) {
       return res.status(200).json({
         success: false,
-        message: "Auction with this name already present, please try with different name",
+        message: "You already have an auction with this name. Please choose a different name.",
       });
     } else {
       let newAuction = new AuctionModel({
         name: name,
-        organizer: organizer,
+        organizer: user._id.toString(), // Store as string
         password: password,
       })
       newAuction = await newAuction.save();

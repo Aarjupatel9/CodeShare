@@ -13,13 +13,13 @@ const AboutPage = () => {
   const isPrivateRoute = location.pathname.startsWith('/p/');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-blue-50">
+    <div className="min-w-full min-h-full bg-gradient-to-br from-indigo-50 via-white to-blue-50">
       {/* Header */}
-      <nav className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+      <nav className="bg-white border-b border-gray-200 px-4 py-3 shadow-sm">
+        <div className="flex items-center justify-between">
           <div 
             onClick={() => navigate('/')}
-            className="text-2xl font-bold text-blue-600 cursor-pointer hover:text-blue-700 transition"
+            className="text-xl font-bold text-blue-600 cursor-pointer hover:text-blue-700 transition"
           >
             CodeShare
           </div>
@@ -34,7 +34,7 @@ const AboutPage = () => {
 
       {/* Hero Section */}
       <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-20">
-        <div className="max-w-4xl mx-auto px-6 text-center">
+        <div className="max-w-7xl mx-auto px-6 text-center w-full">
           <h1 className="text-5xl md:text-6xl font-bold mb-6">
             About CodeShare
           </h1>
@@ -45,9 +45,9 @@ const AboutPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-6 py-12">
+      <div className="w-full px-6 py-12">
         {/* Mission */}
-        <section className="mb-12">
+        <section className="max-w-7xl mx-auto mb-12">
           <div className="bg-white rounded-xl shadow-md p-8 border border-gray-100">
             <div className="flex items-center gap-3 mb-4">
               <span className="text-3xl">🎯</span>
@@ -63,7 +63,7 @@ const AboutPage = () => {
         </section>
 
         {/* What We Offer */}
-        <section className="mb-12">
+        <section className="max-w-7xl mx-auto mb-12">
           <div className="bg-white rounded-xl shadow-md p-8 border border-gray-100">
             <div className="flex items-center gap-3 mb-6">
               <span className="text-3xl">🌟</span>
@@ -135,7 +135,7 @@ const AboutPage = () => {
         </section>
 
         {/* Technology Stack */}
-        <section className="mb-12">
+        <section className="max-w-7xl mx-auto mb-12">
           <div className="bg-white rounded-xl shadow-md p-8 border border-gray-100">
             <div className="flex items-center gap-3 mb-6">
               <span className="text-3xl">⚙️</span>
@@ -180,7 +180,7 @@ const AboutPage = () => {
         </section>
 
         {/* Key Features */}
-        <section className="mb-12">
+        <section className="max-w-7xl mx-auto mb-12">
           <div className="bg-white rounded-xl shadow-md p-8 border border-gray-100">
             <div className="flex items-center gap-3 mb-6">
               <span className="text-3xl">✨</span>
@@ -227,7 +227,7 @@ const AboutPage = () => {
         </section>
 
         {/* Privacy & Security */}
-        <section className="mb-12">
+        <section className="max-w-7xl mx-auto mb-12">
           <div className="bg-white rounded-xl shadow-md p-8 border border-gray-100">
             <div className="flex items-center gap-3 mb-6">
               <span className="text-3xl">🔒</span>
@@ -249,7 +249,7 @@ const AboutPage = () => {
         </section>
 
         {/* Get Started CTA */}
-        <section>
+        <section className="max-w-7xl mx-auto">
           <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl shadow-lg p-8 text-white text-center">
             <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
             <p className="text-blue-100 mb-6 text-lg">
@@ -275,7 +275,7 @@ const AboutPage = () => {
 
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 mt-12 py-8">
-        <div className="max-w-4xl mx-auto px-6">
+        <div className="max-w-7xl mx-auto px-6 w-full">
           <div className="grid md:grid-cols-3 gap-8 mb-6">
             <div>
               <h3 className="font-bold text-gray-900 mb-3">CodeShare</h3>
@@ -286,10 +286,10 @@ const AboutPage = () => {
             <div>
               <h3 className="font-bold text-gray-900 mb-3">Quick Links</h3>
               <ul className="space-y-2 text-sm text-gray-600">
-                <li><a href="/" className="hover:text-blue-600 transition">Home</a></li>
-                <li><a href={isPrivateRoute ? "/p/help" : "/help"} className="hover:text-blue-600 transition">Help</a></li>
-                <li><a href="/games" className="hover:text-blue-600 transition">Games</a></li>
-                <li><a href="/t/auction" className="hover:text-blue-600 transition">Auctions</a></li>
+                <li><button onClick={() => navigate("/")} className="hover:text-blue-600 transition">Home</button></li>
+                <li><button onClick={() => navigate(isPrivateRoute ? "/p/help" : "/help")} className="hover:text-blue-600 transition">Help</button></li>
+                <li><button onClick={() => navigate("/games")} className="hover:text-blue-600 transition">Games</button></li>
+                <li><button onClick={() => navigate(isPrivateRoute ? "/p/t/auction" : "/p/t/auction")} className="hover:text-blue-600 transition">Auctions</button></li>
               </ul>
             </div>
             <div>

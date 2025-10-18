@@ -66,7 +66,7 @@ const FeatureModal = ({ isVisible, onClose, onNavigate }) => {
           </button>
           <p className="text-center text-sm text-gray-600 mt-3">
             Already have an account?
-            <a href="/auth/login" className="text-blue-600 hover:underline font-medium ml-1">Login</a>
+            <button onClick={() => onNavigate("/auth/login")} className="text-blue-600 hover:underline font-medium ml-1">Login</button>
           </p>
         </div>
       </div>

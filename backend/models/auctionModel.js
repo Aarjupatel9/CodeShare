@@ -6,7 +6,6 @@ const auctionSchema = new mongoose.Schema(
         name: {
             type: String,
             required: true,
-            unique: true,
         },
         organizer: {
             type: String,
@@ -68,6 +67,10 @@ auctionSchema.methods.comparePassword = async function (candidatePassword) {
         throw error;
     }
 };
+
+// Create compound unique index on name + organizer
+// This ensures auction names are unique per organizer, not globally
+auctionSchema.index({ name: 1, organizer: 1 }, { unique: true });
 
 const auctionModels = mongoose.model("auctionModels", auctionSchema);
 

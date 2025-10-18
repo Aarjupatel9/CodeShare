@@ -31,10 +31,13 @@ function App() {
           <Route path="/p/help" element={<HelpPage />} />
           <Route path="/p/about" element={<AboutPage />} />
           
-          <Route path="/t/auction/" element={<AuctionHome />} />
-          <Route path="/t/auction/:auctionId" element={<AuctionMain />} />
-          <Route path="/t/auction/:auctionId/manage" element={<AuctionDetailsManage />} />
-          <Route path="/t/auction/:auctionId/bidding" element={<AuctionBidding />} />
+          {/* Auction Routes - Private (management) */}
+          <Route path="/p/t/auction/" element={<AuctionHome />} />
+          <Route path="/p/t/auction/:auctionId" element={<AuctionMain />} />
+          <Route path="/p/t/auction/:auctionId/manage" element={<AuctionDetailsManage />} />
+          <Route path="/p/t/auction/:auctionId/bidding" element={<AuctionBidding />} />
+          
+          {/* Auction Live - Public (when enabled by organizer) */}
           <Route path="/t/auction/:auctionId/live" element={<AuctionLiveUpdate />} />
           <Route path="/games" element={<GamePage />} />
           <Route path="/game/:gameName" element={<GamePage />} />

@@ -13,13 +13,13 @@ const HelpPage = () => {
   const isPrivateRoute = location.pathname.startsWith('/p/');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="min-w-full min-h-full bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Header */}
-      <nav className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+      <nav className="bg-white border-b border-gray-200 px-4 py-3 shadow-sm">
+        <div className="flex items-center justify-between">
           <div 
             onClick={() => navigate('/')}
-            className="text-2xl font-bold text-blue-600 cursor-pointer hover:text-blue-700 transition"
+            className="text-xl font-bold text-blue-600 cursor-pointer hover:text-blue-700 transition"
           >
             CodeShare
           </div>
@@ -33,9 +33,9 @@ const HelpPage = () => {
       </nav>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-6 py-12">
+      <div className="w-full px-6 py-12">
         {/* Hero Section */}
-        <div className="text-center mb-12">
+        <div className="max-w-7xl mx-auto text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             How can we help you?
           </h1>
@@ -45,7 +45,7 @@ const HelpPage = () => {
         </div>
 
         {/* Help Sections */}
-        <div className="space-y-8">
+        <div className="max-w-7xl mx-auto space-y-8">
           {/* Getting Started */}
           <section className="bg-white rounded-xl shadow-md p-8 border border-gray-100">
             <div className="flex items-center gap-3 mb-4">
@@ -225,7 +225,7 @@ const HelpPage = () => {
 
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 mt-12 py-8">
-        <div className="max-w-4xl mx-auto px-6 text-center text-sm text-gray-600">
+        <div className="px-6 text-center text-sm text-gray-600">
           <p>© 2025 CodeShare. Made with ❤️ for the community.</p>
         </div>
       </footer>

@@ -181,7 +181,7 @@ export default function AuctionLiveUpdate(props) {
             console.error(error);
             toast.error(error);
             setIsLinkValid(false);
-            navigate("/t/auction/");
+            navigate("/p/t/auction/");
         });
     }
 
@@ -280,7 +280,7 @@ export default function AuctionLiveUpdate(props) {
         <>
             <div className='flex flex-col w-full max-w-full h-full text-sx gap-4 p-2'>
                 <div className='header flex flex-row flex-wrap justify-start gap-2 font-medium capitalize'>
-                    <div onClick={() => { navigate("/t/auction/" + auctionId) }} type="button" className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer" >Auction Home</div>
+                    <div onClick={() => { navigate("/p/t/auction/" + auctionId) }} type="button" className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer" >Auction Home</div>
                     {!view.liveBidding && <div onClick={() => {
                         setView(() => {
                             var val = structuredClone(defaultViewSelection);

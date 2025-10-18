@@ -14,6 +14,7 @@ const EditorNavbar = ({
   onNavigate,
   onLogout,
   onShowUserProfile,
+  onShowSubscription,
   RedirectUrlComponent,
   MobileMenuComponent
 }) => {
@@ -38,19 +39,22 @@ const EditorNavbar = ({
       <div className="hidden md:flex items-center gap-6 text-sm">
         {!currUser ? (
           <>
-            <a href="/games" className="text-gray-700 hover:text-blue-600">Games</a>
-            <a href="/t/auction" className="text-gray-700 hover:text-blue-600 flex items-center gap-1">
+            <button onClick={() => onNavigate("/games")} className="text-gray-700 hover:text-blue-600 transition">Games</button>
+            <button 
+              onClick={onShowSubscription}
+              className="text-gray-700 hover:text-blue-600 flex items-center gap-1 transition"
+            >
               Auctions <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">Pro</span>
-            </a>
-            <a href="/help" className="text-gray-700 hover:text-blue-600">Help</a>
-            <a href="/about" className="text-gray-700 hover:text-blue-600">About</a>
+            </button>
+            <button onClick={() => onNavigate("/help")} className="text-gray-700 hover:text-blue-600 transition">Help</button>
+            <button onClick={() => onNavigate("/about")} className="text-gray-700 hover:text-blue-600 transition">About</button>
           </>
         ) : (
           <>
-            <a href="/games" className="text-gray-700 hover:text-blue-600">Games</a>
-            <a href="/t/auction" className="text-gray-700 hover:text-blue-600">Auctions</a>
-            <a href="/p/help" className="text-gray-700 hover:text-blue-600">Help</a>
-            <a href="/p/about" className="text-gray-700 hover:text-blue-600">About</a>
+            <button onClick={() => onNavigate("/games")} className="text-gray-700 hover:text-blue-600 transition">Games</button>
+            <button onClick={() => onNavigate("/p/t/auction")} className="text-gray-700 hover:text-blue-600 transition">Auctions</button>
+            <button onClick={() => onNavigate("/p/help")} className="text-gray-700 hover:text-blue-600 transition">Help</button>
+            <button onClick={() => onNavigate("/p/about")} className="text-gray-700 hover:text-blue-600 transition">About</button>
           </>
         )}
       </div>
@@ -67,9 +71,9 @@ const EditorNavbar = ({
             {currUser ? userProfileIcon : "Login"}
           </div>
           {!currUser && (
-            <a href="/auth/register" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition">
+            <button onClick={() => onNavigate("/auth/register")} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition">
               Sign Up
-            </a>
+            </button>
           )}
           
           {/* Profile Dropdown - Modern Design (Option 1) */}
@@ -116,7 +120,7 @@ const EditorNavbar = ({
                 </a>
 
                 <a 
-                  onClick={() => onNavigate("/t/auction")}
+                  onClick={() => onNavigate("/p/t/auction")}
                   className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition cursor-pointer text-left"
                 >
                   <span className="text-xl">🏏</span>

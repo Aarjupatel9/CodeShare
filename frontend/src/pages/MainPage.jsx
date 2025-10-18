@@ -34,6 +34,7 @@ import { UserProfileModal } from "../common/Modals";
 import EditorNavbar from "./components/editor/EditorNavbar";
 import WarningBanner from "./components/editor/WarningBanner";
 import PremiumSidebar from "./components/editor/PremiumSidebar";
+import SubscriptionModal from "./components/editor/SubscriptionModal";
 import EditorSidebar from "./components/editor/EditorSidebar";
 import MobileMenu from "./components/editor/MobileMenu";
 import FloatingHint from "./components/editor/FloatingHint";
@@ -74,8 +75,26 @@ export default function MainPage(props) {
 
   const [incomingEditorValue, setIncomingEditorValue] = useState("");
   const [showUserProfileModal, setShowUserProfileModal] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [showFloatingHint, setShowFloatingHint] = useState(false);
   const [showMobileModal, setShowMobileModal] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showNavigationWarning, setShowNavigationWarning] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
+
+  // Warn before leaving page with unsaved changes (for both logged-in and public users)
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   useEffect(() => {
     if (props.user) {
@@ -112,6 +131,7 @@ export default function MainPage(props) {
     // Don't auto-generate slug for non-logged users on root path
     if (!slug || slug === '' || slug === '/') {
       if (props.user) {
+        // On initial load, navigate directly without warning
         navigate("/p/" + props.user.username + "/new");
       } else {
         // Just set empty slug - let user work without navigation
@@ -124,6 +144,7 @@ export default function MainPage(props) {
     if (!isValidSlug(slug)) {
       const newSlug = generateRandomString(7);
       if (props.user) {
+        // On invalid slug, navigate directly without warning
         navigate("/p/" + props.user.username + "/new");
       } else {
         navigate("/" + newSlug);
@@ -164,6 +185,7 @@ export default function MainPage(props) {
           }
         } else {
           if (props.user) {
+            // Page doesn't exist, navigate to new document
             navigate("/p/" + props.user.username + "/new");
           }
           clearEditorValue();
@@ -521,6 +543,9 @@ export default function MainPage(props) {
         toast.dismiss(loadingToast);
         toast.success("Document saved successfully!");
         
+        // Reset unsaved changes state
+        setHasUnsavedChanges(false);
+        
         if (currUser && res.isInserted) {
           setCurrUser((user) => {
             user.pages.push({
@@ -689,13 +714,52 @@ export default function MainPage(props) {
 
   const inputFile = useRef(null);
 
+  // Wrapped navigate function to check for unsaved changes
+  const safeNavigate = (path) => {
+    if (hasUnsavedChanges) {
+      setPendingNavigation(path);
+      setShowNavigationWarning(true);
+    } else {
+      navigate(path);
+    }
+  };
+
+  const confirmNavigation = () => {
+    if (pendingNavigation) {
+      setHasUnsavedChanges(false); // Reset state to allow navigation
+      
+      // If navigating to root (logout), clear user data
+      if (pendingNavigation === "/") {
+        setCurrUser(null);
+        localStorage.removeItem("currentUser");
+      }
+      
+      navigate(pendingNavigation);
+      setPendingNavigation(null);
+    }
+    setShowNavigationWarning(false);
+  };
+
+  const cancelNavigation = () => {
+    setPendingNavigation(null);
+    setShowNavigationWarning(false);
+  };
+
   const handleLogout = () => {
-    navigate("/");
-    setCurrUser(null);
-    localStorage.removeItem("currentUser");
+    if (hasUnsavedChanges) {
+      setPendingNavigation("/");
+      setShowNavigationWarning(true);
+    } else {
+      navigate("/");
+      setCurrUser(null);
+      localStorage.removeItem("currentUser");
+    }
   };
 
   const handleOnEditorChange = (value) => {
+    // Mark as having unsaved changes (for both logged-in and public users)
+    setHasUnsavedChanges(true);
+    
     if (value != incomingEditorValue && socket && socketEnabled && userSlug) {
       socket.emit("room_message", userSlug, value);
     }
@@ -716,7 +780,7 @@ export default function MainPage(props) {
   };
 
   const handlePageNavigate = (slugName) => {
-    navigate("/p/" + username + "/" + slugName);
+    safeNavigate("/p/" + username + "/" + slugName);
   };
 
   // JSX variables removed - now using components
@@ -749,9 +813,10 @@ export default function MainPage(props) {
         setDropdownVisibility={setDropdownVisibility}
         userProfileIcon={userProfileIcon}
         profilePicture={profilePicture}
-        onNavigate={navigate}
+        onNavigate={safeNavigate}
         onLogout={handleLogout}
         onShowUserProfile={() => setShowUserProfileModal(true)}
+        onShowSubscription={() => setShowSubscriptionModal(true)}
         RedirectUrlComponent={
           <RedirectUrlInput
             value={tmpSlug}
@@ -792,12 +857,17 @@ export default function MainPage(props) {
         )}
 
         {/* Premium Sidebar for Non-Logged */}
-        {!currUser && <PremiumSidebar onNavigate={navigate} />}
+        {!currUser && <PremiumSidebar onNavigate={safeNavigate} />}
 
         {/* Main Editor Area */}
         <div className="flex-1 flex flex-col bg-white overflow-hidden">
           {/* Warning Banner */}
-          {!currUser && <WarningBanner onSave={saveData} />}
+          {!currUser && (
+            <WarningBanner 
+              onSave={saveData} 
+              show={hasUnsavedChanges}
+            />
+          )}
 
           {/* Page title and version - LOGGED USERS ONLY */}
           {currUser && (
@@ -907,11 +977,50 @@ export default function MainPage(props) {
       <FeatureModal
         isVisible={!currUser && showMobileModal}
         onClose={() => setShowMobileModal(false)}
-        onNavigate={navigate}
+        onNavigate={safeNavigate}
       />
 
       {/* Existing Modals */}
       {showUserProfileModal && <UserProfileModal currUser={currUser} setCurrUser={setCurrUser} setShowUserProfileModal={setShowUserProfileModal} />}
+      <SubscriptionModal 
+        isVisible={showSubscriptionModal} 
+        onClose={() => setShowSubscriptionModal(false)}
+        feature="Auctions"
+      />
+
+      {/* Navigation Warning Modal */}
+      {showNavigationWarning && (
+        <>
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50" onClick={cancelNavigation} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <svg className="w-12 h-12 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+                <h3 className="text-xl font-bold text-gray-900">Unsaved Changes</h3>
+              </div>
+              <p className="text-gray-600 mb-6">
+                You have unsaved changes that will be lost if you leave this page. Are you sure you want to continue?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={cancelNavigation}
+                  className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg font-medium transition"
+                >
+                  Stay on Page
+                </button>
+                <button
+                  onClick={confirmNavigation}
+                  className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition"
+                >
+                  Leave Without Saving
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

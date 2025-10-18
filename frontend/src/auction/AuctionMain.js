@@ -99,7 +99,7 @@ export default function AuctionMain(props) {
 
     const logoutFormAuction = () => {
         AuctionService.auctionLogout().then(() => {
-            navigate("/t/auction");
+            navigate("/p/t/auction");
         })
     }
 
