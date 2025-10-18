@@ -15,14 +15,17 @@ docs/
 ├── architecture/             # System Architecture
 │   ├── OVERVIEW.md          # Project overview
 │   ├── DATABASE_SCHEMA.md   # MongoDB models
-│   └── SYSTEM_DESIGN.md     # Architecture diagrams
+│   ├── SYSTEM_DESIGN.md     # Architecture diagrams
+│   └── PROJECT_STRUCTURE.md # File organization
 ├── development/              # Developer Guides
-│   ├── GETTING_STARTED.md   # Setup instructions
-│   ├── IMPLEMENTATION_SUMMARY.md  # What was built
-│   └── SESSION_SUMMARY.md   # Implementation history
-└── testing/                  # Testing Documentation
-    ├── TESTING_GUIDE.md     # How to test
-    └── TESTS_SUMMARY.md     # Test results
+│   └── GETTING_STARTED.md   # Setup instructions
+├── testing/                  # Testing Documentation
+│   ├── TESTING_GUIDE.md     # How to test
+│   └── TESTS_SUMMARY.md     # Test results
+└── session/                  # Implementation History
+    ├── FINAL_SUMMARY.md     # Complete summary
+    ├── SESSION_SUMMARY.md   # Change history
+    └── IMPLEMENTATION_SUMMARY.md  # What was built
 ```
 
 ---
@@ -38,14 +41,19 @@ docs/
 - [API v1 Reference](api/API_RESTRUCTURE.md)
 - [Team Logo System](api/TEAM_LOGO_SYSTEM.md)
 
-### **Development**
-- [Implementation Summary](development/IMPLEMENTATION_SUMMARY.md)
-- [Session History](development/SESSION_SUMMARY.md)
+### **Architecture**
+- [System Design](architecture/SYSTEM_DESIGN.md)
+- [Project Structure](architecture/PROJECT_STRUCTURE.md)
 
 ### **Testing**
 - [Testing Guide](testing/TESTING_GUIDE.md)
 - [Test Results](testing/TESTS_SUMMARY.md)
 - [Backend Test README](../backend/tests/README.md)
+
+### **Implementation History**
+- [Final Summary](session/FINAL_SUMMARY.md)
+- [Session History](session/SESSION_SUMMARY.md)
+- [What Was Built](session/IMPLEMENTATION_SUMMARY.md)
 
 ---
 
@@ -56,19 +64,27 @@ Start here to understand the project:
 1. Read [Project Overview](architecture/OVERVIEW.md)
 2. Follow [Getting Started Guide](development/GETTING_STARTED.md)
 3. Review [API Documentation](api/API_RESTRUCTURE.md)
+4. Explore [Project Structure](architecture/PROJECT_STRUCTURE.md)
 
 ### **Frontend Developers**
 - [API v1 Reference](api/API_RESTRUCTURE.md)
 - [Frontend API Client Guide](api/API_RESTRUCTURE.md#frontend-service-layer)
+- [Getting Started](development/GETTING_STARTED.md)
 
 ### **Backend Developers**
 - [Database Schema](architecture/DATABASE_SCHEMA.md)
 - [System Architecture](architecture/SYSTEM_DESIGN.md)
 - [Testing Guide](testing/TESTING_GUIDE.md)
+- [Project Structure](architecture/PROJECT_STRUCTURE.md)
 
 ### **DevOps/QA**
 - [Testing Guide](testing/TESTING_GUIDE.md)
-- [Deployment Guide](development/GETTING_STARTED.md#deployment)
+- [Deployment Guide](development/GETTING_STARTED.md#building-for-production)
+
+### **Reviewing Changes**
+- [Final Summary](session/FINAL_SUMMARY.md) - Complete overview of changes
+- [Session History](session/SESSION_SUMMARY.md) - Detailed change log
+- [What Was Built](session/IMPLEMENTATION_SUMMARY.md) - Technical details
 
 ---
 
@@ -76,23 +92,17 @@ Start here to understand the project:
 
 ### **I want to...**
 
-**Understand the API**
-→ [API v1 Reference](api/API_RESTRUCTURE.md)
-
-**Upload team logos**
-→ [Team Logo System](api/TEAM_LOGO_SYSTEM.md)
-
-**Run tests**
-→ [Testing Guide](testing/TESTING_GUIDE.md)
-
-**Set up locally**
-→ [Getting Started](development/GETTING_STARTED.md)
-
-**Understand architecture**
-→ [System Design](architecture/SYSTEM_DESIGN.md)
-
-**See what changed**
-→ [Implementation Summary](development/IMPLEMENTATION_SUMMARY.md)
+| What | Where |
+|------|-------|
+| **Understand the API** | [API v1 Reference](api/API_RESTRUCTURE.md) |
+| **Upload team logos** | [Team Logo System](api/TEAM_LOGO_SYSTEM.md) |
+| **Run tests** | [Testing Guide](testing/TESTING_GUIDE.md) |
+| **Set up locally** | [Getting Started](development/GETTING_STARTED.md) |
+| **Understand architecture** | [System Design](architecture/SYSTEM_DESIGN.md) |
+| **See database models** | [Database Schema](architecture/DATABASE_SCHEMA.md) |
+| **Navigate codebase** | [Project Structure](architecture/PROJECT_STRUCTURE.md) |
+| **See what changed** | [Final Summary](session/FINAL_SUMMARY.md) |
+| **Review implementation** | [Implementation Details](session/IMPLEMENTATION_SUMMARY.md) |
 
 ---
 
