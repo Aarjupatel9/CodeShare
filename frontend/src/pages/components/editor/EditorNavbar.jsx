@@ -14,7 +14,6 @@ const EditorNavbar = ({
   onNavigate,
   onLogout,
   onShowUserProfile,
-  onShowHelp,
   RedirectUrlComponent,
   MobileMenuComponent
 }) => {
@@ -43,15 +42,15 @@ const EditorNavbar = ({
             <a href="/t/auction" className="text-gray-700 hover:text-blue-600 flex items-center gap-1">
               Auctions <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">Pro</span>
             </a>
-            <a href="#" className="text-gray-700 hover:text-blue-600 flex items-center gap-1">
-              My Documents <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">Pro</span>
-            </a>
+            <a href="/help" className="text-gray-700 hover:text-blue-600">Help</a>
+            <a href="/about" className="text-gray-700 hover:text-blue-600">About</a>
           </>
         ) : (
           <>
-            <a href={`/p/${username}/new`} className="text-gray-700 hover:text-blue-600">My Documents</a>
             <a href="/games" className="text-gray-700 hover:text-blue-600">Games</a>
             <a href="/t/auction" className="text-gray-700 hover:text-blue-600">Auctions</a>
+            <a href="/p/help" className="text-gray-700 hover:text-blue-600">Help</a>
+            <a href="/p/about" className="text-gray-700 hover:text-blue-600">About</a>
           </>
         )}
       </div>
@@ -141,12 +140,22 @@ const EditorNavbar = ({
                 <div className="border-t border-gray-200 my-2"></div>
 
                 <a 
-                  onClick={onShowHelp}
+                  onClick={() => onNavigate("/p/help")}
                   className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition cursor-pointer text-left"
                 >
                   <span className="text-xl">❓</span>
                   <div className="flex-1 text-left">
                     <div className="text-sm font-medium text-gray-900">Help</div>
+                  </div>
+                </a>
+
+                <a 
+                  onClick={() => onNavigate("/p/about")}
+                  className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition cursor-pointer text-left"
+                >
+                  <span className="text-xl">ℹ️</span>
+                  <div className="flex-1 text-left">
+                    <div className="text-sm font-medium text-gray-900">About</div>
                   </div>
                 </a>
 

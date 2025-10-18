@@ -14,6 +14,8 @@ import AuctionMain from "./auction/AuctionMain";
 import AuctionDetailsManage from "./auction/AuctionDetailsManage";
 import AuctionBidding from "./auction/AuctionBidding";
 import AuctionLiveUpdate from "./auction/AuctionLiveUpdate";
+import HelpPage from "./pages/HelpPage";
+import AboutPage from "./pages/AboutPage";
 
 function App() {
   return (
@@ -21,6 +23,14 @@ function App() {
       <Toaster />
       <UserProvider>
         <Routes>
+          {/* Help and About - Public */}
+          <Route path="/help" element={<HelpPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          
+          {/* Help and About - Private */}
+          <Route path="/p/help" element={<HelpPage />} />
+          <Route path="/p/about" element={<AboutPage />} />
+          
           <Route path="/t/auction/" element={<AuctionHome />} />
           <Route path="/t/auction/:auctionId" element={<AuctionMain />} />
           <Route path="/t/auction/:auctionId/manage" element={<AuctionDetailsManage />} />

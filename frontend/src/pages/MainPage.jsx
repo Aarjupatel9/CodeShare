@@ -28,7 +28,7 @@ import {
   getTimeInFormate,
   isValidSlug,
 } from "../common/functions";
-import { HelpMoedal, UserProfileModal } from "../common/Modals";
+import { UserProfileModal } from "../common/Modals";
 
 // Import new components
 import EditorNavbar from "./components/editor/EditorNavbar";
@@ -73,7 +73,6 @@ export default function MainPage(props) {
   ]);
 
   const [incomingEditorValue, setIncomingEditorValue] = useState("");
-  const [showHelpModal, setShowHelpModal] = useState(false);
   const [showUserProfileModal, setShowUserProfileModal] = useState(false);
   const [showFloatingHint, setShowFloatingHint] = useState(false);
   const [showMobileModal, setShowMobileModal] = useState(false);
@@ -753,7 +752,6 @@ export default function MainPage(props) {
         onNavigate={navigate}
         onLogout={handleLogout}
         onShowUserProfile={() => setShowUserProfileModal(true)}
-        onShowHelp={() => setShowHelpModal(true)}
         RedirectUrlComponent={
           <RedirectUrlInput
             value={tmpSlug}
@@ -913,7 +911,6 @@ export default function MainPage(props) {
       />
 
       {/* Existing Modals */}
-      {showHelpModal && <HelpMoedal setShowHelpModal={setShowHelpModal} />}
       {showUserProfileModal && <UserProfileModal currUser={currUser} setCurrUser={setCurrUser} setShowUserProfileModal={setShowUserProfileModal} />}
     </div>
   );
