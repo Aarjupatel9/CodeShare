@@ -39,20 +39,22 @@ const MobileMenu = ({
       </button>
 
       {isVisible && (
-        <div className="overflow-auto absolute left-0 z-10 mt-2 min-w-[240px] max-w-96 max-h-96 p-1 px-3 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-          <div className="flex flex-col h-full text-sm text-gray-700 dark:text-gray-200">
+        <div className="overflow-auto absolute left-0 right-0 z-10 mt-2 max-w-full sm:w-[500px] sm:right-auto max-h-96 p-3 origin-top-right rounded-md bg-gray-50 shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none">
+          <div className="flex flex-col h-full text-sm text-gray-700">
             <div className="relative fixed top-0">
-              <div className="flex flex-row h-[30px] w-full text-sm justify-center gap-2">
+              <div className="flex flex-row w-full text-sm gap-2 mb-3">
                 {privateTabs.map((tab) => {
                   return (
                     <div
                       key={tab.tabId + generateRandomString(10)}
                       className={`${
-                        tab.selected ? "bg-slate-300" : "bg-slate-100"
-                      } h-full flex items-center justify-center w-full hover:bg-slate-400 text-black rounded`}
+                        tab.selected 
+                          ? "bg-blue-600 text-white font-semibold shadow-sm" 
+                          : "bg-white text-gray-700 border border-gray-200 font-medium hover:bg-gray-50"
+                      } flex items-center justify-center flex-1 py-2 px-3 rounded-lg transition cursor-pointer`}
                       onClick={(e) => onSelectTab(tab.tabId, e)}
                     >
-                      {tab.tabName}
+                      {tab.tabName === "Pages" ? "📄 " : "📎 "}{tab.tabName}
                     </div>
                   );
                 })}
@@ -62,91 +64,104 @@ const MobileMenu = ({
 
               {privateTabs[0].selected ? (
                 <>
-                  <div className="pt-2 mt-4 font-medium text-sm border-t border-gray-200 dark:border-gray-700">
-                    <div>
-                      <label
-                        onClick={(e) => onPageNavigate("new")}
-                        className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-1 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group"
-                      >
-                        {pageListIcon}
-                        Create new page
-                      </label>
-                    </div>
+                  <div className="pb-3">
+                    <button
+                      onClick={(e) => onPageNavigate("new")}
+                      className="w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition shadow-sm flex items-center justify-center gap-2 text-sm"
+                    >
+                      <span>⊕</span>
+                      <span>New Document</span>
+                    </button>
                   </div>
                   {/* Page List functionality */}
-                  <div className="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700 overflow-auto">
+                  <div className="space-y-2 overflow-auto">
                     {currUser &&
                       currUser.pages &&
                       currUser.pages.map((page) => {
                         return (
-                          <li
+                          <div
                             key={page.pageId._id}
-                            className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between border-blue-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
+                            className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm active:shadow-md transition group"
                           >
-                            <div
-                              className="flex items-center cursor-pointer p-2 text-gray-900 transition duration-75 rounded-lg group flex-1"
-                              onClick={(e) => onPageNavigate(page.pageId.unique_name)}
-                            >
-                              {pageIcon}
-                              <span
-                                className="ms-3 w-full line-clamp-1"
-                                title={page.pageId.unique_name}
+                            <div className="flex items-center justify-between mb-2">
+                              <div
+                                className="flex items-center gap-2 flex-1"
+                                onClick={(e) => onPageNavigate(page.pageId.unique_name)}
                               >
-                                {page.pageId.unique_name ? getPresizeFileName(page.pageId.unique_name) : "page"}
-                              </span>
-                            </div>
-                            <div className="flex flex-row">
-                              <div onClick={() => onPageRemove(page.pageId)}>
-                                {removeIcon}
+                                <span className="text-base">{pageIcon}</span>
+                                <span
+                                  className="font-semibold text-gray-900 text-sm line-clamp-1"
+                                  title={page.pageId.unique_name}
+                                >
+                                  {page.pageId.unique_name ? getPresizeFileName(page.pageId.unique_name) : "page"}
+                                </span>
                               </div>
+                              <button
+                                onClick={() => onPageRemove(page.pageId)}
+                                className="text-red-600 text-lg px-2"
+                              >
+                                {removeIcon}
+                              </button>
                             </div>
-                          </li>
+                            <div className="pt-2 border-t border-gray-100">
+                              <button
+                                onClick={(e) => onPageNavigate(page.pageId.unique_name)}
+                                className="w-full px-3 py-2 text-xs bg-blue-50 text-blue-600 rounded-md font-medium"
+                              >
+                                Open
+                              </button>
+                            </div>
+                          </div>
                         );
                       })}
                   </div>
                 </>
               ) : (
                 currUser && <>
-                  <div className="pt-4 mt-4 font-medium text-sm border-t border-gray-200 dark:border-gray-700">
-                    <label className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group">
-                      <input type="file" accept="*" onChange={onSelectFile} />
-                      {fileAddIcon}
-                      Upload File
+                  <div className="pb-3">
+                    <label className="w-full px-4 py-2.5 bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold rounded-lg transition cursor-pointer flex items-center justify-center gap-2 text-sm">
+                      <input type="file" accept="*" onChange={onSelectFile} className="hidden" />
+                      <span>📎</span>
+                      <span>Upload File</span>
                     </label>
                   </div>
 
                   {/* File List functionality */}
                   {privateFileList.length > 0 && (
-                    <div className="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700 overflow-auto">
+                    <div className="space-y-2 overflow-auto">
                       {privateFileList.map((file, index) => {
                         return (
-                          <li
+                          <div
                             key={index}
-                            className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between border-blue-300"
+                            className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm group"
                           >
-                            <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg group flex-1">
-                              {fileIcon(file.type)}
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-base">{fileIcon(file.type)}</span>
                               <span
-                                className="ms-3 cursor-pointer line-clamp-1"
+                                className="font-semibold text-gray-900 text-sm flex-1 line-clamp-1"
                                 title={file.name}
                               >
                                 {file.name ? getPresizeFileName(file.name) : "file"}
                               </span>
                             </div>
-                            <div className="flex flex-row min-w-[50px]">
+                            <div className="flex gap-2 pt-2 border-t border-gray-100">
                               <a
                                 href={file.url}
                                 target="_blank"
                                 download={file.name}
                                 rel="noreferrer"
+                                className="flex-1 px-3 py-2 text-xs bg-green-50 text-green-600 rounded-md font-medium text-center"
                               >
-                                {downloadIcon}
+                                Download
                               </a>
-                              <div onClick={() => onFileRemove(file)}>
-                                {removeIcon}
-                              </div>
+                              <button
+                                onClick={() => onFileRemove(file)}
+                                className="px-3 py-2 text-xs bg-red-50 text-red-600 rounded-md font-medium"
+                              >
+                                Delete
+                              </button>
                             </div>
-                          </li>
+                          </div>
                         );
                       })}
                     </div>

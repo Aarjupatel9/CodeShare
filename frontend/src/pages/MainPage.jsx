@@ -803,11 +803,11 @@ export default function MainPage(props) {
 
           {/* Page title and version - LOGGED USERS ONLY */}
           {currUser && (
-            <div className="flex flex-row gap-2 items-center px-4 py-2 border-b border-gray-200 flex-shrink-0">
-              <div className="flex flex-row gap-2 w-full items-center">
-                <div className="flex flex-row gap-3 items-center justify-between">
-                  <div className="relative inline-block text-left cursor-pointer">
-                    <div onClick={() => {
+            <div className="flex flex-row gap-3 items-center justify-between px-4 py-3 border-b border-gray-200 flex-shrink-0">
+              <div className="flex items-center gap-3 flex-1">
+                <div className="relative inline-block">
+                  <button
+                    onClick={() => {
                       getAllversionData(true);
                       setDropdownVisibility(() => {
                         var val = structuredClone(dropdownVisibility);
@@ -817,19 +817,14 @@ export default function MainPage(props) {
                         return val;
                       });
                     }}
-                      type="button"
-                      className="gap-2 flex items-center justify-between rounded-lg text-xs font-medium shadow-sm text-gray-700 bg-gray-100 hover:bg-gray-200 px-2 py-1.5 transition"
-                    >
-                      <div className="px-1 py-1 capitalize">
-                        {latestVersion.timeformate ? userSlug : "New page"}
-                      </div>
-                      <div
-                        title="Click to show page versions"
-                        className="flex items-center justify-between px-1 py-1 cursor-pointer"
-                      >
-                        {downArrowIcon}
-                      </div>
-                    </div>
+                    type="button"
+                    className="gap-3 flex items-center bg-gray-100 hover:bg-gray-200 px-4 py-2 transition rounded-lg text-sm font-medium text-gray-900"
+                  >
+                    <span className="capitalize">📄 {latestVersion.timeformate ? userSlug : "New page"}</span>
+                    <span className="text-gray-500" title="Click to show page versions">
+                      {downArrowIcon}
+                    </span>
+                  </button>
 
                     {dropdownVisibility.history && allVersionData.length > 0 && (
                       <div
@@ -871,16 +866,16 @@ export default function MainPage(props) {
                       </div>
                     )}
                   </div>
-                </div>
-                
-                <button
-                  type="button"
-                  onClick={(e) => saveData()}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition shadow-sm flex items-center gap-1"
-                >
-                  💾 <span className="hidden sm:inline">Save</span>
-                </button>
               </div>
+              
+              <button
+                type="button"
+                onClick={(e) => saveData()}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition shadow-sm flex items-center gap-2"
+              >
+                <span>💾</span>
+                <span className="hidden sm:inline">Save</span>
+              </button>
             </div>
           )}
 

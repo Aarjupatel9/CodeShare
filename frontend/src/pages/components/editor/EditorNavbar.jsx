@@ -73,61 +73,93 @@ const EditorNavbar = ({
             </a>
           )}
           
-          {/* Profile Dropdown */}
+          {/* Profile Dropdown - Modern Design (Option 1) */}
           {currUser && dropdownVisibility.profile && (
             <div
-              className="absolute right-0 top-16 z-10 mt-2 p-1 min-w-48 max-h-96 overflow-auto origin-top-right rounded-md bg-slate-300 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+              className="absolute right-0 top-16 z-10 mt-2 w-80 origin-top-right rounded-xl bg-white shadow-xl border border-gray-200 overflow-hidden"
               role="menu"
             >
-              <ul className="py-2 text-sm text-gray-700 dark:text-gray-200 rounded font-bold">
-                <li className="flex px-1 items-center rounded">
-                  <div
-                    className="w-full version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-slate-100 dark:hover:bg-gray-600 dark:hover:text-white flex items-center rounded"
-                    onClick={onShowUserProfile}
-                  >
-                    <div className="w-12 h-12 flex-shrink-0">
-                      {profilePicture}
-                    </div>
-                    <span className="ml-2">{username}</span>
+              {/* User Info Header with Gradient */}
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 flex-shrink-0">
+                    {profilePicture}
                   </div>
-                </li>
+                  <div className="flex-1 text-left">
+                    <div className="text-white font-semibold text-left">{username}</div>
+                    <div className="text-blue-100 text-xs text-left">{currUser.email || 'user@example.com'}</div>
+                  </div>
+                </div>
+              </div>
 
-                <li className="flex items-center px-1">
-                  <div
-                    onClick={() => onNavigate("/t/auction")}
-                    className="w-full version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-slate-100 dark:hover:bg-gray-600 dark:hover:text-white rounded"
-                  >
-                    Auction
+              {/* Menu Items */}
+              <div className="py-2">
+                <a 
+                  onClick={onShowUserProfile}
+                  className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition cursor-pointer text-left"
+                >
+                  <span className="text-xl">👤</span>
+                  <div className="flex-1 text-left">
+                    <div className="text-sm font-medium text-gray-900">My Profile</div>
+                    <div className="text-xs text-gray-500">Account settings</div>
                   </div>
-                </li>
+                </a>
+                
+                <a 
+                  onClick={() => onNavigate("/p/" + username)}
+                  className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition cursor-pointer text-left"
+                >
+                  <span className="text-xl">📄</span>
+                  <div className="flex-1 text-left">
+                    <div className="text-sm font-medium text-gray-900">My Documents</div>
+                    <div className="text-xs text-gray-500">View all pages</div>
+                  </div>
+                </a>
 
-                <li className="flex items-center px-1">
-                  <div
-                    onClick={() => onNavigate("/games")}
-                    className="w-full version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-slate-100 dark:hover:bg-gray-600 dark:hover:text-white rounded"
-                  >
-                    Games
+                <a 
+                  onClick={() => onNavigate("/t/auction")}
+                  className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition cursor-pointer text-left"
+                >
+                  <span className="text-xl">🏏</span>
+                  <div className="flex-1 text-left">
+                    <div className="text-sm font-medium text-gray-900">Auctions</div>
+                    <div className="text-xs text-gray-500">Manage auctions</div>
                   </div>
-                </li>
+                </a>
 
-                <li className="flex items-center px-1">
-                  <div
-                    onClick={onShowHelp}
-                    className="w-full version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-slate-100 dark:hover:bg-gray-600 dark:hover:text-white rounded"
-                  >
-                    Help
+                <a 
+                  onClick={() => onNavigate("/games")}
+                  className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition cursor-pointer text-left"
+                >
+                  <span className="text-xl">🎮</span>
+                  <div className="flex-1 text-left">
+                    <div className="text-sm font-medium text-gray-900">Games</div>
+                    <div className="text-xs text-gray-500">Play games</div>
                   </div>
-                </li>
+                </a>
 
-                <li className="flex items-center px-1">
-                  <div
-                    onClick={onLogout}
-                    className="w-full version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-slate-100 dark:hover:bg-gray-600 dark:hover:text-white rounded"
-                  >
-                    Logout
+                <div className="border-t border-gray-200 my-2"></div>
+
+                <a 
+                  onClick={onShowHelp}
+                  className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition cursor-pointer text-left"
+                >
+                  <span className="text-xl">❓</span>
+                  <div className="flex-1 text-left">
+                    <div className="text-sm font-medium text-gray-900">Help</div>
                   </div>
-                </li>
-              </ul>
+                </a>
+
+                <a 
+                  onClick={onLogout}
+                  className="flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 transition cursor-pointer text-red-600 text-left"
+                >
+                  <span className="text-xl">🚪</span>
+                  <div className="flex-1 text-left">
+                    <div className="text-sm font-semibold">Logout</div>
+                  </div>
+                </a>
+              </div>
             </div>
           )}
         </div>
