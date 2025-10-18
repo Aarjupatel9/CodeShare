@@ -176,42 +176,11 @@ class ImageService {
     return Buffer.from(base64Data, 'base64');
   }
 
-  /**
-   * Cleanup old cached logos (older than 30 days)
-   */
-  async cleanupOldCache() {
-    try {
-      const files = await fs.readdir(PUBLIC_LOGOS_DIR);
-      const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-      
-      let cleaned = 0;
-      for (const file of files) {
-        const filepath = path.join(PUBLIC_LOGOS_DIR, file);
-        const stats = await fs.stat(filepath);
-        
-        if (stats.mtimeMs < thirtyDaysAgo) {
-          await fs.unlink(filepath);
-          cleaned++;
-        }
-      }
-      
-      if (cleaned > 0) {
-        console.log(`🧹 Cleaned up ${cleaned} old cached logos`);
-      }
-    } catch (error) {
-      console.error('Error cleaning up cache:', error);
-    }
-  }
 }
 
 // Initialize and export singleton
 const imageService = new ImageService();
 imageService.init();
-
-// Cleanup old cache every 24 hours
-setInterval(() => {
-  imageService.cleanupOldCache();
-}, 24 * 60 * 60 * 1000);
 
 module.exports = imageService;
 
