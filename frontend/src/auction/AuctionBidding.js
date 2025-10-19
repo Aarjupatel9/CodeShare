@@ -643,12 +643,46 @@ export default function AuctionBidding(props) {
     }
 
     return (
-        <>
-            <div className='flex flex-col w-full h-full p-1 text-sx gap-2'>
-                <div className='header flex flex-row justify-start gap-2 bg-gray-50'>
-                    <div onClick={() => { navigate(`/p/${currUser._id}/t/auction/${auctionId}`) }} className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer">Auction Home</div>
-                    <div onClick={() => { setAllowMusic(!allowMusic); }} className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer">{`${allowMusic ? "Stop" : "Start"} Sound`} </div>
+        <div className='flex flex-col w-full min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-indigo-900 text-white'>
+            {/* Top Bar */}
+            <div className="bg-black bg-opacity-40 backdrop-blur-sm px-4 py-3 shadow-lg flex-shrink-0">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div className="flex items-center gap-4">
+                        <h2 className="font-bold text-xl">{auction?.name || 'Auction'}</h2>
+                        <span className="px-3 py-1 bg-red-600 text-white rounded-full text-sm font-semibold flex items-center gap-2">
+                            <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                            LIVE
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <button 
+                            onClick={() => { setAllowMusic(!allowMusic); }}
+                            className="px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg font-medium transition flex items-center gap-2"
+                        >
+                            <span>{allowMusic ? '🔊' : '🔇'}</span>
+                            <span className="hidden md:inline">Sound: {allowMusic ? 'ON' : 'OFF'}</span>
+                        </button>
+                        <button 
+                            onClick={() => { /* undo logic */ }}
+                            className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black rounded-lg font-bold transition flex items-center gap-2"
+                        >
+                            <span>⏪</span>
+                            <span className="hidden md:inline">Undo</span>
+                        </button>
+                        <button 
+                            onClick={() => { navigate(`/p/${currUser._id}/t/auction/${auctionId}`) }}
+                            className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-semibold transition flex items-center gap-2"
+                        >
+                            <span>🚪</span>
+                            <span className="hidden md:inline">Exit</span>
+                        </button>
+                    </div>
                 </div>
+            </div>
+            
+            {/* Main Content */}
+            <div className='flex-1 flex flex-col p-4 overflow-auto'>
+                <div className='max-w-7xl mx-auto w-full'>
 
                 <div className='flex flex-col gap-2 h-full max-h-full overflow-auto bg-gray-100 rounded-lg'>
 
@@ -719,7 +753,8 @@ export default function AuctionBidding(props) {
                         </div>
                     </div>
                 </div>
+                </div>
             </div>
-        </>
+        </div>
     )
 }

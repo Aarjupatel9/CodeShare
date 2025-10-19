@@ -51,6 +51,41 @@ export default function AuctionHome() {
     password: ''
   });
 
+  // Mock stats (TODO: Replace with real API when backend is ready)
+  const [auctionStats, setAuctionStats] = useState({
+    total: 0,
+    active: 0,
+    completed: 0,
+    setup: 0
+  });
+
+  // Calculate stats from myAuctions
+  useEffect(() => {
+    if (myAuctions && myAuctions.length > 0) {
+      const stats = {
+        total: myAuctions.length,
+        active: myAuctions.filter(a => a.state === 'running').length,
+        completed: myAuctions.filter(a => a.state === 'completed').length,
+        setup: myAuctions.filter(a => a.state === 'setup').length
+      };
+      setAuctionStats(stats);
+    }
+  }, [myAuctions]);
+
+  // Get status badge color and text
+  const getStatusBadge = (state) => {
+    switch(state) {
+      case 'running':
+        return { bg: 'bg-green-100', text: 'text-green-700', label: 'Running', icon: '⚡' };
+      case 'completed':
+        return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Completed', icon: '✅' };
+      case 'setup':
+        return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Setup', icon: '⚙️' };
+      default:
+        return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Unknown', icon: '❓' };
+    }
+  };
+
   // Handle logout
   const handleLogout = () => {
     authService.logout()
@@ -273,52 +308,130 @@ export default function AuctionHome() {
       />
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        {/* Hero Widget */}
-        <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl shadow-2xl p-8 md:p-12 mb-12 overflow-hidden">
-          {/* Decorative Background Pattern */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full -mr-32 -mt-32"></div>
-            <div className="absolute bottom-0 left-0 w-96 h-96 bg-white rounded-full -ml-48 -mb-48"></div>
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-600 hover:shadow-lg transition">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm font-medium mb-1">Total Auctions</p>
+                <p className="text-3xl font-bold text-gray-900">{auctionStats.total}</p>
+              </div>
+              <div className="text-4xl">🏏</div>
+            </div>
           </div>
           
-          <div className="relative text-center">
-            <div className="text-6xl md:text-7xl mb-6">🏏</div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Auction Management
-            </h1>
-            <p className="text-lg md:text-xl text-blue-100 max-w-2xl mx-auto">
-              Create and manage cricket/sports auctions with real-time bidding and team management
-            </p>
+          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500 hover:shadow-lg transition">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm font-medium mb-1">Active Now</p>
+                <p className="text-3xl font-bold text-green-600">{auctionStats.active}</p>
+              </div>
+              <div className="text-4xl">⚡</div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-indigo-600 hover:shadow-lg transition">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm font-medium mb-1">Completed</p>
+                <p className="text-3xl font-bold text-gray-900">{auctionStats.completed}</p>
+              </div>
+              <div className="text-4xl">✅</div>
+            </div>
           </div>
         </div>
 
-        {/* Action Cards */}
-        <div className="grid md:grid-cols-2 gap-8 mb-16">
-          {/* Create Auction Card */}
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1">
-            <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-8 text-white">
-              <div className="text-6xl mb-4">🎯</div>
-              <h2 className="text-3xl font-bold mb-2">Create New Auction</h2>
-              <p className="text-blue-100">Start a fresh auction and invite participants</p>
+        {/* Recent Auctions */}
+        {myAuctions && myAuctions.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-gray-900">Your Auctions</h2>
+              {myAuctions.length > 3 && (
+                <span className="text-blue-600 text-sm font-medium">{myAuctions.length} total</span>
+              )}
             </div>
-            <div className="p-8">
-              <ul className="space-y-3 mb-6">
-                <li className="flex items-start gap-2 text-gray-700">
-                  <span className="text-green-600 font-bold mt-1">✓</span>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+              {myAuctions.slice(0, 6).map((auction) => {
+                const badge = getStatusBadge(auction.state);
+                // Mock counts (TODO: Replace with real data from API)
+                const mockTeamCount = Math.floor(Math.random() * 8) + 4;
+                const mockPlayerCount = Math.floor(Math.random() * 40) + 20;
+                
+                return (
+                  <div key={auction._id} className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-5 border border-gray-100 cursor-pointer" onClick={() => navigate(`/p/${currUser._id}/t/auction/${auction._id}`)}>
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1 pr-2">
+                        <h3 className="font-bold text-gray-900 text-lg mb-1 line-clamp-1" title={auction.name}>{auction.name}</h3>
+                        <p className="text-sm text-gray-600">Organizer: {currUser?.username || 'You'}</p>
+                      </div>
+                      <span className={`px-3 py-1 ${badge.bg} ${badge.text} rounded-full text-xs font-semibold whitespace-nowrap flex items-center gap-1`}>
+                        <span>{badge.icon}</span>
+                        <span>{badge.label}</span>
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
+                      <span className="flex items-center gap-1">
+                        <span>👥</span>
+                        <span>{mockTeamCount}</span>
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span>🎯</span>
+                        <span>{mockPlayerCount}</span>
+                      </span>
+                    </div>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/p/${currUser._id}/t/auction/${auction._id}`);
+                      }}
+                      className={`w-full px-4 py-2.5 ${
+                        auction.state === 'running' 
+                          ? 'bg-green-600 hover:bg-green-700' 
+                          : auction.state === 'setup'
+                          ? 'bg-gray-600 hover:bg-gray-700'
+                          : 'bg-blue-600 hover:bg-blue-700'
+                      } text-white rounded-lg font-semibold transition shadow-sm`}
+                    >
+                      {auction.state === 'running' ? 'Continue →' : auction.state === 'setup' ? 'Setup →' : 'View Results →'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Action Cards */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Get Started</h2>
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Create Auction Card */}
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 text-white">
+                <div className="text-5xl mb-3">🎯</div>
+                <h2 className="text-2xl font-bold mb-2">Create New Auction</h2>
+                <p className="text-blue-100">Start a fresh auction and invite participants</p>
+              </div>
+            <div className="p-6">
+              <ul className="space-y-2.5 mb-6">
+                <li className="flex items-start gap-2 text-gray-700 text-sm">
+                  <span className="text-green-600 font-bold mt-0.5">✓</span>
                   <span>Set up teams and budgets</span>
                 </li>
-                <li className="flex items-start gap-2 text-gray-700">
-                  <span className="text-green-600 font-bold mt-1">✓</span>
+                <li className="flex items-start gap-2 text-gray-700 text-sm">
+                  <span className="text-green-600 font-bold mt-0.5">✓</span>
                   <span>Add players to auction pool</span>
                 </li>
-                <li className="flex items-start gap-2 text-gray-700">
-                  <span className="text-green-600 font-bold mt-1">✓</span>
+                <li className="flex items-start gap-2 text-gray-700 text-sm">
+                  <span className="text-green-600 font-bold mt-0.5">✓</span>
                   <span>Control the bidding process</span>
                 </li>
-                <li className="flex items-start gap-2 text-gray-700">
-                  <span className="text-green-600 font-bold mt-1">✓</span>
-                  <span>Real-time updates for all participants</span>
+                <li className="flex items-start gap-2 text-gray-700 text-sm">
+                  <span className="text-green-600 font-bold mt-0.5">✓</span>
+                  <span>Real-time updates</span>
                 </li>
               </ul>
               <button
@@ -326,37 +439,37 @@ export default function AuctionHome() {
                   resetForm();
                   setShowCreateModal(true);
                 }}
-                className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-lg shadow-lg transition transform hover:scale-105"
+                className="w-full px-6 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold shadow-lg transition transform hover:scale-105"
               >
-                Create Auction
+                🎯 Create Auction
               </button>
             </div>
           </div>
 
           {/* Join Auction Card */}
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1">
-            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-8 text-white">
-              <div className="text-6xl mb-4">🤝</div>
-              <h2 className="text-3xl font-bold mb-2">Join Existing Auction</h2>
+            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-6 text-white">
+              <div className="text-5xl mb-3">🤝</div>
+              <h2 className="text-2xl font-bold mb-2">Join Existing Auction</h2>
               <p className="text-indigo-100">Continue an ongoing auction session</p>
             </div>
-            <div className="p-8">
-              <ul className="space-y-3 mb-6">
-                <li className="flex items-start gap-2 text-gray-700">
-                  <span className="text-green-600 font-bold mt-1">✓</span>
+            <div className="p-6">
+              <ul className="space-y-2.5 mb-6">
+                <li className="flex items-start gap-2 text-gray-700 text-sm">
+                  <span className="text-green-600 font-bold mt-0.5">✓</span>
                   <span>Resume where you left off</span>
                 </li>
-                <li className="flex items-start gap-2 text-gray-700">
-                  <span className="text-green-600 font-bold mt-1">✓</span>
+                <li className="flex items-start gap-2 text-gray-700 text-sm">
+                  <span className="text-green-600 font-bold mt-0.5">✓</span>
                   <span>View live bidding updates</span>
                 </li>
-                <li className="flex items-start gap-2 text-gray-700">
-                  <span className="text-green-600 font-bold mt-1">✓</span>
+                <li className="flex items-start gap-2 text-gray-700 text-sm">
+                  <span className="text-green-600 font-bold mt-0.5">✓</span>
                   <span>Manage your auction data</span>
                 </li>
-                <li className="flex items-start gap-2 text-gray-700">
-                  <span className="text-green-600 font-bold mt-1">✓</span>
-                  <span>Access all auction features</span>
+                <li className="flex items-start gap-2 text-gray-700 text-sm">
+                  <span className="text-green-600 font-bold mt-0.5">✓</span>
+                  <span>Access all features</span>
                 </li>
               </ul>
               <button
@@ -365,35 +478,12 @@ export default function AuctionHome() {
                   setJoinTab('myAuctions');
                   setShowJoinModal(true);
                 }}
-                className="w-full px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-bold text-lg shadow-lg transition transform hover:scale-105"
+                className="w-full px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-bold shadow-lg transition transform hover:scale-105"
               >
-                Join Auction
+                🤝 Join Auction
               </button>
             </div>
           </div>
-        </div>
-
-        {/* Features Section */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-          <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">
-            ✨ Auction Features
-          </h2>
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="text-center p-6 bg-blue-50 rounded-xl">
-              <div className="text-4xl mb-3">👥</div>
-              <h3 className="font-bold text-gray-900 mb-2">Team Management</h3>
-              <p className="text-sm text-gray-600">Create teams, set budgets, and track spending in real-time</p>
-            </div>
-            <div className="text-center p-6 bg-green-50 rounded-xl">
-              <div className="text-4xl mb-3">🎮</div>
-              <h3 className="font-bold text-gray-900 mb-2">Live Bidding</h3>
-              <p className="text-sm text-gray-600">Real-time bidding interface with instant updates</p>
-            </div>
-            <div className="text-center p-6 bg-purple-50 rounded-xl">
-              <div className="text-4xl mb-3">📊</div>
-              <h3 className="font-bold text-gray-900 mb-2">Player Analytics</h3>
-              <p className="text-sm text-gray-600">Detailed player stats and auction analytics</p>
-            </div>
           </div>
         </div>
       </div>
@@ -412,7 +502,7 @@ export default function AuctionHome() {
             <p className="text-sm text-blue-800 text-left">
               <span className="font-semibold">Organizer:</span> {currUser?.username || currUser?.email?.split('@')[0] || 'You'}
             </p>
-          </div>
+        </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2 text-left">
@@ -457,17 +547,17 @@ export default function AuctionHome() {
         </div>
           
           <div className="flex gap-3 mt-6">
-            <button
+          <button
               type="button"
-              onClick={() => {
+            onClick={() => {
                 setShowCreateModal(false);
                 resetForm();
-              }}
+            }}
               className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg font-medium transition"
-            >
-              Cancel
-            </button>
-            <button
+          >
+            Cancel
+          </button>
+          <button
               type="submit"
               className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-bold transition shadow-lg"
             >
@@ -582,14 +672,14 @@ export default function AuctionHome() {
               <p className="text-sm text-indigo-800">
                 Enter the auction details provided by the organizer to join their auction.
               </p>
-            </div>
+        </div>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2 text-left">
                 Auction Name *
               </label>
-              <input
-                type="text"
+          <input
+            type="text"
                 value={joinOtherData.name}
                 onChange={(e) => setJoinOtherData({ ...joinOtherData, name: e.target.value })}
                 placeholder="Enter auction name"
@@ -614,8 +704,8 @@ export default function AuctionHome() {
                   </div>
                 </div>
               </div>
-              <input
-                type="text"
+          <input
+            type="text"
                 value={joinOtherData.organizerId}
                 onChange={(e) => setJoinOtherData({ ...joinOtherData, organizerId: e.target.value })}
                 placeholder="e.g., 676ea66aea46eee8df13e77b"
@@ -659,6 +749,6 @@ export default function AuctionHome() {
           </form>
         )}
       </Modal>
-    </div>
+      </div>
   );
 }

@@ -23,9 +23,32 @@ export default function AuctionMain(props) {
     const { auctionId } = useParams();
     const navigate = useNavigate();
 
+    // Calculate quick stats (mock for now, TODO: get from API)
+    const [auctionStats, setAuctionStats] = useState({
+        teamCount: 0,
+        playerCount: 0,
+        soldCount: 0,
+        totalBudget: 0
+    });
+
     useEffect(() => {
         getAuctionData()
     }, [])
+
+    // Update stats when data changes
+    useEffect(() => {
+        if (teams && players) {
+            const soldCount = players.filter(p => p.auctionStatus === 'sold').length;
+            const totalBudget = teams.reduce((sum, t) => sum + (t.budget || 0), 0);
+            
+            setAuctionStats({
+                teamCount: teams.length,
+                playerCount: players.length,
+                soldCount,
+                totalBudget
+            });
+        }
+    }, [teams, players]);
 
     const getAuctionData = () => {
         AuctionService.getAuctionDetails({ auctionId: auctionId }).then((res) => {
@@ -119,19 +142,145 @@ export default function AuctionMain(props) {
           });
     };
 
-    return (<div className='flex flex-col w-full h-full'>
-        <AuctionNavbar 
-            onNavigate={navigate}
-            onLogout={handleLogout}
-        />
-        <div className='flex flex-col w-full h-full sm:text-xs md:text-lg lg:text-xl sm:gap-2 md:gap-2 lg:gap-4 sm:p-1 md:p-2 lg:p-4'>
-        <div className='header flex flex-row justify-center gap-2 font-medium capitalize'>
-            <div className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer" onClick={() => { openBiddingProcess() }}>Continue Bidding process</div>
-            <div className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer" onClick={() => { openManagementBoard() }}>Auction Details</div>
-            <div className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer" onClick={() => { openLiveUpdatePage() }}>Auction Live update</div>
-            <div className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer ml-auto" onClick={() => { logoutFormAuction() }}>Logout</div>
+    // Get status badge
+    const getStatusBadge = (state) => {
+        switch(state) {
+            case 'running':
+                return { bg: 'bg-green-100', text: 'text-green-700', label: 'Running', pulse: true };
+            case 'completed':
+                return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Completed', pulse: false };
+            case 'setup':
+                return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Setup', pulse: false };
+            default:
+                return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Unknown', pulse: false };
+        }
+    };
+
+    const badge = auction?.state ? getStatusBadge(auction.state) : null;
+
+    return (
+        <div className='flex flex-col w-full min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50'>
+            <AuctionNavbar 
+                onNavigate={navigate}
+                onLogout={handleLogout}
+            />
+            
+            <div className='max-w-7xl mx-auto px-4 py-6 w-full'>
+                {/* Auction Header */}
+                <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-100">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div>
+                            <div className="flex items-center gap-3 mb-2 flex-wrap">
+                                <h1 className="text-3xl font-bold text-gray-900">{auction?.name || 'Loading...'}</h1>
+                                {badge && (
+                                    <span className={`px-3 py-1 ${badge.bg} ${badge.text} rounded-full text-sm font-semibold flex items-center gap-1`}>
+                                        {badge.pulse && <span className="w-2 h-2 bg-green-600 rounded-full animate-pulse"></span>}
+                                        {badge.label}
+                                    </span>
+                                )}
+                            </div>
+                            <p className="text-gray-600">Organizer: {currUser?.username || 'You'} • Created: {auction?.createdAt ? new Date(auction.createdAt).toLocaleDateString() : '-'}</p>
+                        </div>
+                        <button 
+                            onClick={() => {
+                                const liveUrl = `${window.location.origin}/t/auction/${auctionId}/live`;
+                                navigator.clipboard.writeText(liveUrl);
+                                toast.success('Live link copied to clipboard!');
+                            }}
+                            className="px-6 py-3 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-semibold transition flex items-center gap-2 justify-center md:justify-start"
+                        >
+                            <span>🔗</span>
+                            <span>Share Live Link</span>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Quick Stats */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div className="bg-white rounded-xl shadow-md p-5 text-center border border-gray-100 hover:shadow-lg transition">
+                        <div className="text-3xl mb-2">👥</div>
+                        <p className="text-2xl font-bold text-gray-900">{auctionStats.teamCount}</p>
+                        <p className="text-sm text-gray-600">Teams</p>
+                    </div>
+                    
+                    <div className="bg-white rounded-xl shadow-md p-5 text-center border border-gray-100 hover:shadow-lg transition">
+                        <div className="text-3xl mb-2">🎯</div>
+                        <p className="text-2xl font-bold text-gray-900">{auctionStats.playerCount}</p>
+                        <p className="text-sm text-gray-600">Players</p>
+                    </div>
+                    
+                    <div className="bg-white rounded-xl shadow-md p-5 text-center border border-gray-100 hover:shadow-lg transition">
+                        <div className="text-3xl mb-2">✅</div>
+                        <p className="text-2xl font-bold text-green-600">{auctionStats.soldCount}</p>
+                        <p className="text-sm text-gray-600">Sold</p>
+                    </div>
+                    
+                    <div className="bg-white rounded-xl shadow-md p-5 text-center border border-gray-100 hover:shadow-lg transition">
+                        <div className="text-3xl mb-2">💰</div>
+                        <p className="text-2xl font-bold text-gray-900">₹{auctionStats.totalBudget}Cr</p>
+                        <p className="text-sm text-gray-600">Total Budget</p>
+                    </div>
+                </div>
+
+                {/* Quick Actions */}
+                <div className="grid md:grid-cols-3 gap-6 mb-6">
+                    {/* Start/Continue Bidding */}
+                    <div 
+                        onClick={() => openBiddingProcess()} 
+                        className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-xl p-6 text-white cursor-pointer hover:shadow-2xl transition-all transform hover:scale-105"
+                    >
+                        <div className="text-5xl mb-3">🎮</div>
+                        <h3 className="text-2xl font-bold mb-2">
+                            {auction?.state === 'setup' ? 'Start Bidding' : 'Continue Bidding'}
+                        </h3>
+                        <p className="text-green-100 text-sm mb-4">
+                            {auction?.state === 'setup' ? 'Begin the live auction process' : 'Resume the live auction process'}
+                        </p>
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm">{auctionStats.soldCount}/{auctionStats.playerCount} Players sold</span>
+                            <span className="text-2xl">→</span>
+                        </div>
+                    </div>
+
+                    {/* Auction Setup/Details */}
+                    <div 
+                        onClick={() => openManagementBoard()} 
+                        className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-xl p-6 text-white cursor-pointer hover:shadow-2xl transition-all transform hover:scale-105"
+                    >
+                        <div className="text-5xl mb-3">⚙️</div>
+                        <h3 className="text-2xl font-bold mb-2">Auction Setup</h3>
+                        <p className="text-blue-100 text-sm mb-4">Manage teams, players, and sets</p>
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm">Edit auction data</span>
+                            <span className="text-2xl">→</span>
+                        </div>
+                    </div>
+
+                    {/* Live View */}
+                    <div 
+                        onClick={() => openLiveUpdatePage()} 
+                        className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-xl p-6 text-white cursor-pointer hover:shadow-2xl transition-all transform hover:scale-105"
+                    >
+                        <div className="text-5xl mb-3">📺</div>
+                        <h3 className="text-2xl font-bold mb-2">Live View</h3>
+                        <p className="text-purple-100 text-sm mb-4">Public spectator page</p>
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm">Share with viewers</span>
+                            <span className="text-2xl">→</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Teams Overview */}
+                <AuctionTeamView 
+                    currentTeamPlayerMap={currentTeamPlayerMap} 
+                    teamPlayerMap={teamPlayerMap} 
+                    setCurrentTeamPlayerMap={setCurrentTeamPlayerMap} 
+                    teams={teams} 
+                    selectedPlayer={selectedPlayer} 
+                    setSelectedPlayer={setSelectedPlayer} 
+                />
+            </div>
         </div>
-        <AuctionTeamView currentTeamPlayerMap={currentTeamPlayerMap} teamPlayerMap={teamPlayerMap} setCurrentTeamPlayerMap={setCurrentTeamPlayerMap} teams={teams} selectedPlayer={selectedPlayer} setSelectedPlayer={setSelectedPlayer} />
-        </div>
-    </div>)
+    )
 }

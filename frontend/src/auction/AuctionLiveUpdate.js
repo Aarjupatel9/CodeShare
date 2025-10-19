@@ -28,6 +28,9 @@ export default function AuctionLiveUpdate(props) {
     const [view, setView] = useState({ ...defaultViewSelection, liveBidding: true });
     const [selectedPlayer, setSelectedPlayer] = useState(null);
     const [setPlayerMap, setSetPlayerMap] = useState([]);
+    
+    // Viewer count (mock for now, TODO: integrate with WebSocket)
+    const [viewerCount, setViewerCount] = useState(0);
 
     const [playerListFilters, setPlayerListFilters] = useState({
         auctionStatus: [],
@@ -72,6 +75,15 @@ export default function AuctionLiveUpdate(props) {
         socket.on("playerSoldUpdate", (message) => {
             toast.success(message);
         });
+        
+        // Viewer count tracking (TODO: Implement when backend WebSocket is ready)
+        // socket.emit('joinLiveView', auctionId);
+        // socket.on('viewerCount', (count) => {
+        //     setViewerCount(count);
+        // });
+        
+        // Mock viewer count for demo
+        setViewerCount(Math.floor(Math.random() * 150) + 20);
 
         setSocket(socket);
     }
@@ -276,8 +288,48 @@ export default function AuctionLiveUpdate(props) {
         }
     }
 
+    // Calculate sold players for display
+    const soldPlayers = players.filter(p => p.auctionStatus === 'sold');
+    const recentSold = soldPlayers.slice(-5).reverse(); // Last 5 sold, most recent first
+
     return (
-        <>
+        <div className='flex flex-col w-full min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 text-white'>
+            {/* Modern Header */}
+            <div className="bg-black bg-opacity-50 backdrop-blur-md px-4 py-4 shadow-2xl sticky top-0 z-50">
+                <div className="max-w-7xl mx-auto">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                        <div className="flex items-center gap-3 flex-wrap">
+                            <h1 className="text-2xl md:text-3xl font-bold">{auction?.name || 'Auction'}</h1>
+                            <span className="px-4 py-2 bg-red-600 rounded-full text-sm font-bold flex items-center gap-2 animate-pulse">
+                                <span className="w-3 h-3 bg-white rounded-full"></span>
+                                LIVE
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm flex-wrap">
+                            <span className="px-3 py-1 bg-white bg-opacity-20 rounded-lg backdrop-blur-sm flex items-center gap-2">
+                                <span>👥</span>
+                                <span className="font-semibold">{viewerCount} watching</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-6 text-sm text-blue-200 mt-2">
+                        <span className="flex items-center gap-1">
+                            <span>🎯</span>
+                            <span>{players.length} Players</span>
+                        </span>
+                        <span className="flex items-center gap-1">
+                            <span>✅</span>
+                            <span>{soldPlayers.length} Sold</span>
+                        </span>
+                        <span className="flex items-center gap-1">
+                            <span>⏳</span>
+                            <span>{players.length - soldPlayers.length} Remaining</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Content Area */}
             <div className='flex flex-col w-full max-w-full h-full text-sx gap-4 p-2'>
                 <div className='header flex flex-row flex-wrap justify-start gap-2 font-medium capitalize'>
                     <div onClick={() => { navigate("/p/t/auction/" + auctionId) }} type="button" className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer" >Auction Home</div>
@@ -432,9 +484,7 @@ export default function AuctionLiveUpdate(props) {
                         </div>
                     </section>}
                 </div>
-
-
             </div>
-        </>
+        </div>
     )
 }
