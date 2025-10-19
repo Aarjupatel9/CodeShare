@@ -33,20 +33,10 @@ const AuctionNavbar = ({ onNavigate, onLogout }) => {
         >
           CodeShare
         </button>
-        <span className="hidden md:inline text-sm text-gray-500">→ Auctions</span>
       </div>
 
-      {/* Right: User Profile & Navigation */}
+      {/* Right: User Profile */}
       <div className="flex items-center gap-4">
-        {/* Back to Documents Link */}
-        <button
-          onClick={() => onNavigate(`/p/${currUser?._id}/new`)}
-          className="hidden md:inline-flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:text-blue-600 transition"
-        >
-          <span>📄</span>
-          <span>Documents</span>
-        </button>
-
         {/* User Profile Dropdown */}
         <div className="relative">
           <button
@@ -82,23 +72,13 @@ const AuctionNavbar = ({ onNavigate, onLogout }) => {
                   }}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
                 >
-                  👤 Profile
-                </button>
-                
-                <button
-                  onClick={() => {
-                    closeProfileDropdown();
-                    onNavigate(`/p/${currUser?._id}/new`);
-                  }}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
-                >
-                  📄 My Documents
+                  👤 My Profile
                 </button>
 
                 <button
                   onClick={() => {
                     closeProfileDropdown();
-                    onNavigate('/help');
+                    onNavigate(`/p/${currUser?._id}/help`);
                   }}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
                 >

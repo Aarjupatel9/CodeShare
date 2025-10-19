@@ -382,7 +382,7 @@ export default function MainPage(props) {
   const validateNewPageTitle = (newTitle) => {
     // Check if slug is reserved
     if (isReservedRouteName(newTitle)) {
-      toast.error(`"${newTitle}" is a reserved system name and cannot be used. Please choose a different name.`, { duration: 4000 });
+      toast.error(`"${newTitle}" is a reserved system name and cannot be used. Please choose a different name.`, { duration: 3000 });
       return false;
     }
     
