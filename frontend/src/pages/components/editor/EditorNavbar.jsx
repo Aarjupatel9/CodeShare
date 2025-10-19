@@ -63,9 +63,9 @@ const EditorNavbar = ({
         ) : (
           <>
             <button onClick={() => onNavigate("/games")} className="text-gray-700 hover:text-blue-600 transition">Games</button>
-            <button onClick={() => onNavigate("/p/t/auction")} className="text-gray-700 hover:text-blue-600 transition">Auctions</button>
-            <button onClick={() => onNavigate("/p/help")} className="text-gray-700 hover:text-blue-600 transition">Help</button>
-            <button onClick={() => onNavigate("/p/about")} className="text-gray-700 hover:text-blue-600 transition">About</button>
+            <button onClick={() => onNavigate(`/p/${currUser._id}/t/auction`)} className="text-gray-700 hover:text-blue-600 transition">Auctions</button>
+            <button onClick={() => onNavigate(`/p/${currUser._id}/help`)} className="text-gray-700 hover:text-blue-600 transition">Help</button>
+            <button onClick={() => onNavigate(`/p/${currUser._id}/about`)} className="text-gray-700 hover:text-blue-600 transition">About</button>
           </>
         )}
       </div>
@@ -110,7 +110,7 @@ const EditorNavbar = ({
               {/* Menu Items */}
               <div className="py-2">
                 <a 
-                  onClick={() => onNavigate("/p/profile")}
+                  onClick={() => onNavigate(`/p/${currUser._id}/profile`)}
                   className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition cursor-pointer text-left"
                 >
                   <span className="text-xl">👤</span>
@@ -121,7 +121,7 @@ const EditorNavbar = ({
                 </a>
                 
                 <a 
-                  onClick={() => onNavigate("/p/" + username)}
+                  onClick={() => onNavigate(`/p/${currUser._id}/new`)}
                   className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition cursor-pointer text-left"
                 >
                   <span className="text-xl">📄</span>
@@ -132,7 +132,7 @@ const EditorNavbar = ({
                 </a>
 
                 <a 
-                  onClick={() => onNavigate("/p/t/auction")}
+                  onClick={() => onNavigate(`/p/${currUser._id}/t/auction`)}
                   className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition cursor-pointer text-left"
                 >
                   <span className="text-xl">🏏</span>
@@ -156,7 +156,7 @@ const EditorNavbar = ({
                 <div className="border-t border-gray-200 my-2"></div>
 
                 <a 
-                  onClick={() => onNavigate("/p/help")}
+                  onClick={() => onNavigate(`/p/${currUser._id}/help`)}
                   className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition cursor-pointer text-left"
                 >
                   <span className="text-xl">❓</span>
@@ -166,7 +166,7 @@ const EditorNavbar = ({
                 </a>
 
                 <a 
-                  onClick={() => onNavigate("/p/about")}
+                  onClick={() => onNavigate(`/p/${currUser._id}/about`)}
                   className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition cursor-pointer text-left"
                 >
                   <span className="text-xl">ℹ️</span>

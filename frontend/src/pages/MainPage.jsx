@@ -46,7 +46,7 @@ export default function MainPage(props) {
 
   const editorRef = useRef(null);
   const navigate = useNavigate();
-  const { slug, username } = useParams();
+  const { slug, userId } = useParams();
 
   const [appConfig, setAppConfig] = useState({});
   const [userSlug, setUserSlug] = useState(slug);
@@ -82,6 +82,8 @@ export default function MainPage(props) {
   const [pendingNavigation, setPendingNavigation] = useState(null);
   const [lastSavedContent, setLastSavedContent] = useState("");
 
+  // Note: Auth checking and userId validation now handled by PrivateRoute component
+  
   // Warn before leaving page with unsaved changes (for both logged-in and public users)
   useEffect(() => {
     const handleBeforeUnload = (e) => {
@@ -132,7 +134,7 @@ export default function MainPage(props) {
     if (!slug || slug === '' || slug === '/') {
       if (props.user) {
         // On initial load, navigate directly without warning
-        navigate("/p/" + props.user.username + "/new");
+        navigate("/p/" + props.user._id + "/new");
       } else {
         // Just set empty slug - let user work without navigation
         setTmpSlug('');
@@ -145,7 +147,7 @@ export default function MainPage(props) {
       const newSlug = generateRandomString(7);
       if (props.user) {
         // On invalid slug, navigate directly without warning
-        navigate("/p/" + props.user.username + "/new");
+        navigate("/p/" + props.user._id + "/new");
       } else {
         navigate("/" + newSlug);
       }
@@ -189,7 +191,7 @@ export default function MainPage(props) {
         } else {
           if (props.user) {
             // Page doesn't exist, navigate to new document
-            navigate("/p/" + props.user.username + "/new");
+            navigate("/p/" + props.user._id + "/new");
           }
           clearEditorValue();
         }
@@ -569,7 +571,7 @@ export default function MainPage(props) {
           });
         }
         if (userSlug == "new") {
-          navigate("/p/" + username + "/" + pageTitle);
+          navigate("/p/" + currUser._id + "/" + pageTitle);
         }
         
         // Call the callback after save completes
@@ -804,7 +806,7 @@ export default function MainPage(props) {
   };
 
   const handlePageNavigate = (slugName) => {
-    safeNavigate("/p/" + username + "/" + slugName);
+    safeNavigate(`/p/${currUser._id}/${slugName}`);
   };
 
   // JSX variables removed - now using components
@@ -832,7 +834,6 @@ export default function MainPage(props) {
       {/* Navigation */}
       <EditorNavbar 
         currUser={currUser}
-        username={username}
         dropdownVisibility={dropdownVisibility}
         setDropdownVisibility={setDropdownVisibility}
         userProfileIcon={userProfileIcon}

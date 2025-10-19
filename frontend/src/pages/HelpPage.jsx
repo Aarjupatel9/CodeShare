@@ -4,13 +4,15 @@ import { useNavigate, useLocation } from 'react-router-dom';
 /**
  * HelpPage - Help and documentation page
  * Available to both public and logged-in users
+ * @param {Object} user - User object (only provided when accessed via private route)
  */
-const HelpPage = () => {
+const HelpPage = ({ user }) => {
   const navigate = useNavigate();
   const location = useLocation();
   
   // Check if user is on private route
   const isPrivateRoute = location.pathname.startsWith('/p/');
+  const userId = user?._id;
 
   return (
     <div className="min-w-full min-h-full bg-gradient-to-br from-blue-50 via-white to-indigo-50">
@@ -206,7 +208,7 @@ const HelpPage = () => {
               <p className="mb-6 text-blue-100">We're here to assist you with any questions or issues.</p>
               <div className="flex flex-wrap gap-4 justify-center">
                 <button
-                  onClick={() => navigate(isPrivateRoute ? '/p/about' : '/about')}
+                  onClick={() => navigate(isPrivateRoute && userId ? `/p/${userId}/about` : '/about')}
                   className="px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 transition shadow-md"
                 >
                   About CodeShare

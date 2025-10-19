@@ -4,13 +4,15 @@ import { useNavigate, useLocation } from 'react-router-dom';
 /**
  * AboutPage - About/web details page
  * Information about CodeShare platform
+ * @param {Object} user - User object (only provided when accessed via private route)
  */
-const AboutPage = () => {
+const AboutPage = ({ user }) => {
   const navigate = useNavigate();
   const location = useLocation();
   
   // Check if user is on private route
   const isPrivateRoute = location.pathname.startsWith('/p/');
+  const userId = user?._id;
 
   return (
     <div className="min-w-full min-h-full bg-gradient-to-br from-indigo-50 via-white to-blue-50">
@@ -263,7 +265,7 @@ const AboutPage = () => {
                 Sign Up Free
               </button>
               <button
-                onClick={() => navigate(isPrivateRoute ? '/p/help' : '/help')}
+                onClick={() => navigate(isPrivateRoute && userId ? `/p/${userId}/help` : '/help')}
                 className="px-8 py-3 bg-blue-500 hover:bg-blue-400 rounded-lg font-bold transition shadow-md text-lg"
               >
                 Learn More
@@ -287,9 +289,9 @@ const AboutPage = () => {
               <h3 className="font-bold text-gray-900 mb-3">Quick Links</h3>
               <ul className="space-y-2 text-sm text-gray-600">
                 <li><button onClick={() => navigate("/")} className="hover:text-blue-600 transition">Home</button></li>
-                <li><button onClick={() => navigate(isPrivateRoute ? "/p/help" : "/help")} className="hover:text-blue-600 transition">Help</button></li>
+                <li><button onClick={() => navigate(isPrivateRoute && userId ? `/p/${userId}/help` : "/help")} className="hover:text-blue-600 transition">Help</button></li>
                 <li><button onClick={() => navigate("/games")} className="hover:text-blue-600 transition">Games</button></li>
-                <li><button onClick={() => navigate(isPrivateRoute ? "/p/t/auction" : "/p/t/auction")} className="hover:text-blue-600 transition">Auctions</button></li>
+                <li><button onClick={() => navigate(isPrivateRoute && userId ? `/p/${userId}/t/auction` : "/games")} className="hover:text-blue-600 transition">Auctions</button></li>
               </ul>
             </div>
             <div>

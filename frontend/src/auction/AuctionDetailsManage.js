@@ -6,6 +6,7 @@ import * as xlsx from 'xlsx';
 import { defaultTeamLogo, downArrowIcon } from '../assets/svgs';
 import { generatePDF } from './generatePdf';
 import { getTeamBudgetForView, getTeamName } from './Utility';
+import { UserContext } from '../context/UserContext';
 
 const requiredPlayerColumnForDisplay = ["playerNumber", "name", "team", "auctionStatus", "basePrice", "soldPrice", "auctionSet", "role", "bowlingHand", "bowlingType", "battingHand", "battingPossition", "battingType", "commnets"];
 const filterFields = ["auctionSet", "team", "auctionStatus"];
@@ -38,6 +39,7 @@ export default function AuctionDetailsManage(props) {
 
     const { auctionId } = useParams();
     const navigate = useNavigate();
+    const { currUser } = useContext(UserContext);
 
     useEffect(() => {
         getAuctionData();
@@ -857,7 +859,7 @@ export default function AuctionDetailsManage(props) {
         <>
             <div className='flex flex-col w-full max-w-full h-full overflow-x-hidden overflow-y-auto p-1 text-sx gap-2'>
                 <div className='header flex flex-row justify-center gap-2'>
-                    <button onClick={() => { navigate("/p/t/auction/" + auctionId) }} type="button" className=" px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer" >Auction Home</button>
+                    <button onClick={() => { navigate(`/p/${currUser._id}/t/auction/${auctionId}`) }} type="button" className=" px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer" >Auction Home</button>
                     <button onClick={() => {
                         setView((old) => {
                             old = structuredClone(old);

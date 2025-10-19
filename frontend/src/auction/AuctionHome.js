@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import AuctionService from '../services/auctionService';
 import authService from '../services/authService';
 import { UserContext } from '../context/UserContext';
+import AuctionNavbar from './components/AuctionNavbar';
 
 // Modal Component - defined outside to prevent re-creation
 const Modal = ({ isOpen, onClose, title, children }) => {
@@ -49,6 +50,19 @@ export default function AuctionHome() {
     organizerId: '',
     password: ''
   });
+
+  // Handle logout
+  const handleLogout = () => {
+    authService.logout()
+      .then(() => {
+        toast.success("Logged out successfully");
+        setCurrUser(null);
+        navigate('/auth/login');
+      })
+      .catch((error) => {
+        toast.error("Failed to logout");
+      });
+  };
 
   // Check authentication on mount
   useEffect(() => {
@@ -190,7 +204,7 @@ export default function AuctionHome() {
           localStorage.setItem("currentAuction", JSON.stringify(res.auction));
           setShowJoinModal(false);
           resetForm();
-          navigate("/p/t/auction/" + res.auction._id);
+          navigate(`/p/${currUser._id}/t/auction/${res.auction._id}`);
         }
       })
       .catch((error) => {
@@ -223,7 +237,7 @@ export default function AuctionHome() {
           localStorage.setItem("currentAuction", JSON.stringify(res.auction));
           setShowJoinModal(false);
           resetForm();
-          navigate("/p/t/auction/" + res.auction._id);
+          navigate(`/p/${currUser._id}/t/auction/${res.auction._id}`);
         }
       })
       .catch((error) => {
@@ -251,24 +265,12 @@ export default function AuctionHome() {
   }
 
   return (
-    <div className="min-h-full min-w-full bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-      {/* Header */}
-      <nav className="bg-white border-b border-gray-200 px-4 py-3 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div 
-            onClick={() => navigate('/')}
-            className="text-xl font-bold text-blue-600 cursor-pointer hover:text-blue-700 transition"
-          >
-            CodeShare
-          </div>
-          <button
-            onClick={() => navigate(-1)}
-            className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition"
-          >
-            ← Back
-          </button>
-        </div>
-      </nav>
+    <div className="min-h-full min-w-full bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex flex-col">
+      {/* Header with AuctionNavbar */}
+      <AuctionNavbar 
+        onNavigate={navigate}
+        onLogout={handleLogout}
+      />
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-6 py-8">

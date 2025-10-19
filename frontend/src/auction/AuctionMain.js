@@ -1,13 +1,17 @@
 import React, { useEffect, useContext, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import AuctionService from '../services/auctionService';
+import authService from '../services/authService';
 import toast from 'react-hot-toast';
 import * as xlsx from 'xlsx';
 import { backArrowIcon } from '../assets/svgs';
 import AuctionTeamView from './AuctionTeamView';
 import { getTeamBudget } from './Utility';
+import { UserContext } from '../context/UserContext';
+import AuctionNavbar from './components/AuctionNavbar';
 
 export default function AuctionMain(props) {
+    const { currUser, setCurrUser } = useContext(UserContext);
     const [auction, setAuction] = useState({});
     const [teams, setTeams] = useState([]);
     const [players, setPlayers] = useState([]);
@@ -99,11 +103,28 @@ export default function AuctionMain(props) {
 
     const logoutFormAuction = () => {
         AuctionService.auctionLogout().then(() => {
-            navigate("/p/t/auction");
+            navigate(`/p/${currUser._id}/t/auction`);
         })
     }
 
-    return (<div className='flex flex-col w-full h-full sm:text-xs md:text-lg lg:text-xl sm:gap-2 md:gap-2 lg:gap-4 sm:p-1 md:p-2 lg:p-4'>
+    const handleLogout = () => {
+        authService.logout()
+          .then(() => {
+            toast.success("Logged out successfully");
+            setCurrUser(null);
+            navigate('/auth/login');
+          })
+          .catch((error) => {
+            toast.error("Failed to logout");
+          });
+    };
+
+    return (<div className='flex flex-col w-full h-full'>
+        <AuctionNavbar 
+            onNavigate={navigate}
+            onLogout={handleLogout}
+        />
+        <div className='flex flex-col w-full h-full sm:text-xs md:text-lg lg:text-xl sm:gap-2 md:gap-2 lg:gap-4 sm:p-1 md:p-2 lg:p-4'>
         <div className='header flex flex-row justify-center gap-2 font-medium capitalize'>
             <div className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer" onClick={() => { openBiddingProcess() }}>Continue Bidding process</div>
             <div className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer" onClick={() => { openManagementBoard() }}>Auction Details</div>
@@ -111,5 +132,6 @@ export default function AuctionMain(props) {
             <div className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer ml-auto" onClick={() => { logoutFormAuction() }}>Logout</div>
         </div>
         <AuctionTeamView currentTeamPlayerMap={currentTeamPlayerMap} teamPlayerMap={teamPlayerMap} setCurrentTeamPlayerMap={setCurrentTeamPlayerMap} teams={teams} selectedPlayer={selectedPlayer} setSelectedPlayer={setSelectedPlayer} />
+        </div>
     </div>)
 }

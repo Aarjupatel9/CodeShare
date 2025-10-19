@@ -1,22 +1,31 @@
 import "./App.css";
-import MainPage from "./pages/MainPage";
 import { Routes, Route } from "react-router-dom";
-import toast, { Toaster } from "react-hot-toast";
+import { Toaster } from "react-hot-toast";
+import { UserProvider } from "./context/UserContext";
+
+// Pages
+import MainPage from "./pages/MainPage";
 import LoginComponent from "./pages/LoginComponent";
 import RegisterComponent from "./pages/RegisterComponent";
-import { UserProvider } from "./context/UserContext";
 import ForgetPasswordComponent from "./pages/ForgetPasswordComponent";
 import PublicPages from "./pages/PublicPages";
-import PrivatePages from "./pages/PrivatePages";
+import HelpPage from "./pages/HelpPage";
+import AboutPage from "./pages/AboutPage";
+import UserProfilePage from "./pages/UserProfilePage";
+
+// Features
 import GamePage from "./gamePlugin/GamePage";
+
+// Auction
 import AuctionHome from "./auction/AuctionHome";
 import AuctionMain from "./auction/AuctionMain";
 import AuctionDetailsManage from "./auction/AuctionDetailsManage";
 import AuctionBidding from "./auction/AuctionBidding";
 import AuctionLiveUpdate from "./auction/AuctionLiveUpdate";
-import HelpPage from "./pages/HelpPage";
-import AboutPage from "./pages/AboutPage";
-import UserProfilePage from "./pages/UserProfilePage";
+
+// Route components
+import PrivateRoute from "./components/routes/PrivateRoute";
+import PublicRoute from "./components/routes/PublicRoute";
 
 function App() {
   return (
@@ -24,36 +33,50 @@ function App() {
       <Toaster />
       <UserProvider>
         <Routes>
-          {/* Help and About - Public */}
-          <Route path="/help" element={<HelpPage />} />
-          <Route path="/about" element={<AboutPage />} />
+          {/* ==================== PUBLIC ROUTES ==================== */}
           
-          {/* Help and About - Private */}
-          <Route path="/p/help" element={<HelpPage />} />
-          <Route path="/p/about" element={<AboutPage />} />
+          {/* Authentication */}
+          <Route path="/auth/login" element={<PublicRoute component={LoginComponent} />} />
+          <Route path="/auth/register" element={<PublicRoute component={RegisterComponent} />} />
+          <Route path="/auth/forgetpassword" element={<PublicRoute component={ForgetPasswordComponent} />} />
           
-          {/* User Profile - Private */}
-          <Route path="/p/profile" element={<UserProfilePage />} />
+          {/* Information Pages */}
+          <Route path="/help" element={<PublicRoute component={HelpPage} />} />
+          <Route path="/about" element={<PublicRoute component={AboutPage} />} />
           
-          {/* Auction Routes - Private (management) */}
-          <Route path="/p/t/auction/" element={<AuctionHome />} />
-          <Route path="/p/t/auction/:auctionId" element={<AuctionMain />} />
-          <Route path="/p/t/auction/:auctionId/manage" element={<AuctionDetailsManage />} />
-          <Route path="/p/t/auction/:auctionId/bidding" element={<AuctionBidding />} />
+          {/* Games */}
+          <Route path="/games" element={<PublicRoute component={GamePage} />} />
+          <Route path="/game/:gameName" element={<PublicRoute component={GamePage} />} />
           
-          {/* Auction Live - Public (when enabled by organizer) */}
-          <Route path="/t/auction/:auctionId/live" element={<AuctionLiveUpdate />} />
-          <Route path="/games" element={<GamePage />} />
-          <Route path="/game/:gameName" element={<GamePage />} />
-          <Route path="/auth/login" element={<LoginComponent />} />
-          <Route path="/auth/register" element={<RegisterComponent />} />
-          <Route path='/auth/forgetpassword' element={<ForgetPasswordComponent />} />
-          <Route path="/p/" element={<PrivatePages />} />
-          <Route path="/p/:username/" element={<PrivatePages />} />
-          <Route path="/p/:username/:slug" element={<PrivatePages />} />
-          <Route path="/:slug" element={<PublicPages />} />
-          <Route path="/" element={<PublicPages />} />
-          <Route path="*" element={<PublicPages />} />
+          {/* Public Auction View */}
+          <Route path="/t/auction/:auctionId/live" element={<PublicRoute component={AuctionLiveUpdate} />} />
+          
+          {/* Public Documents */}
+          <Route path="/:userId/:slug" element={<PublicRoute component={PublicPages} />} />
+          <Route path="/:slug" element={<PublicRoute component={PublicPages} />} />
+          <Route path="/" element={<PublicRoute component={PublicPages} />} />
+          
+          {/* ==================== PRIVATE ROUTES ==================== */}
+          
+          {/* Information Pages (skipAuth for performance) */}
+          <Route path="/p/:userId/help" element={<PrivateRoute component={HelpPage} skipAuth={true} />} />
+          <Route path="/p/:userId/about" element={<PrivateRoute component={AboutPage} skipAuth={true} />} />
+          
+          {/* User Profile */}
+          <Route path="/p/:userId/profile" element={<PrivateRoute component={UserProfilePage} />} />
+          
+          {/* Documents */}
+          <Route path="/p/:userId/" element={<PrivateRoute component={MainPage} />} />
+          <Route path="/p/:userId/:slug" element={<PrivateRoute component={MainPage} />} />
+          
+          {/* Auction Management */}
+          <Route path="/p/:userId/t/auction/" element={<PrivateRoute component={AuctionHome} />} />
+          <Route path="/p/:userId/t/auction/:auctionId" element={<PrivateRoute component={AuctionMain} />} />
+          <Route path="/p/:userId/t/auction/:auctionId/manage" element={<PrivateRoute component={AuctionDetailsManage} />} />
+          <Route path="/p/:userId/t/auction/:auctionId/bidding" element={<PrivateRoute component={AuctionBidding} />} />
+          
+          {/* Fallback */}
+          <Route path="*" element={<PublicRoute component={PublicPages} />} />
         </Routes>
       </UserProvider>
     </div>
