@@ -13,7 +13,7 @@ var defaultViewSelection = { liveBidding: false, team: false, playerDetails: fal
 const requiredPlayerColumnForDisplay = ["playerNumber", "name", "team", "auctionStatus", "basePrice", "soldPrice", "auctionSet", "role", "bowlingHand", "bowlingType", "battingHand", "battingPossition", "battingType", "commnets"];
 const filterFields = ["auctionSet", "team", "auctionStatus"];
 
-export default function AuctionLiveUpdate(props) {
+export default function AuctionLiveView(props) {
     const [auction, setAuction] = useState({});
     const [sets, setSets] = useState([]);
     const [teams, setTeams] = useState([]);

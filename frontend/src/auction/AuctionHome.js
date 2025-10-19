@@ -308,7 +308,7 @@ export default function AuctionHome() {
       />
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto px-4 py-6 w-full">
         
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -363,24 +363,18 @@ export default function AuctionHome() {
                 return (
                   <div key={auction._id} className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-5 border border-gray-100 cursor-pointer" onClick={() => navigate(`/p/${currUser._id}/t/auction/${auction._id}`)}>
                     <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1 pr-2">
-                        <h3 className="font-bold text-gray-900 text-lg mb-1 line-clamp-1" title={auction.name}>{auction.name}</h3>
-                        <p className="text-sm text-gray-600">Organizer: {currUser?.username || 'You'}</p>
+                      <div>
+                        <h3 className="font-bold text-gray-900 text-left text-lg mb-1">{auction.name}</h3>
+                        <p className="text-sm text-gray-600 text-left ">Organizer: {currUser?.username || 'You'}</p>
                       </div>
-                      <span className={`px-3 py-1 ${badge.bg} ${badge.text} rounded-full text-xs font-semibold whitespace-nowrap flex items-center gap-1`}>
+                      <span className={`px-3 py-1 ${badge.bg} ${badge.text} rounded-full text-xs font-semibold flex items-center gap-1 flex-shrink-0`}>
                         <span>{badge.icon}</span>
                         <span>{badge.label}</span>
                       </span>
                     </div>
                     <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
-                      <span className="flex items-center gap-1">
-                        <span>👥</span>
-                        <span>{mockTeamCount}</span>
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span>🎯</span>
-                        <span>{mockPlayerCount}</span>
-                      </span>
+                      <span>👥 {mockTeamCount} Teams</span>
+                      <span>🎯 {mockPlayerCount} Players</span>
                     </div>
                     <button 
                       onClick={(e) => {
@@ -405,9 +399,7 @@ export default function AuctionHome() {
         )}
 
         {/* Action Cards */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Get Started</h2>
-          <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols-2 gap-8 mb-8">
             {/* Create Auction Card */}
             <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden hover:shadow-2xl transition-all transform hover:-translate-y-1">
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 text-white">
@@ -483,7 +475,6 @@ export default function AuctionHome() {
                 🤝 Join Auction
               </button>
             </div>
-          </div>
           </div>
         </div>
       </div>

@@ -10,7 +10,7 @@ import { getTeamBudget } from './Utility';
 import { UserContext } from '../context/UserContext';
 import AuctionNavbar from './components/AuctionNavbar';
 
-export default function AuctionMain(props) {
+export default function AuctionDashboard(props) {
     const { currUser, setCurrUser } = useContext(UserContext);
     const [auction, setAuction] = useState({});
     const [teams, setTeams] = useState([]);
@@ -272,14 +272,40 @@ export default function AuctionMain(props) {
                 </div>
 
                 {/* Teams Overview */}
-                <AuctionTeamView 
-                    currentTeamPlayerMap={currentTeamPlayerMap} 
-                    teamPlayerMap={teamPlayerMap} 
-                    setCurrentTeamPlayerMap={setCurrentTeamPlayerMap} 
-                    teams={teams} 
-                    selectedPlayer={selectedPlayer} 
-                    setSelectedPlayer={setSelectedPlayer} 
-                />
+                <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
+                    <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-2xl font-bold text-gray-900">Teams Overview</h2>
+                        <button 
+                            onClick={() => openManagementBoard()}
+                            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                        >
+                            Manage Teams →
+                        </button>
+                    </div>
+                    
+                    {teamPlayerMap && teamPlayerMap.length > 0 ? (
+                        <AuctionTeamView 
+                            currentTeamPlayerMap={currentTeamPlayerMap} 
+                            teamPlayerMap={teamPlayerMap} 
+                            setCurrentTeamPlayerMap={setCurrentTeamPlayerMap} 
+                            teams={teams} 
+                            selectedPlayer={selectedPlayer} 
+                            setSelectedPlayer={setSelectedPlayer} 
+                        />
+                    ) : (
+                        <div className="text-center py-12">
+                            <div className="text-6xl mb-4">👥</div>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">No Teams Yet</h3>
+                            <p className="text-gray-600 mb-6">Add teams in the Auction Setup to see them here</p>
+                            <button 
+                                onClick={() => openManagementBoard()}
+                                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition"
+                            >
+                                Go to Setup →
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     )

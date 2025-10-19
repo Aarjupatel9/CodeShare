@@ -18,10 +18,10 @@ import GamePage from "./gamePlugin/GamePage";
 
 // Auction
 import AuctionHome from "./auction/AuctionHome";
-import AuctionMain from "./auction/AuctionMain";
-import AuctionDetailsManage from "./auction/AuctionDetailsManage";
+import AuctionDashboard from "./auction/AuctionDashboard";
+import AuctionSetup from "./auction/AuctionSetup";
 import AuctionBidding from "./auction/AuctionBidding";
-import AuctionLiveUpdate from "./auction/AuctionLiveUpdate";
+import AuctionLiveView from "./auction/AuctionLiveView";
 
 // Route components
 import PrivateRoute from "./components/routes/PrivateRoute";
@@ -49,7 +49,7 @@ function App() {
           <Route path="/game/:gameName" element={<PublicRoute component={GamePage} />} />
           
           {/* Public Auction View */}
-          <Route path="/t/auction/:auctionId/live" element={<PublicRoute component={AuctionLiveUpdate} />} />
+          <Route path="/t/auction/:auctionId/live" element={<PublicRoute component={AuctionLiveView} />} />
           
           {/* Public Documents */}
           <Route path="/:userId/:slug" element={<PublicRoute component={PublicPages} />} />
@@ -71,8 +71,8 @@ function App() {
           
           {/* Auction Management */}
           <Route path="/p/:userId/t/auction/" element={<PrivateRoute component={AuctionHome} />} />
-          <Route path="/p/:userId/t/auction/:auctionId" element={<PrivateRoute component={AuctionMain} />} />
-          <Route path="/p/:userId/t/auction/:auctionId/manage" element={<PrivateRoute component={AuctionDetailsManage} />} />
+          <Route path="/p/:userId/t/auction/:auctionId" element={<PrivateRoute component={AuctionDashboard} />} />
+          <Route path="/p/:userId/t/auction/:auctionId/manage" element={<PrivateRoute component={AuctionSetup} />} />
           <Route path="/p/:userId/t/auction/:auctionId/bidding" element={<PrivateRoute component={AuctionBidding} />} />
           
           {/* Fallback */}
