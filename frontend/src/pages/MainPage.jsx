@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import flobiteJS from "flowbite/dist/flowbite.min.js";
 import { io } from "socket.io-client";
 import useKeys from "../hooks/keyKeys";
+import useClickOutside from "../hooks/useClickOutside";
 import {
   currentVersionIcon,
   versionIndicatorIcon,
@@ -28,7 +29,6 @@ import {
   getTimeInFormate,
   isValidSlug,
 } from "../common/functions";
-import { UserProfileModal } from "../common/Modals";
 
 // Import new components
 import EditorNavbar from "./components/editor/EditorNavbar";
@@ -74,13 +74,13 @@ export default function MainPage(props) {
   ]);
 
   const [incomingEditorValue, setIncomingEditorValue] = useState("");
-  const [showUserProfileModal, setShowUserProfileModal] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [showFloatingHint, setShowFloatingHint] = useState(false);
   const [showMobileModal, setShowMobileModal] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showNavigationWarning, setShowNavigationWarning] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState(null);
+  const [lastSavedContent, setLastSavedContent] = useState("");
 
   // Warn before leaving page with unsaved changes (for both logged-in and public users)
   useEffect(() => {
@@ -171,6 +171,9 @@ export default function MainPage(props) {
               res.result.data.time
             );
             setLatestVersion(res.result.data);
+            // Mark content as saved (just loaded from server)
+            setLastSavedContent(res.result.data.data);
+            setHasUnsavedChanges(false);
           }
           if (res.result.files && res.result.files.length > 0) {
             if (!currUser) {
@@ -344,6 +347,9 @@ export default function MainPage(props) {
             editorRef.current.value = res.result.data.data;
           }
           latestVersion.data = res.result.data.data;
+          // Update last saved content to loaded version
+          setLastSavedContent(res.result.data.data);
+          setHasUnsavedChanges(false);
           setAllVersionData((oldData) => {
             var x = oldData.map((m) => {
               m.isLoaded = false;
@@ -364,6 +370,9 @@ export default function MainPage(props) {
       editorRef.current.value = "";
     }
     setFileList([]);
+    // Reset saved content and unsaved changes when clearing
+    setLastSavedContent("");
+    setHasUnsavedChanges(false);
   }
 
   const validateNewPageTitle = (newTitle) => {
@@ -543,7 +552,8 @@ export default function MainPage(props) {
         toast.dismiss(loadingToast);
         toast.success("Document saved successfully!");
         
-        // Reset unsaved changes state
+        // Update last saved content and reset unsaved changes state
+        setLastSavedContent(editorValue);
         setHasUnsavedChanges(false);
         
         if (currUser && res.isInserted) {
@@ -713,6 +723,16 @@ export default function MainPage(props) {
   };
 
   const inputFile = useRef(null);
+  const versionHistoryRef = useRef(null);
+
+  // Close version history dropdown when clicking outside
+  const closeVersionHistory = () => {
+    setDropdownVisibility((prev) => ({
+      ...prev,
+      history: false
+    }));
+  };
+  useClickOutside(versionHistoryRef, closeVersionHistory, dropdownVisibility.history);
 
   // Wrapped navigate function to check for unsaved changes
   const safeNavigate = (path) => {
@@ -757,8 +777,12 @@ export default function MainPage(props) {
   };
 
   const handleOnEditorChange = (value) => {
-    // Mark as having unsaved changes (for both logged-in and public users)
-    setHasUnsavedChanges(true);
+    // Only mark as unsaved if content actually changed from last saved state
+    if (value !== lastSavedContent) {
+      setHasUnsavedChanges(true);
+    } else {
+      setHasUnsavedChanges(false);
+    }
     
     if (value != incomingEditorValue && socket && socketEnabled && userSlug) {
       socket.emit("room_message", userSlug, value);
@@ -815,7 +839,6 @@ export default function MainPage(props) {
         profilePicture={profilePicture}
         onNavigate={safeNavigate}
         onLogout={handleLogout}
-        onShowUserProfile={() => setShowUserProfileModal(true)}
         onShowSubscription={() => setShowSubscriptionModal(true)}
         RedirectUrlComponent={
           <RedirectUrlInput
@@ -873,7 +896,7 @@ export default function MainPage(props) {
           {currUser && (
             <div className="flex flex-row gap-3 items-center justify-between px-4 py-3 border-b border-gray-200 flex-shrink-0">
               <div className="flex items-center gap-3 flex-1">
-                <div className="relative inline-block">
+                <div className="relative inline-block" ref={versionHistoryRef}>
                   <button
                     onClick={() => {
                       getAllversionData(true);
@@ -981,7 +1004,6 @@ export default function MainPage(props) {
       />
 
       {/* Existing Modals */}
-      {showUserProfileModal && <UserProfileModal currUser={currUser} setCurrUser={setCurrUser} setShowUserProfileModal={setShowUserProfileModal} />}
       <SubscriptionModal 
         isVisible={showSubscriptionModal} 
         onClose={() => setShowSubscriptionModal(false)}

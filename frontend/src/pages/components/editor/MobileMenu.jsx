@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { 
   menuIcon,
   pageIcon, 
@@ -9,6 +9,7 @@ import {
   fileAddIcon 
 } from '../../../assets/svgs';
 import { getPresizeFileName, generateRandomString } from '../../../common/functions';
+import useClickOutside from '../../../hooks/useClickOutside';
 
 /**
  * MobileMenu - Mobile dropdown menu (hamburger)
@@ -26,8 +27,17 @@ const MobileMenu = ({
   onFileRemove,
   privateFileList
 }) => {
+  const mobileMenuRef = useRef(null);
+
+  // Close menu when clicking outside
+  useClickOutside(mobileMenuRef, () => {
+    if (isVisible) {
+      onToggle();
+    }
+  }, isVisible);
+
   return (
-    <div className="md:hidden inline-block text-left">
+    <div className="md:hidden inline-block text-left" ref={mobileMenuRef}>
       <button
         onClick={onToggle}
         type="button"

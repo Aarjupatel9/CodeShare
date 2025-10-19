@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import useClickOutside from '../../../hooks/useClickOutside';
 
 /**
  * EditorNavbar - Top navigation bar
@@ -13,11 +14,11 @@ const EditorNavbar = ({
   profilePicture,
   onNavigate,
   onLogout,
-  onShowUserProfile,
   onShowSubscription,
   RedirectUrlComponent,
   MobileMenuComponent
 }) => {
+  const profileDropdownRef = useRef(null);
   
   const handleProfileClick = () => {
     setDropdownVisibility((prev) => {
@@ -28,6 +29,16 @@ const EditorNavbar = ({
       return val;
     });
   };
+
+  const closeProfileDropdown = () => {
+    setDropdownVisibility((prev) => ({
+      ...prev,
+      profile: false
+    }));
+  };
+
+  // Close dropdown when clicking outside
+  useClickOutside(profileDropdownRef, closeProfileDropdown, dropdownVisibility.profile);
 
   return (
     <nav className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between flex-shrink-0">
@@ -79,6 +90,7 @@ const EditorNavbar = ({
           {/* Profile Dropdown - Modern Design (Option 1) */}
           {currUser && dropdownVisibility.profile && (
             <div
+              ref={profileDropdownRef}
               className="absolute right-0 top-16 z-10 mt-2 w-80 origin-top-right rounded-xl bg-white shadow-xl border border-gray-200 overflow-hidden"
               role="menu"
             >
@@ -98,7 +110,7 @@ const EditorNavbar = ({
               {/* Menu Items */}
               <div className="py-2">
                 <a 
-                  onClick={onShowUserProfile}
+                  onClick={() => onNavigate("/p/profile")}
                   className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition cursor-pointer text-left"
                 >
                   <span className="text-xl">👤</span>

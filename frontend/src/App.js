@@ -16,6 +16,7 @@ import AuctionBidding from "./auction/AuctionBidding";
 import AuctionLiveUpdate from "./auction/AuctionLiveUpdate";
 import HelpPage from "./pages/HelpPage";
 import AboutPage from "./pages/AboutPage";
+import UserProfilePage from "./pages/UserProfilePage";
 
 function App() {
   return (
@@ -30,6 +31,9 @@ function App() {
           {/* Help and About - Private */}
           <Route path="/p/help" element={<HelpPage />} />
           <Route path="/p/about" element={<AboutPage />} />
+          
+          {/* User Profile - Private */}
+          <Route path="/p/profile" element={<UserProfilePage />} />
           
           {/* Auction Routes - Private (management) */}
           <Route path="/p/t/auction/" element={<AuctionHome />} />
