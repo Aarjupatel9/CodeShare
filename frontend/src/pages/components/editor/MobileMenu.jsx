@@ -14,6 +14,7 @@ import useClickOutside from '../../../hooks/useClickOutside';
 /**
  * MobileMenu - Mobile dropdown menu (hamburger)
  * Shows pages/files navigation on mobile devices
+ * For public users, shows URL input option
  */
 const MobileMenu = ({ 
   isVisible,
@@ -25,7 +26,12 @@ const MobileMenu = ({
   onPageRemove,
   onSelectFile,
   onFileRemove,
-  privateFileList
+  privateFileList,
+  // Public user props
+  tmpSlug,
+  onTmpSlugChange,
+  onTmpSlugSubmit,
+  redirectArrowIcon
 }) => {
   const mobileMenuRef = useRef(null);
 
@@ -51,26 +57,52 @@ const MobileMenu = ({
       {isVisible && (
         <div className="overflow-auto absolute left-0 right-0 z-10 mt-2 max-w-full sm:w-[500px] sm:right-auto max-h-96 p-3 origin-top-right rounded-md bg-gray-50 shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none">
           <div className="flex flex-col h-full text-sm text-gray-700">
-            <div className="relative fixed top-0">
-              <div className="flex flex-row w-full text-sm gap-2 mb-3">
-                {privateTabs.map((tab) => {
-                  return (
-                    <div
-                      key={tab.tabId + generateRandomString(10)}
-                      className={`${
-                        tab.selected 
-                          ? "bg-blue-600 text-white font-semibold shadow-sm" 
-                          : "bg-white text-gray-700 border border-gray-200 font-medium hover:bg-gray-50"
-                      } flex items-center justify-center flex-1 py-2 px-3 rounded-lg transition cursor-pointer`}
-                      onClick={(e) => onSelectTab(tab.tabId, e)}
-                    >
-                      {tab.tabName === "Pages" ? "📄 " : "📎 "}{tab.tabName}
-                    </div>
-                  );
-                })}
+            
+            {/* Public User - Show URL Input */}
+            {!currUser ? (
+              <div className="p-4">
+                <h3 className="text-sm font-semibold text-gray-800 mb-3">📄 Open Document by URL</h3>
+                <p className="text-xs text-gray-600 mb-3">Enter a custom URL to open or create a document</p>
+                <form onSubmit={(e) => { e.preventDefault(); onTmpSlugSubmit(); }} className="flex items-center gap-2">
+                  <input
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    type="text"
+                    placeholder="e.g., my-document"
+                    onChange={onTmpSlugChange}
+                    value={tmpSlug}
+                  />
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition text-sm font-medium"
+                    title="Open document"
+                  >
+                    Go {redirectArrowIcon}
+                  </button>
+                </form>
               </div>
-            </div>
-            <div className="overflow-auto flex-grow h-full">
+            ) : (
+              /* Logged User - Show Pages/Files Tabs */
+              <>
+                <div className="relative fixed top-0">
+                  <div className="flex flex-row w-full text-sm gap-2 mb-3">
+                    {privateTabs.map((tab) => {
+                      return (
+                        <div
+                          key={tab.tabId + generateRandomString(10)}
+                          className={`${
+                            tab.selected 
+                              ? "bg-blue-600 text-white font-semibold shadow-sm" 
+                              : "bg-white text-gray-700 border border-gray-200 font-medium hover:bg-gray-50"
+                          } flex items-center justify-center flex-1 py-2 px-3 rounded-lg transition cursor-pointer`}
+                          onClick={(e) => onSelectTab(tab.tabId, e)}
+                        >
+                          {tab.tabName === "Pages" ? "📄 " : "📎 "}{tab.tabName}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="overflow-auto flex-grow h-full">
 
               {privateTabs[0].selected ? (
                 <>
@@ -178,7 +210,9 @@ const MobileMenu = ({
                   )}
                 </>
               )}
-            </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

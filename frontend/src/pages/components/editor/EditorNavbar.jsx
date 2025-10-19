@@ -43,7 +43,7 @@ const EditorNavbar = ({
   return (
     <nav className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between flex-shrink-0">
       <div className="flex items-center gap-4">
-        {currUser && MobileMenuComponent}
+        {MobileMenuComponent}
         <div className="text-xl font-bold text-blue-600">CodeShare</div>
       </div>
       
@@ -82,7 +82,7 @@ const EditorNavbar = ({
             {currUser ? userProfileIcon : "Login"}
           </div>
           {!currUser && (
-            <button onClick={() => onNavigate("/auth/register")} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition">
+            <button onClick={() => onNavigate("/auth/register")} className="hidden md:inline-flex px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition">
               Sign Up
             </button>
           )}

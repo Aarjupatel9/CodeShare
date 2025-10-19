@@ -19,17 +19,32 @@ export default function TmceEditor({ props }) {
             licenseKey={"gpl"}
             init={{
                 selector: "textarea",
-                plugins: 'preview importcss searchreplace autolink  directionality code visualblocks visualchars fullscreen image link media codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons accordion',
+                plugins: 'preview importcss searchreplace autolink directionality code visualblocks visualchars fullscreen image link media codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons accordion',
                 editimage_cors_hosts: ['picsum.photos'],
                 menubar: 'file edit view insert format tools table help',
-                toolbar: "socketTogglePlugin | undo redo | bold italic underline strikethrough | align numlist bullist |  blocks fontfamily fontsize | link image | table media | lineheight outdent indent| forecolor backcolor removeformat | charmap emoticons | code fullscreen preview | print | pagebreak anchor codesample | ltr rtl | accordion accordionremove",
-                // toolbar1: "code fullscreen preview | print | pagebreak anchor codesample | ltr rtl | accordion accordionremove",
-
+                
+                // Compact toolbar - single scrollable row
+                toolbar: 'socketTogglePlugin | undo redo | bold italic underline strikethrough | fontfamily fontsize forecolor backcolor | align numlist bullist outdent indent | link image table | blocks | code fullscreen preview | removeformat',
+                toolbar_mode: 'scrolling',  // Single row, horizontally scrollable
+                
+                // Mobile-friendly selection toolbar with essential editing actions
+                quickbars_selection_toolbar: 'bold italic underline | h2 h3 | quicklink | copy cut paste selectall',
+                
+                // Better context menu with more options
+                contextmenu: 'copy cut paste | link image table | selectall',
+                
                 image_caption: true,
-                quickbars_selection_toolbar: 'bold italic quicklink h2 h3 blockquote quickimage quicktable',
                 noneditable_class: 'mceNonEditable',
-                toolbar_mode: 'sliding',
-                contextmenu: 'link image table',
+                
+                // Enable mobile-friendly options - compact toolbar
+                mobile: {
+                  menubar: false,  // Hide menubar on mobile to save space
+                  toolbar_mode: 'scrolling',  // Scrollable single row
+                  // Compact toolbar with only essential tools
+                  toolbar: 'socketTogglePlugin | undo redo | bold italic | link | bullist numlist | blocks | fullscreen',
+                  quickbars_selection_toolbar: 'bold italic underline | h2 h3 | copy cut paste | selectall | quicklink',
+                  quickbars_insert_toolbar: false,  // Disable insert quickbar
+                },
                 // skin: useDarkMode ? 'oxide-dark' : 'oxide',
                 // content_css: useDarkMode ? 'dark' : 'default',
                 skin: 'oxide',
@@ -40,6 +55,7 @@ export default function TmceEditor({ props }) {
                 tinycomments_author: 'Aarju Patel',
 
                 setup: (editor) => {
+                    // Socket toggle button
                     editor.ui.registry.addIcon("socketIcon", socketIcon)
                     editor.ui.registry.addButton("socketTogglePlugin", {
                         icon: "socketIcon",
@@ -49,16 +65,45 @@ export default function TmceEditor({ props }) {
                         },
                     });
 
+                    // Add Copy button
+                    editor.ui.registry.addButton("copy", {
+                        text: "Copy",
+                        icon: "copy",
+                        tooltip: "Copy",
+                        onAction: function () {
+                            editor.execCommand('copy');
+                        },
+                    });
 
-                    // add file button
-                    // editor.ui.registry.addIcon("addFileIcon", addFileIcon)
-                    // editor.ui.registry.addButton("addFileButton", {
-                    //     icon: "addFileIcon",
-                    //     tooltip: "Upload a file",
-                    //     onAction: function () {
-                    //         inputFile.current.click();
-                    //     },
-                    // });
+                    // Add Cut button
+                    editor.ui.registry.addButton("cut", {
+                        text: "Cut",
+                        icon: "cut",
+                        tooltip: "Cut",
+                        onAction: function () {
+                            editor.execCommand('cut');
+                        },
+                    });
+
+                    // Add Paste button
+                    editor.ui.registry.addButton("paste", {
+                        text: "Paste",
+                        icon: "paste",
+                        tooltip: "Paste",
+                        onAction: function () {
+                            editor.execCommand('paste');
+                        },
+                    });
+
+                    // Add Select All button
+                    editor.ui.registry.addButton("selectall", {
+                        text: "Select All",
+                        icon: "select-all",
+                        tooltip: "Select All",
+                        onAction: function () {
+                            editor.execCommand('SelectAll');
+                        },
+                    });
                 },
                 // save_onsavecallback: (e) => {
                 //   saveData()

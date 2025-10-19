@@ -860,6 +860,11 @@ export default function MainPage(props) {
             onSelectFile={onSelectFile}
             onFileRemove={confirmFileRemove}
             privateFileList={privateFileList}
+            // Public user URL input props
+            tmpSlug={tmpSlug}
+            onTmpSlugChange={(e) => setTmpSlug(e.target.value)}
+            onTmpSlugSubmit={redirect}
+            redirectArrowIcon={redirectArrowIcon}
           />
         }
       />
