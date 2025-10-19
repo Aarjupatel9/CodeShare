@@ -28,6 +28,8 @@ import {
   getPresizeFileName,
   getTimeInFormate,
   isValidSlug,
+  isReservedRouteName,
+  isValidAndNotReservedSlug,
 } from "../common/functions";
 
 // Import new components
@@ -378,13 +380,18 @@ export default function MainPage(props) {
   }
 
   const validateNewPageTitle = (newTitle) => {
-    let reservedPageTitle = ["new", "auth", "p", "api", "socket", "game", "games"];
-    if (reservedPageTitle.includes(newTitle.toLowerCase())) {
+    // Check if slug is reserved
+    if (isReservedRouteName(newTitle)) {
+      toast.error(`"${newTitle}" is a reserved system name and cannot be used. Please choose a different name.`, { duration: 4000 });
       return false;
     }
+    
+    // Check if slug is valid format
     if (!isValidSlug(newTitle)) {
-      return true
+      toast.error("Please use only letters, numbers, spaces, underscores, and hyphens", { duration: 3000 });
+      return false;
     }
+    
     return true;
   };
 
@@ -407,6 +414,14 @@ export default function MainPage(props) {
             newSlug = newSlug.trim();
             if (newSlug) {
               newSlug = newSlug.replaceAll(" ", "_");
+              
+              // Check if slug is reserved
+              if (isReservedRouteName(newSlug)) {
+                toast.error(`"${newSlug}" is a reserved system name and cannot be used. Please choose a different name.`, { duration: 4000 });
+                return;
+              }
+              
+              // Check if slug is valid format
               if (isValidSlug(newSlug)) {
                 toast.dismiss(t.id);
                 // Pass callback to navigate after save
@@ -415,7 +430,7 @@ export default function MainPage(props) {
                   setUserSlug(newSlug);
                 });
               } else {
-                toast.error("Please use only letters, numbers, and underscores");
+                toast.error("Please use only letters, numbers, underscores, and hyphens", { duration: 3000 });
               }
             }
           }}
@@ -639,7 +654,21 @@ export default function MainPage(props) {
   };
 
   const redirect = () => {
-    navigate("/" + tmpSlug);
+    const slug = tmpSlug.trim();
+    
+    // Check if slug is reserved
+    if (isReservedRouteName(slug)) {
+      toast.error(`"${slug}" is a reserved system name and cannot be used. Please choose a different name.`, { duration: 4000 });
+      return;
+    }
+    
+    // Check if slug is valid format
+    if (!isValidSlug(slug)) {
+      toast.error("Please use only letters, numbers, spaces, underscores, and hyphens", { duration: 3000 });
+      return;
+    }
+    
+    navigate("/" + slug.replaceAll(" ", "_"));
   };
 
   const remvoeCurrentFile = (file) => {

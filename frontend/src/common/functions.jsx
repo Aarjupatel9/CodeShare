@@ -17,6 +17,30 @@ export function isValidSlug(slug) {
     return slugRegex.test(slug) && slug.length > 1;
 }
 
+/**
+ * Reserved route names that cannot be used as document slugs
+ */
+const RESERVED_ROUTE_NAMES = [
+    'p', 't', 'auth', 'api', 'help', 'about', 'games', 'game',
+    'admin', 'system', 'config', 'settings', 'dashboard', 'profile', 'user', 'users'
+];
+
+/**
+ * Check if a slug is a reserved route name
+ */
+export function isReservedRouteName(slug) {
+    if (!slug || typeof slug !== 'string') return false;
+    const normalizedSlug = slug.toLowerCase().trim().replace(/[_\s-]/g, '');
+    return RESERVED_ROUTE_NAMES.includes(normalizedSlug);
+}
+
+/**
+ * Validate slug is both valid format AND not a reserved name
+ */
+export function isValidAndNotReservedSlug(slug) {
+    return isValidSlug(slug) && !isReservedRouteName(slug);
+}
+
 export function getTimeInFormate(time) {
     let t = new Date(time);
     // Pad each component with leading zeros if necessary
