@@ -1,5 +1,7 @@
 import { handleRejectResponse } from './systemService'
-const backend_url = (await (await fetch('/config.json')).json()).backend_url
+import { getBackendUrl } from '../hooks/useConfig'
+
+const getBackendURL = () => getBackendUrl()
 
 class AuctionService {
   getAuction(data) {
@@ -16,7 +18,7 @@ class AuctionService {
         body: JSON.stringify(data),
       }
       if (!data.owner) {
-        fetch(backend_url + '/api/auction/login', fetchPostOptions)
+        fetch(getBackendURL() + '/api/auction/login', fetchPostOptions)
           .then((response) => {
             return response.json()
           })
@@ -49,7 +51,7 @@ class AuctionService {
         body: JSON.stringify(data),
       }
       if (!data.owner) {
-        fetch(backend_url + '/api/auction/public/get', fetchPostOptions)
+        fetch(getBackendURL() + '/api/auction/public/get', fetchPostOptions)
           .then((response) => {
             return response.json()
           })
@@ -82,7 +84,7 @@ class AuctionService {
         body: JSON.stringify(data),
       }
       if (!data.owner) {
-        fetch(backend_url + '/api/auction/get', fetchPostOptions)
+        fetch(getBackendURL() + '/api/auction/get', fetchPostOptions)
           .then((response) => {
             return response.json()
           })
@@ -115,7 +117,7 @@ class AuctionService {
         body: JSON.stringify(data),
       }
       if (!data.owner) {
-        fetch(backend_url + '/api/auction/create', fetchPostOptions)
+        fetch(getBackendURL() + '/api/auction/create', fetchPostOptions)
           .then((response) => {
             return response.json()
           })
@@ -147,7 +149,7 @@ class AuctionService {
         },
         body: JSON.stringify(data),
       }
-      fetch(backend_url + '/api/auction/update', fetchPostOptions)
+      fetch(getBackendURL() + '/api/auction/update', fetchPostOptions)
         .then((response) => {
           return response.json()
         })
@@ -178,7 +180,7 @@ class AuctionService {
         },
         body: JSON.stringify(data),
       }
-      fetch(backend_url + '/api/auction/team/create', fetchPostOptions)
+      fetch(getBackendURL() + '/api/auction/team/create', fetchPostOptions)
         .then((response) => {
           return response.json()
         })
@@ -209,7 +211,7 @@ class AuctionService {
         },
         body: JSON.stringify(data),
       }
-      fetch(backend_url + '/api/auction/team/update', fetchPostOptions)
+      fetch(getBackendURL() + '/api/auction/team/update', fetchPostOptions)
         .then((response) => {
           return response.json()
         })
@@ -240,7 +242,7 @@ class AuctionService {
         },
         body: JSON.stringify(data),
       }
-      fetch(backend_url + '/api/auction/team/remove', fetchPostOptions)
+      fetch(getBackendURL() + '/api/auction/team/remove', fetchPostOptions)
         .then((response) => {
           return response.json()
         })
@@ -271,7 +273,7 @@ class AuctionService {
         },
         body: JSON.stringify(data),
       }
-      fetch(backend_url + '/api/auction/player/create', fetchPostOptions)
+      fetch(getBackendURL() + '/api/auction/player/create', fetchPostOptions)
         .then((response) => {
           return response.json()
         })
@@ -302,7 +304,7 @@ class AuctionService {
         },
         body: JSON.stringify(data),
       }
-      fetch(backend_url + '/api/auction/player/remove', fetchPostOptions)
+      fetch(getBackendURL() + '/api/auction/player/remove', fetchPostOptions)
         .then((response) => {
           return response.json()
         })
@@ -333,7 +335,7 @@ class AuctionService {
         },
         body: JSON.stringify(data),
       }
-      fetch(backend_url + '/api/auction/player/update', fetchPostOptions)
+      fetch(getBackendURL() + '/api/auction/player/update', fetchPostOptions)
         .then((response) => {
           return response.json()
         })
@@ -365,7 +367,7 @@ class AuctionService {
         body: JSON.stringify(data),
       }
       if (!data.owner) {
-        fetch(backend_url + '/api/auction/set/update', fetchPostOptions)
+        fetch(getBackendURL() + '/api/auction/set/update', fetchPostOptions)
           .then((response) => {
             return response.json()
           })
@@ -398,7 +400,7 @@ class AuctionService {
         body: JSON.stringify(data),
       }
       if (!data.owner) {
-        fetch(backend_url + '/api/auction/set/create', fetchPostOptions)
+        fetch(getBackendURL() + '/api/auction/set/create', fetchPostOptions)
           .then((response) => {
             return response.json()
           })
@@ -431,7 +433,7 @@ class AuctionService {
         body: JSON.stringify(data),
       }
       if (!data.owner) {
-        fetch(backend_url + '/api/auction/set/remove', fetchPostOptions)
+        fetch(getBackendURL() + '/api/auction/set/remove', fetchPostOptions)
           .then((response) => {
             return response.json()
           })
@@ -463,7 +465,7 @@ class AuctionService {
         },
         body: JSON.stringify(data),
       }
-      fetch(backend_url + '/api/auction/dataImports', fetchPostOptions)
+      fetch(getBackendURL() + '/api/auction/dataImports', fetchPostOptions)
         .then((response) => {
           return response.json()
         })
@@ -494,7 +496,7 @@ class AuctionService {
         },
         body: JSON.stringify(data),
       }
-      fetch(backend_url + '/api/auction/team/logo/upload', fetchPostOptions)
+      fetch(getBackendURL() + '/api/auction/team/logo/upload', fetchPostOptions)
         .then((response) => {
           return response.json()
         })
@@ -521,7 +523,7 @@ class AuctionService {
           'Access-Control-Allow-Origin': '*',
         },
       }
-      fetch(backend_url + '/api/auction/logout', fetchPostOptions)
+      fetch(getBackendURL() + '/api/auction/logout', fetchPostOptions)
         .then((response) => {
           return response.json()
         })

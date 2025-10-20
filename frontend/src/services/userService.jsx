@@ -1,6 +1,7 @@
 import { handleRejectResponse } from './systemService'
+import { getBackendUrl } from '../hooks/useConfig'
 
-const backend_url = (await (await fetch('/config.json')).json()).backend_url
+const getBackendURL = () => getBackendUrl()
 
 class UserService {
 
@@ -24,7 +25,7 @@ class UserService {
         body: JSON.stringify(requestPayload),
       }
       if (!user) {
-        fetch(backend_url + '/api/data/getData', fetchPostOptions)
+        fetch(getBackendURL() + '/api/data/getData', fetchPostOptions)
           .then((response) => {
             return response.json()
           })
@@ -40,7 +41,7 @@ class UserService {
             reject(e.toString())
           })
       } else {
-        fetch(backend_url + '/api/data/p/getData', fetchPostOptions)
+        fetch(getBackendURL() + '/api/data/p/getData', fetchPostOptions)
           .then((response) => {
             return response.json()
           })
@@ -77,7 +78,7 @@ class UserService {
         body: JSON.stringify(data),
       }
       if (!data.owner) {
-        fetch(backend_url + '/api/data/saveData/', fetchPostOptions)
+        fetch(getBackendURL() + '/api/data/saveData/', fetchPostOptions)
           .then((response) => {
             return response.json()
           })
@@ -93,7 +94,7 @@ class UserService {
             reject(e.toString())
           })
       } else {
-        fetch(backend_url + '/api/data/p/saveData/', fetchPostOptions)
+        fetch(getBackendURL() + '/api/data/p/saveData/', fetchPostOptions)
           .then((response) => {
             return response.json()
           })
@@ -126,7 +127,7 @@ class UserService {
         },
         body: formData,
       }
-      fetch(backend_url + '/api/data/p/saveFile/', fetchPostOptions)
+      fetch(getBackendURL() + '/api/data/p/saveFile/', fetchPostOptions)
         .then((response) => {
           return response.json()
         })
@@ -158,7 +159,7 @@ class UserService {
         body: JSON.stringify(data),
       }
       if (!data.currUser) {
-        fetch(backend_url + '/api/data/removeFile/', fetchPostOptions)
+        fetch(getBackendURL() + '/api/data/removeFile/', fetchPostOptions)
           .then((response) => {
             return response.json()
           })
@@ -176,7 +177,7 @@ class UserService {
             reject(e.toString())
           })
       } else {
-        fetch(backend_url + '/api/data/p/removeFile/', fetchPostOptions)
+        fetch(getBackendURL() + '/api/data/p/removeFile/', fetchPostOptions)
           .then((response) => {
             return response.json()
           })
@@ -211,7 +212,7 @@ class UserService {
         body: JSON.stringify(data),
       }
 
-      fetch(backend_url + '/api/data/p/removePage', fetchPostOptions)
+      fetch(getBackendURL() + '/api/data/p/removePage', fetchPostOptions)
         .then((response) => {
           return response.json()
         })

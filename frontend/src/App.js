@@ -2,7 +2,7 @@ import "./App.css";
 import { Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { UserProvider } from "./context/UserContext";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { preloadConfig } from "./hooks/useConfig";
 
 // Pages
@@ -30,10 +30,36 @@ import PrivateRoute from "./components/routes/PrivateRoute";
 import PublicRoute from "./components/routes/PublicRoute";
 
 function App() {
-  // Preload config on app initialization
+  const [configLoaded, setConfigLoaded] = useState(false);
+
+  // Preload config on app initialization - MUST finish before routes render
   useEffect(() => {
-    preloadConfig();
+    preloadConfig().then(() => {
+      setConfigLoaded(true);
+    }).catch((err) => {
+      console.error('Failed to load config:', err);
+      setConfigLoaded(true); // Still render app even if config fails
+    });
   }, []);
+
+  // Don't render routes until config is loaded
+  if (!configLoaded) {
+    return (
+      <div className="App">
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '100vh',
+          fontSize: '1.2rem',
+          color: '#666'
+        }}>
+          Loading...
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="App">
       <Toaster />

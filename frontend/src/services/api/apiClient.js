@@ -4,46 +4,37 @@
  */
 
 import toast from 'react-hot-toast';
+import { preloadConfig, getBackendUrl, getBackendSocketUrl } from '../../hooks/useConfig';
 
 class ApiClient {
   constructor() {
-    this.baseURL = null;
-    this.socketURL = null;
     this.configLoaded = false;
-    this.configPromise = null;
   }
 
   /**
-   * Initialize configuration (loads only once)
+   * Initialize configuration (uses global config hook)
    */
   async init() {
     if (this.configLoaded) {
       return;
     }
 
-    // Prevent multiple simultaneous config loads
-    if (this.configPromise) {
-      await this.configPromise;
-      return;
-    }
+    await preloadConfig();
+    this.configLoaded = true;
+  }
 
-    this.configPromise = fetch('/config.json')
-      .then(response => response.json())
-      .then(config => {
-        this.baseURL = config.backend_url;
-        this.socketURL = config.backend_socket_url;
-        this.configLoaded = true;
-      })
-      .catch(error => {
-        console.error('Failed to load config:', error);
-        // Fallback to default URLs
-        this.baseURL = 'http://localhost:8080';
-        this.socketURL = 'http://localhost:8081';
-        this.configLoaded = true;
-      });
+  /**
+   * Get base URL from global config
+   */
+  get baseURL() {
+    return getBackendUrl() || 'http://localhost:8080';
+  }
 
-    await this.configPromise;
-    this.configPromise = null;
+  /**
+   * Get socket URL from global config
+   */
+  get socketURL() {
+    return getBackendSocketUrl() || 'http://localhost:8081';
   }
 
   /**

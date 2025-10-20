@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
+import { useConfig } from "../hooks/useConfig";
 import userService from "../services/userService";
 import { json, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -49,8 +50,7 @@ export default function MainPage(props) {
   const editorRef = useRef(null);
   const navigate = useNavigate();
   const { slug, userId } = useParams();
-
-  const [appConfig, setAppConfig] = useState({});
+  const { config: appConfig } = useConfig();
   const [userSlug, setUserSlug] = useState(slug);
   const [socketEnabled, setSocketEnabled] = useState(true);
   const [allVersionData, setAllVersionData] = useState([]);
@@ -209,18 +209,7 @@ export default function MainPage(props) {
     checkSlug();
   }, [slug]);
 
-  useEffect(() => {
-    const fetchConfig = async () => {
-      try {
-        const res = await fetch('/config.json');
-        const config = await res.json();
-        setAppConfig(config);
-      } catch (error) {
-        console.error("Error fetching config:", error);
-      }
-    };
-    fetchConfig();
-  }, []); 
+  // Config is now loaded via useConfig hook - no need for separate fetch 
 
   useEffect(() => {
     if (socketEnabled && appConfig.backend_socket_url) {
