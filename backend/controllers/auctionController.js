@@ -427,6 +427,12 @@ exports.updateNewAuctionSet = async (req, res) => {
     // Remove password from auction object
     auctionData.password = undefined;
 
+    // Find last sold/unsold player (most recent by updatedAt)
+    let lastSoldPlayer = await AuctionPlayerModel.findOne({ 
+      auction: auction._id, 
+      auctionStatus: { $in: ["sold", "unsold"] } 
+    }).sort({ updatedAt: -1 }).limit(1);
+
     return res.status(200).json({
       success: true,
       message: "Set is updated to " + set.state,
@@ -436,6 +442,7 @@ exports.updateNewAuctionSet = async (req, res) => {
         teams: teams,
         players: allPlayers,
         sets: allSets,
+        lastSoldPlayer: lastSoldPlayer || null
       }
     });
 
@@ -676,6 +683,13 @@ exports.updateNewAuctionPlayer = async (req, res) => {
       let players = await AuctionPlayerModel.find({ auction: auctionId });
       let sets = await AuctionSetModel.find({ auction: auctionId });
       auction.password = undefined;
+
+      // Find last sold/unsold player (most recent by updatedAt)
+      let lastSoldPlayer = await AuctionPlayerModel.findOne({ 
+        auction: auctionId, 
+        auctionStatus: { $in: ["sold", "unsold"] } 
+      }).sort({ updatedAt: -1 }).limit(1);
+      
       // Fetch full auction data (same as getAuctionDetails)
       return res.status(200).json({
         success: true,
@@ -686,6 +700,7 @@ exports.updateNewAuctionPlayer = async (req, res) => {
           teams: teams,
           players: players,
           sets: sets,
+          lastSoldPlayer: lastSoldPlayer || null
         }
       });
     } else {
@@ -759,13 +774,21 @@ exports.getAuctionDetails = async (req, res) => {
       let players = await AuctionPlayerModel.find({ auction: auctionId });
       let sets = await AuctionSetModel.find({ auction: auctionId });
       auction.password = undefined;
+      
+      // Find last sold/unsold player (most recent by updatedAt)
+      let lastSoldPlayer = await AuctionPlayerModel.findOne({ 
+        auction: auctionId, 
+        auctionStatus: { $in: ["sold", "unsold"] } 
+      }).sort({ updatedAt: -1 }).limit(1);
+      
       return res.status(200).json({
         success: true,
         message: "Action details available",
         auction: auction,
         teams: teams,
         players: players,
-        sets: sets
+        sets: sets,
+        lastSoldPlayer: lastSoldPlayer || null
       });
     } else {
       res.status(200).json({

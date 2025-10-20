@@ -361,7 +361,7 @@ export default function AuctionSetup(props) {
     }
 
     const addNewSet = (data) => {
-        AuctionService.createAuctionSet({ name: data.name, auction: auctionId }).then((res) => {
+        AuctionService.createAuctionSet({ name: data.name, auction: auction }).then((res) => {
             toast.success(res.message, { duration: 3000 });
         }).catch((error) => {
             toast.error(error)
