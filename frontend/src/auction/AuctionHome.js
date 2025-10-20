@@ -572,11 +572,11 @@ export default function AuctionHome() {
           <button
               type="submit"
               className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-bold transition shadow-lg"
-            >
+          >
               Create Auction
-            </button>
-          </div>
-        </form>
+          </button>
+        </div>
+      </form>
       </Modal>
 
       {/* Join Auction Modal */}

@@ -10,6 +10,7 @@ import { backArrowIcon, defaultTeamLogo } from "../assets/svgs";
 import { getTeamName, getTeamBudgetForView } from "./Utility";
 import heartBeatSound from "../assets/heart-beat-sound.mp3";
 import { UserContext } from '../context/UserContext';
+import AuctionModal from './components/AuctionModal';
 const SOCKET_ADDRESS = process.env.REACT_APP_SOCKET_ADDRESS;
 //auctionStatus : idle, bidding, sold, unsold
 
@@ -28,6 +29,10 @@ export default function AuctionBidding(props) {
     const [isAPICallInProgress, setIsAPICallInProgress] = useState(null);
     const [allowMusic, setAllowMusic] = useState(false);
 
+    // NEW: UI State Management
+    const [biddingState, setBiddingState] = useState('LOADING'); // LOADING, NO_SET, IDLE, BIDDING, SOLD, SET_COMPLETE, UNSOLD_SET_CREATED, AUCTION_COMPLETE
+    const [showSetSelectionModal, setShowSetSelectionModal] = useState(false);
+    const [selectedSetName, setSelectedSetName] = useState('');
 
     const { auctionId } = useParams();
     const navigate = useNavigate();
@@ -69,56 +74,7 @@ export default function AuctionBidding(props) {
     const getAuctionData = () => {
         setIsAPICallInProgress(true);
         AuctionService.getAuctionDetails({ auctionId: auctionId }).then((res) => {
-            console.info("getAuctionData", res);
-            if (res.auction) {
-                setAuction(res.auction);
-            }
-            if (res.teams) {
-                setTeams(res.teams);
-            } if (res.sets) {
-                let orderedSet = res.sets.sort((s1, s2) => { return s1.order - s2.order });
-                setSets(orderedSet);
-            }
-            if (res.players && res.players.length > 0) {
-                setPlayers(res.players);
-            }
-            if (res.sets && res.players) {
-                let data = [];
-                let map = {};
-                res.players.forEach(element => {
-                    if (!map[element.auctionSet]) {
-                        map[element.auctionSet] = [];
-                    }
-                    map[element.auctionSet].push(element);
-                });
-                Object.keys(map).map((key) => {
-                    data.push({ set: key, players: map[key] });
-                })
-                setSetPlayerMap(data);
-            }
-            if (res.teams && res.players) {
-                let data = [];
-                let map = {};
-                res.teams && res.teams.forEach((t) => {
-                    map[t._id] = [];
-                })
-                res.players.forEach(element => {
-                    if (!map[element.team]) {
-                        map[element.team] = [];
-                    }
-                    map[element.team].push(element);
-                });
-                Object.keys(map).map((key) => {
-                    if (key != "null") {
-                        let rb = map[key].reduce((total, p) => {
-                            return total + parseInt(p.soldPrice);
-                        }, 0);
-                        rb = getTeamBudget(key, res.teams) - rb;
-                        data.push({ team: key, players: map[key], remainingBudget: rb });
-                    }
-                })
-                setTeamPlayerMap(data);
-            }
+          processAuctionData(res);
         }).catch((error) => {
             console.error(error);
             if (error == "TokenExpiredError" || error.toString().includes("TokenExpiredError") || error.toString().includes("token expired")) {
@@ -130,6 +86,60 @@ export default function AuctionBidding(props) {
         }).finally(() => {
             setIsAPICallInProgress(false);
         });
+    }
+
+    // Unified handler to apply full auction data payload (from enhanced update API)
+    const processAuctionData = (auctionData) => {
+        console.info("getAuctionData", auctionData);
+        if (auctionData.auction) {
+            setAuction(auctionData.auction);
+        }
+        if (auctionData.teams) {
+            setTeams(auctionData.teams);
+        } if (auctionData.sets) {
+            let orderedSet = auctionData.sets.sort((s1, s2) => { return s1.order - s2.order });
+                setSets(orderedSet);
+            }
+        if (auctionData.players && auctionData.players.length > 0) {
+            setPlayers(auctionData.players);
+            }
+        if (auctionData.sets && auctionData.players) {
+                let data = [];
+                let map = {};
+            auctionData.players.forEach(element => {
+                    if (!map[element.auctionSet]) {
+                        map[element.auctionSet] = [];
+                    }
+                    map[element.auctionSet].push(element);
+                });
+                Object.keys(map).map((key) => {
+                    data.push({ set: key, players: map[key] });
+                })
+                setSetPlayerMap(data);
+            }
+        if (auctionData.teams && auctionData.players) {
+                let data = [];
+                let map = {};
+            auctionData.teams && auctionData.teams.forEach((t) => {
+                    map[t._id] = [];
+                })
+            auctionData.players.forEach(element => {
+                    if (!map[element.team]) {
+                        map[element.team] = [];
+                    }
+                    map[element.team].push(element);
+                });
+                Object.keys(map).map((key) => {
+                    if (key != "null") {
+                        let rb = map[key].reduce((total, p) => {
+                            return total + parseInt(p.soldPrice);
+                        }, 0);
+                    rb = getTeamBudget(key, auctionData.teams) - rb;
+                        data.push({ team: key, players: map[key], remainingBudget: rb });
+                    }
+                })
+                setTeamPlayerMap(data);
+            }
     }
 
     function createAuctionSocket() {
@@ -235,13 +245,15 @@ export default function AuctionBidding(props) {
             if (isCompleted) {
                 setIsAPICallInProgress(true);
                 AuctionService.updateAuctionSet({ set: { _id: runningSet._id, state: "completed" }, auction: auction }).then((res) => {
+                    if (res && res.auctionData) {
+                        processAuctionData(res.auctionData);
+                    }
                     toast.success("Set is complete, select next set to continue.", { duration: 3000 });
                 }).catch((err) => {
                     toast.error(err, { duration: 3000 });
                     console.error(err);
                 }).finally(() => {
                     setIsAPICallInProgress(false);
-                    getAuctionData();
                 });
 
                 setCurrentSet({});
@@ -301,13 +313,15 @@ export default function AuctionBidding(props) {
         console.debug("randomPlayer", randomPlayer);
         setIsAPICallInProgress(true);
         AuctionService.updateAuctionPlayer({ players: [{ _id: randomPlayer._id, auctionStatus: "bidding" }] }).then((res) => {
+            if (res && res.auctionData) {
+                processAuctionData(res.auctionData);
+            }
             toast.success("Start bidding for player " + randomPlayer.name + " at base price " + getTeamBudgetForView(randomPlayer.basePrice), { duration: 3000 })
         }).catch((err) => {
             toast.error(err);
             console.error(err);
         }).finally(() => {
             setIsAPICallInProgress(false);
-            getAuctionData();
         });
 
     }
@@ -371,13 +385,15 @@ export default function AuctionBidding(props) {
             newBiddingState.sort((b1, b2) => { return b1.price - b2.price });
             setIsAPICallInProgress(true);
             AuctionService.updateAuctionPlayer({ players: [{ _id: player._id, bidding: newBiddingState }] }).then((res) => {
-                let toastId = toast.success("Current bid at " + getTeamBudgetForView(nextBid) + " of team " + team.name, { duration: 3000 });
+                if (res && res.auctionData) {
+                    processAuctionData(res.auctionData);
+                }
+                toast.success("Current bid at " + getTeamBudgetForView(nextBid) + " of team " + team.name, { duration: 3000 });
             }).catch((err) => {
                 toast.error(err.toString(), { duration: 3000 });
                 console.error(err);
             }).finally(() => {
                 setIsAPICallInProgress(false);
-                // getAuctionData();
             });
         }
     }
@@ -427,13 +443,15 @@ export default function AuctionBidding(props) {
             newBiddingState.sort((b1, b2) => { return b1.price - b2.price });
             setIsAPICallInProgress(true);
             AuctionService.updateAuctionPlayer({ players: [{ _id: player._id, bidding: newBiddingState }] }).then((res) => {
+            if (res && res.auctionData) {
+                processAuctionData(res.auctionData);
+            }
                 toast.success("Undo last bid from team " + getTeamName(popedBid.team), { duration: 3000 });
             }).catch((err) => {
                 toast.error(err, { duration: 3000 });
                 console.error(err);
             }).finally(() => {
                 setIsAPICallInProgress(false);
-                getAuctionData();
             });
         }
     }
@@ -542,6 +560,9 @@ export default function AuctionBidding(props) {
             if (player.bidding.length == 0) {
                 setIsAPICallInProgress(true);
                 AuctionService.updateAuctionPlayer({ players: [{ _id: player._id, auctionStatus: "unsold" }] }).then((res) => {
+                    if (res && res.auctionData) {
+                        processAuctionData(res.auctionData);
+                    }
                     toast.success("Player - " + player.name + " is unsold", { duration: 3000 })
                     socket.emit("playerSoldUpdate", "Player - " + player.name + " is unsold");
                     setPlayer({});
@@ -550,7 +571,6 @@ export default function AuctionBidding(props) {
                     console.error(err);
                 }).finally(() => {
                     setIsAPICallInProgress(false);
-                    getAuctionData();
                 });
             } else {
                 let biddingState = structuredClone(player.bidding);
@@ -559,6 +579,9 @@ export default function AuctionBidding(props) {
                 let soldPrice = biddingState[biddingState.length - 1].price;
                 setIsAPICallInProgress(true);
                 AuctionService.updateAuctionPlayer({ players: [{ _id: player._id, auctionStatus: "sold", bidding: biddingState, team: team, soldPrice: soldPrice }] }).then((res) => {
+                    if (res && res.auctionData) {
+                        processAuctionData(res.auctionData);
+                    }
                     let message = "" + player.name + " is sold to team - " + getTeamName(biddingState[biddingState.length - 1].team) + " at price " + getTeamBudgetForView(biddingState[biddingState.length - 1].price);
                     toast.success(message, { duration: 5000 });
                     socket.emit("playerSoldUpdate", message);
@@ -568,64 +591,36 @@ export default function AuctionBidding(props) {
                     console.error(err);
                 }).finally(() => {
                     setIsAPICallInProgress(false);
-                    getAuctionData();
                 });
             }
         }
     }
 
-    const handleSelectNextSet = (set, t) => {
+
+    const selectNextSet = () => {
+        setShowSetSelectionModal(true);
+    }
+
+    const handleSetSelection = (set) => {
+        if (isAPICallInProgress) return; // Prevent double clicks
+        
+        // Close modal immediately and set loading state
+        setShowSetSelectionModal(false);
+        setSelectedSetName(set.name);
         setIsAPICallInProgress(true);
+        
         AuctionService.updateAuctionSet({ set: { _id: set._id, state: "running" }, auction: auction }).then((res) => {
-            toast.success("Please start bidding for set - " + set.name, { duration: 3000 });
+            if (res && res.auctionData) {
+                processAuctionData(res.auctionData);
+            }
+            toast.success("Set '" + set.name + "' is now active. Pick a player to start bidding!", { duration: 3000 });
         }).catch((err) => {
             toast.error(err, { duration: 3000 });
             console.error(err);
         }).finally(() => {
             setIsAPICallInProgress(false);
-            toast.dismiss(t.id);
-            getAuctionData();
+            setSelectedSetName('');
         });
-    }
-
-    const selectNextSet = () => {
-        let selectableSet = sets.filter((s) => { return s.state == "idle" });
-        if (!selectableSet) {
-            console.debug("selectableSet", selectableSet);
-            return;
-        }
-        toast.custom((t) => (
-            <div className="z-[1000] bg-gray-100 border border-gray-200 p-6 rounded w-[350px] h-auto flex flex-col justify-center items-center space-y-4 shadow-md">
-                <div
-                    className={`text-gray-800 text-lg font-semibold ${t.visible ? "animate-enter" : "animate-leave"
-                        }`}
-                >
-                    Select next set
-                </div>
-                <div className="flex flex-col items-center items-start w-full space-y-4">
-                    <label htmlFor="newTitle" className="text-gray-700">
-                        Select Player set to continue
-                    </label>
-                    <div className='flex flex-row flex-wrap max-w-400px overflow-auto gap-3'>
-                        {selectableSet && selectableSet.length > 0 && selectableSet.map((set, index) => {
-                            return (<div className=''>
-                                <button className='button bg-slate-300 cursor-pointer rounded p-2' onClick={() => { handleSelectNextSet(set, t) }}> {set.name}</button>
-                            </div>)
-                        })}
-                    </div>
-                </div>
-                <div className="flex flex-row gap-4 justify-center w-full">
-                    <button
-                        onClick={() => {
-                            toast.dismiss(t.id);
-                        }}
-                        className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md"
-                    >
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        ), { duration: 60000 });
     }
 
     const getTeamLogo = (team) => {
@@ -644,10 +639,1032 @@ export default function AuctionBidding(props) {
         }
     }
 
+    // ============================================
+    // NEW: Helper Functions for UI State & Calculations
+    // ============================================
+
+    // Calculate set progress
+    const calculateSetProgress = (set) => {
+        if (!set || !set._id || !players || players.length === 0) {
+            return { total: 0, processed: 0, remaining: 0, sold: 0, unsold: 0 };
+        }
+        
+        const playersInSet = players.filter(p => p.auctionSet?.toString() === set._id.toString());
+        const sold = playersInSet.filter(p => p.auctionStatus === "sold").length;
+        const unsold = playersInSet.filter(p => p.auctionStatus === "unsold").length;
+        const processed = sold + unsold;
+        const remaining = playersInSet.filter(p => p.auctionStatus === "idle").length;
+        
+        return {
+            total: playersInSet.length,
+            processed,
+            remaining,
+            sold,
+            unsold
+        };
+    };
+
+    // Detect unsold set created
+    const detectUnsoldSetCreated = () => {
+        if (!sets || sets.length === 0) return false;
+        
+        const unsoldSet = sets.find(s => s.name === "unsold" && s.state === "idle");
+        const mainSets = sets.filter(s => s.name !== "unsold");
+        const allMainSetsCompleted = mainSets.length > 0 && mainSets.every(s => s.state === "completed");
+        
+        return unsoldSet && allMainSetsCompleted;
+    };
+
+    // Check if auction is fully complete
+    const isAuctionComplete = () => {
+        if (!sets || sets.length === 0) return false;
+        
+        const allSetsCompleted = sets.every(s => s.state === "completed");
+        const unsoldSet = sets.find(s => s.name === "unsold");
+        
+        // Auction complete if: all sets done OR (all main sets done AND unsold set completed)
+        return allSetsCompleted || (unsoldSet && unsoldSet.state === "completed");
+    };
+
+    // Get team initials for logo fallback
+    const getTeamInitials = (teamName) => {
+        if (!teamName) return "T";
+        return teamName.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 3);
+    };
+
+    // Determine UI state based on current data
+    useEffect(() => {
+        // Show loading if API call in progress OR if essential data not loaded yet
+        if (isAPICallInProgress || !auction || !auction._id || !teams || !players || !sets) {
+            setBiddingState('LOADING');
+            return;
+        }
+        
+        // Check auction complete first
+        if (isAuctionComplete()) {
+            setBiddingState('AUCTION_COMPLETE');
+            return;
+        }
+        
+        // Check unsold set created
+        if (detectUnsoldSetCreated()) {
+            setBiddingState('UNSOLD_SET_CREATED');
+            return;
+        }
+        
+        // Check if no sets exist or all idle
+        if (sets.length === 0 || sets.every(s => s.state === "idle")) {
+            setBiddingState('NO_SET');
+            return;
+        }
+        
+        // Check if a set is running
+        const runningSet = sets.find(s => s.state === "running");
+        
+        if (!runningSet) {
+            // No running set, check if all completed
+            if (sets.every(s => s.state === "completed" || s.name === "unsold")) {
+                setBiddingState('SET_COMPLETE');
+            } else {
+                setBiddingState('NO_SET');
+            }
+            return;
+        }
+        
+        // Set is running, check player status
+        if (player && Object.keys(player).length > 0) {
+            if (player.auctionStatus === "bidding") {
+                setBiddingState('BIDDING');
+            } else if (player.auctionStatus === "sold" || player.auctionStatus === "unsold") {
+                setBiddingState('SOLD');
+            } else {
+                setBiddingState('IDLE');
+            }
+        } else {
+            // No active player
+            if (auctionDetails && auctionDetails.shouldNext) {
+                setBiddingState('IDLE');
+            } else if (auctionDetails && auctionDetails.selectSet) {
+                const setProgress = calculateSetProgress(runningSet);
+                if (setProgress.processed === setProgress.total && setProgress.total > 0) {
+                    setBiddingState('SET_COMPLETE');
+                } else {
+                    setBiddingState('IDLE');
+                }
+            } else {
+                setBiddingState('IDLE');
+            }
+        }
+    }, [player, currentSet, sets, auctionDetails, isAPICallInProgress]);
+
+    // ============================================
+    // NEW: Layout Structure - Top Section (State-Dependent)
+    // ============================================
+    
+    const renderTopSection = () => {
+        // Fixed height container to prevent UI jumping
+        const topSectionContent = (() => {
+            switch (biddingState) {
+                case 'LOADING':
+                    return renderLoadingState();
+                case 'NO_SET':
+                    return renderNoSetSelected();
+                case 'IDLE':
+                    return renderReadyToStart();
+                case 'BIDDING':
+                    return renderActiveBiddingTop();
+                case 'SOLD':
+                    return renderPlayerSold();
+                case 'SET_COMPLETE':
+                    return renderSetCompleted();
+                case 'UNSOLD_SET_CREATED':
+                    return renderUnsoldSetCreated();
+                case 'AUCTION_COMPLETE':
+                    return renderAuctionCompleted();
+                default:
+                    return renderLoadingState();
+            }
+        })();
+
+        return (
+            <div className="h-96 w-full flex items-center justify-center">
+                <div className="w-full h-full flex items-center justify-center">
+                    {topSectionContent}
+                </div>
+            </div>
+        );
+    };
+
+    // ============================================
+    // NEW: Layout Structure - Bottom Section (Always Visible)
+    // ============================================
+    
+    const renderBottomSection = () => {
+        const isInteractable = biddingState === 'BIDDING' && !isAPICallInProgress;
+        
+        return (
+            <div className="space-y-6">
+                {/* Team Cards - Always visible */}
+                <div className={`${!isInteractable ? 'opacity-50 pointer-events-none' : ''}`}>
+                    {renderTeamCards()}
+                </div>
+                
+                {/* Control Panel - Conditional based on state */}
+                {renderControlPanel()}
+                
+                {/* Current Set Widget - Always visible */}
+                {renderCurrentSetWidget()}
+            </div>
+        );
+    };
+
+    // ============================================
+    // NEW: Bottom Section Components
+    // ============================================
+    
+    const renderTeamCards = () => {
+        if (!teams || teams.length === 0) return null;
+        
+        return (
+            <div className="mb-6">
+                <h2 className="text-2xl font-bold mb-4 text-center">Click Team to Bid (Auto Increment)</h2>
+                
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3 max-h-96 overflow-y-auto">
+                    {teams.map((team, index) => {
+                        const canBid = canTeamBid(team._id);
+                        const teamPlayers = teamPlayerMap.find(tm => tm.team === team._id);
+                        const playerCount = teamPlayers ? teamPlayers.players.length : 0;
+                        
+                        return (
+                            <div 
+                                key={index}
+                                onClick={() => canBid && handleTeamClick(team)}
+                                className={`bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-3 transition border-2 
+                                    ${canBid ? 'cursor-pointer hover:bg-opacity-20 border-transparent hover:border-blue-400' : 'cursor-not-allowed opacity-50 border-transparent'}`}
+                            >
+                                <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg mx-auto mb-2"
+                                    style={{backgroundColor: team.color || '#6b7280'}}>
+                                    {team.logo && team.logo.url ? (
+                                        <img src={getTeamLogo(team)} alt={team.name} className="w-full h-full rounded-full object-cover" />
+                                    ) : (
+                                        getTeamInitials(team.name)
+                                    )}
+                </div>
+                                <h3 className="text-center font-bold text-xs mb-1 truncate">{team.name}</h3>
+                                <p className="text-center text-xs text-blue-200">{getTeamBudgetForView(team.remainingBudget)}</p>
+                                <p className="text-center text-xs text-green-300">{playerCount}/{auction.maxTeamMember || 11}</p>
+                            </div>
+                        );
+                    })}
+                    
+                    {/* Unsold Option */}
+                    <div 
+                        onClick={() => handlePlayerSold()}
+                        className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-3 cursor-pointer hover:bg-opacity-20 transition border-2 border-transparent hover:border-gray-400"
+                    >
+                        <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center text-white font-bold text-lg mx-auto mb-2">
+                            ❌
+                    </div>
+                        <h3 className="text-center font-bold text-xs mb-1">Unsold</h3>
+                        <p className="text-center text-xs text-blue-200">No bid</p>
+                </div>
+                </div>
+            </div>
+        );
+    };
+
+    const renderControlPanel = () => {
+        // Only show control panel during bidding state
+        if (biddingState !== 'BIDDING') return null;
+        
+        return (
+            <div className="grid md:grid-cols-2 gap-4">
+                    <button
+                    onClick={() => handlePlayerSold()}
+                    className="px-8 py-5 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-2xl font-bold text-2xl shadow-2xl transition transform hover:scale-105 flex items-center justify-center gap-3"
+                >
+                    <span>✅</span>
+                    <span>SOLD</span>
+                </button>
+                <button 
+                    onClick={() => handleBidUndo(player)}
+                    disabled={!player.bidding || player.bidding.length === 0}
+                    className={`px-8 py-5 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 rounded-2xl font-bold text-2xl shadow-2xl transition transform hover:scale-105 flex items-center justify-center gap-3 text-black ${(!player.bidding || player.bidding.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                    <span>↩️</span>
+                    <span>UNDO</span>
+                    </button>
+                </div>
+        );
+    };
+
+    const renderCurrentSetWidget = () => {
+        return (
+            <div className="mt-6 bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                    <div>
+                        <p className="text-sm text-blue-200">Current Set</p>
+                        <p className="text-xl font-bold">{currentSet?.name || 'Set'}</p>
+            </div>
+                </div>
+                <div className="mt-3">
+                    {currentSet && currentSet._id && (
+                        <>
+                            <div className="w-full bg-white bg-opacity-20 rounded-full h-3">
+                                <div 
+                                    className="bg-green-500 h-3 rounded-full transition-all duration-300" 
+                                    style={{width: `${(calculateSetProgress(currentSet).processed / calculateSetProgress(currentSet).total) * 100}%`}}
+                                ></div>
+                            </div>
+                            <p className="text-sm text-blue-200 mt-2">
+                                {calculateSetProgress(currentSet).processed}/{calculateSetProgress(currentSet).total} players processed
+                            </p>
+                        </>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
+    // ============================================
+    // NEW: Main Content Renderer (Updated Structure)
+    // ============================================
+    
+    const renderMainContent = () => {
+        return (
+            <div className="space-y-6">
+                {/* TOP SECTION - Changes based on state */}
+                {renderTopSection()}
+                
+                {/* BOTTOM SECTION - Always visible */}
+                {renderBottomSection()}
+            </div>
+        );
+    };
+
+    // Loading State with Skeleton
+    const renderLoadingState = () => {
+        // If selecting a set, show custom loading message
+        if (selectedSetName) {
+    return (
+                <div className="w-full">
+                    <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-3xl shadow-2xl p-12 text-center">
+                        <div className="w-32 h-32 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-6xl mx-auto mb-6 animate-spin">
+                            ⚙️
+                        </div>
+                        <h2 className="text-4xl font-bold mb-4">Setting up auction...</h2>
+                        <p className="text-xl text-blue-100 mb-2">
+                            Activating set: <span className="font-bold text-yellow-300">"{selectedSetName}"</span>
+                        </p>
+                        <p className="text-lg text-blue-200">Please wait while we prepare the bidding environment</p>
+                        
+                        {/* Loading dots animation */}
+                        <div className="flex justify-center gap-2 mt-8">
+                            <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
+                            <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
+                            <div className="w-3 h-3 bg-white rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Default skeleton loading
+    return (
+            <div className="w-full h-full flex items-center justify-center">
+                <div className="bg-gradient-to-r from-gray-700 to-gray-800 rounded-3xl shadow-2xl p-8 animate-pulse w-full  min-h-full">
+                    <div className="flex flex-col md:flex-row items-center gap-8">
+                        {/* Skeleton Icon */}
+                        <div className="w-40 h-40 bg-white bg-opacity-10 rounded-full flex-shrink-0"></div>
+                        
+                        {/* Skeleton Info */}
+                        <div className="flex-1 w-full">
+                            <div className="h-12 bg-white bg-opacity-10 rounded-lg mb-4 w-3/4"></div>
+                            <div className="h-6 bg-white bg-opacity-10 rounded-lg mb-6 w-1/2"></div>
+                            
+                            <div className="grid grid-cols-3 gap-4 max-w-md">
+                                <div className="bg-white bg-opacity-10 rounded-xl p-4 h-24"></div>
+                                <div className="bg-white bg-opacity-10 rounded-xl p-4 h-24"></div>
+                                <div className="bg-white bg-opacity-10 rounded-xl p-4 h-24"></div>
+                            </div>
+                        </div>
+
+                        {/* Skeleton Action */}
+                        <div className="flex-shrink-0 w-full md:w-64">
+                            <div className="h-16 bg-white bg-opacity-10 rounded-2xl"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // STATE 1: No Set Selected
+    const renderNoSetSelected = () => {
+        const totalSets = sets ? sets.filter(s => s.name !== "unsold").length : 0;
+        const totalPlayers = players ? players.length : 0;
+        const totalTeams = teams ? teams.length : 0;
+
+        return (
+            <div className="w-full h-full flex items-center justify-center">
+                <div className="bg-gradient-to-r from-gray-700 to-gray-800 rounded-3xl shadow-2xl p-8 w-full min-h-full">
+                    <div className="flex flex-col md:flex-row items-center gap-8">
+                        {/* Icon Section */}
+                        <div className="w-40 h-40 bg-white bg-opacity-10 rounded-full flex items-center justify-center text-6xl font-bold shadow-xl flex-shrink-0">
+                            📋
+                        </div>
+                        
+                        {/* Info Section */}
+                        <div className="flex-1 text-center md:text-left">
+                            <h1 className="text-5xl font-bold mb-2">No Set Selected</h1>
+                            <p className="text-xl text-gray-300 mb-4">Please select a set to start the bidding process</p>
+                            
+                            <div className="grid grid-cols-3 gap-4 max-w-md mx-auto md:mx-0">
+                                <div className="bg-white bg-opacity-20 rounded-xl p-4">
+                                    <p className="text-sm text-gray-300 mb-1">Total Sets</p>
+                                    <p className="text-2xl font-bold">{totalSets}</p>
+                                </div>
+                                <div className="bg-white bg-opacity-20 rounded-xl p-4">
+                                    <p className="text-sm text-gray-300 mb-1">Total Players</p>
+                                    <p className="text-2xl font-bold">{totalPlayers}</p>
+                                </div>
+                                <div className="bg-white bg-opacity-20 rounded-xl p-4">
+                                    <p className="text-sm text-gray-300 mb-1">Total Teams</p>
+                                    <p className="text-2xl font-bold">{totalTeams}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Action Section */}
+                        <div className="flex-shrink-0 w-full md:w-64">
+                            <button 
+                                onClick={() => selectNextSet()}
+                                className="w-full px-8 py-6 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 rounded-2xl font-bold text-xl shadow-xl transition transform hover:scale-105 flex items-center justify-center gap-3"
+                            >
+                                <span>📂</span>
+                                <span>Select Set to Begin</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // STATE 2: Ready to Start (Idle)
+    const renderReadyToStart = () => {
+        const progress = currentSet && currentSet._id ? calculateSetProgress(currentSet) : { total: 0, processed: 0, remaining: 0 };
+        
+        return (
+            <div className="w-full h-full flex items-center justify-center">
+                <div className="bg-gradient-to-r from-indigo-700 to-blue-800 rounded-3xl shadow-2xl p-8 w-full  min-h-full">
+                    <div className="flex flex-col md:flex-row items-center gap-8">
+                        {/* Icon Section */}
+                        <div className="w-40 h-40 bg-white bg-opacity-10 rounded-full flex items-center justify-center text-6xl font-bold shadow-xl flex-shrink-0 animate-pulse">
+                            🎯
+                        </div>
+                        
+                        {/* Info Section */}
+                        <div className="flex-1 text-center md:text-left">
+                            <h1 className="text-5xl font-bold mb-2">Ready to Start Bidding</h1>
+                            <p className="text-xl text-blue-100 mb-1">Current Set: <span className="font-bold">{currentSet?.name || 'Set'}</span></p>
+                            <p className="text-lg text-blue-200 mb-4">{progress.remaining} players remaining in this set</p>
+                            
+                            <div className="grid grid-cols-3 gap-4 max-w-md mx-auto md:mx-0">
+                                <div className="bg-white bg-opacity-20 rounded-xl p-4">
+                                    <p className="text-sm text-blue-100 mb-1">Total in Set</p>
+                                    <p className="text-2xl font-bold">{progress.total}</p>
+                                </div>
+                                <div className="bg-white bg-opacity-20 rounded-xl p-4">
+                                    <p className="text-sm text-blue-100 mb-1">Remaining</p>
+                                    <p className="text-2xl font-bold text-yellow-300">{progress.remaining}</p>
+                                </div>
+                                <div className="bg-white bg-opacity-20 rounded-xl p-4">
+                                    <p className="text-sm text-blue-100 mb-1">Processed</p>
+                                    <p className="text-2xl font-bold text-green-300">{progress.processed}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Action Section */}
+                        <div className="flex-shrink-0 w-full md:w-64 space-y-3">
+                            <button 
+                                onClick={() => pickUpRandomPlayer()}
+                                className="w-full px-6 py-4 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-2xl font-bold text-lg shadow-xl transition transform hover:scale-105 flex items-center justify-center gap-2"
+                            >
+                                <span>🎲</span>
+                                <span>Pick Random Player</span>
+                            </button>
+                            <button 
+                                onClick={() => selectNextSet()}
+                                className="w-full px-6 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-xl font-semibold text-sm shadow-lg transition flex items-center justify-center gap-2"
+                            >
+                                <span>📂</span>
+                                <span>Change Set</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // STATE 4: Player Sold Confirmation
+    const renderPlayerSold = () => {
+        if (!player || !player._id) return renderLoadingState();
+
+        const soldTeam = player.team ? teams.find(t => t._id === player.team) : null;
+        const progress = currentSet && currentSet._id ? calculateSetProgress(currentSet) : { total: 0, processed: 0 };
+        const finalPrice = player.soldPrice || (player.bidding && player.bidding.length > 0 ? player.bidding[player.bidding.length - 1].price : player.basePrice);
+
+        return (
+            <div className="w-full h-full flex items-center justify-center">
+                <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-3xl shadow-2xl p-8 w-full min-h-full">
+                    <div className="flex flex-col md:flex-row items-center gap-6">
+                        {/* Icon Section */}
+                        <div className="flex-shrink-0 text-center md:text-left">
+                            <div className="w-24 h-24 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-5xl mx-auto md:mx-0 mb-3">
+                                ✅
+                            </div>
+                            <h2 className="text-4xl font-bold">SOLD!</h2>
+                        </div>
+
+                        {/* Player Summary */}
+                        <div className="flex-1 bg-white bg-opacity-10 backdrop-blur-sm rounded-2xl p-4">
+                            <div className="flex items-center gap-4 mb-3">
+                                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-3xl font-bold text-green-600 flex-shrink-0">
+                                    #{player.jerseyNumber || '?'}
+                                </div>
+                                <div className="flex-1 text-left">
+                                    <h3 className="text-2xl font-bold">{player.name}</h3>
+                                    <p className="text-sm text-green-100">{player.role || 'Player'}</p>
+                                </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="bg-white bg-opacity-10 rounded-lg p-3">
+                                    <p className="text-xs text-green-100 mb-1">Sold To</p>
+                                    <div className="flex items-center gap-2">
+                                        {soldTeam && (
+                                            <>
+                                                <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+                                                    style={{backgroundColor: soldTeam.color || '#f59e0b', color: 'white'}}>
+                                                    {getTeamInitials(soldTeam.name)}
+                                                </div>
+                                                <p className="text-lg font-bold">{soldTeam.name}</p>
+                                            </>
+                                        )}
+                                        {!soldTeam && <p className="text-lg font-bold text-red-300">Unsold</p>}
+                                    </div>
+                                </div>
+                                <div className="bg-white bg-opacity-10 rounded-lg p-3">
+                                    <p className="text-xs text-green-100 mb-1">Final Price</p>
+                                    <p className="text-xl font-bold text-yellow-300">{getTeamBudgetForView(finalPrice)}</p>
+                                </div>
+                            </div>
+                </div>
+
+                        {/* Action & Progress */}
+                        <div className="flex-shrink-0 w-full md:w-64">
+                            <button 
+                                onClick={() => pickUpRandomPlayer()}
+                                className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 rounded-2xl font-bold text-lg shadow-xl transition transform hover:scale-105 flex items-center justify-center gap-2 mb-4"
+                            >
+                                <span>▶️</span>
+                                <span>Pick Next Player</span>
+                            </button>
+
+                            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-3">
+                                <p className="text-xs text-green-100 mb-2">{currentSet?.name || 'Set'}</p>
+                                <div className="w-full bg-white bg-opacity-20 rounded-full h-2 mb-2">
+                                    <div className="bg-yellow-400 h-2 rounded-full" 
+                                        style={{width: `${(progress.processed / progress.total) * 100}%`}}></div>
+                                </div>
+                                <p className="text-xs text-green-200">{progress.processed}/{progress.total} processed</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // STATE 5: Set Completed
+    const renderSetCompleted = () => {
+        const completedSet = sets && sets.find(s => s.state === "completed" && s.name !== "unsold");
+        const progress = completedSet ? calculateSetProgress(completedSet) : { total: 0, sold: 0, unsold: 0 };
+
+        return (
+            <div className="w-full h-full flex items-center justify-center">
+                <div className="bg-gradient-to-r from-green-600 to-emerald-700 rounded-3xl shadow-2xl p-8 w-full  min-h-full">
+                    <div className="flex flex-col md:flex-row items-center gap-8">
+                        {/* Icon Section */}
+                        <div className="w-40 h-40 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-6xl font-bold shadow-xl flex-shrink-0">
+                            🎉
+                        </div>
+                        
+                        {/* Info Section */}
+                        <div className="flex-1 text-center md:text-left">
+                            <h1 className="text-5xl font-bold mb-2">Set Completed!</h1>
+                            <p className="text-xl text-green-100 mb-1">Set: <span className="font-bold">{completedSet?.name || 'Set'}</span></p>
+                            <p className="text-lg text-green-200 mb-4">All players in this set have been processed</p>
+                            
+                            <div className="grid grid-cols-3 gap-4 max-w-md mx-auto md:mx-0">
+                                <div className="bg-white bg-opacity-20 rounded-xl p-4">
+                                    <p className="text-sm text-green-100 mb-1">Total Players</p>
+                                    <p className="text-2xl font-bold">{progress.total}</p>
+                                </div>
+                                <div className="bg-white bg-opacity-20 rounded-xl p-4">
+                                    <p className="text-sm text-green-100 mb-1">Sold</p>
+                                    <p className="text-2xl font-bold text-yellow-300">{progress.sold}</p>
+                                </div>
+                                <div className="bg-white bg-opacity-20 rounded-xl p-4">
+                                    <p className="text-sm text-green-100 mb-1">Unsold</p>
+                                    <p className="text-2xl font-bold text-red-300">{progress.unsold}</p>
+                        </div>
+                    </div>
+                                                    </div>
+
+                        {/* Action Section */}
+                        <div className="flex-shrink-0 w-full md:w-64 space-y-3">
+                            <button 
+                                onClick={() => selectNextSet()}
+                                className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 rounded-2xl font-bold text-lg shadow-xl transition transform hover:scale-105 flex items-center justify-center gap-2"
+                            >
+                                <span>➡️</span>
+                                <span>Next Set</span>
+                            </button>
+                            <button 
+                                onClick={() => selectNextSet()}
+                                className="w-full px-6 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-xl font-semibold text-sm shadow-lg transition flex items-center justify-center gap-2"
+                            >
+                                <span>📂</span>
+                                <span>Change Set</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // STATE 6: Unsold Set Created
+    const renderUnsoldSetCreated = () => {
+        const unsoldSet = sets && sets.find(s => s.name === "unsold");
+        const unsoldPlayers = unsoldSet ? players.filter(p => p.auctionSet === unsoldSet._id && p.auctionStatus === "idle") : [];
+        const mainSetsCompleted = sets ? sets.filter(s => s.state === "completed" && s.name !== "unsold").length : 0;
+        const totalSold = players ? players.filter(p => p.auctionStatus === "sold").length : 0;
+
+        return (
+            <div className="w-full h-full flex items-center justify-center">
+                <div className="bg-gradient-to-r from-orange-600 to-amber-700 rounded-3xl shadow-2xl p-8 w-full  min-h-full">
+                    <div className="flex flex-col md:flex-row items-center gap-8">
+                        {/* Icon Section */}
+                        <div className="w-40 h-40 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-6xl font-bold shadow-xl flex-shrink-0 animate-pulse">
+                            🔄
+                        </div>
+                        
+                        {/* Info Section */}
+                        <div className="flex-1 text-center md:text-left">
+                            <h1 className="text-5xl font-bold mb-2">Unsold Set Created!</h1>
+                            <p className="text-xl text-orange-100 mb-1">All main sets completed</p>
+                            <p className="text-lg text-orange-200 mb-4">Unsold players have been moved to a new set for re-bidding</p>
+                            
+                            <div className="grid grid-cols-3 gap-4 max-w-md mx-auto md:mx-0">
+                                <div className="bg-white bg-opacity-20 rounded-xl p-4">
+                                    <p className="text-sm text-orange-100 mb-1">Unsold Players</p>
+                                    <p className="text-2xl font-bold text-yellow-300">{unsoldPlayers.length}</p>
+                                </div>
+                                <div className="bg-white bg-opacity-20 rounded-xl p-4">
+                                    <p className="text-sm text-orange-100 mb-1">Sets Completed</p>
+                                    <p className="text-2xl font-bold">{mainSetsCompleted}/{mainSetsCompleted}</p>
+                                </div>
+                                <div className="bg-white bg-opacity-20 rounded-xl p-4">
+                                    <p className="text-sm text-orange-100 mb-1">Already Sold</p>
+                                    <p className="text-2xl font-bold text-green-300">{totalSold}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Action Section */}
+                        <div className="flex-shrink-0 w-full md:w-64 space-y-3">
+                            <button 
+                                onClick={() => {
+                                    if (unsoldSet) {
+                                        handleSetSelection(unsoldSet);
+                                    }
+                                }}
+                                className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 rounded-2xl font-bold text-lg shadow-xl transition transform hover:scale-105 flex items-center justify-center gap-2"
+                            >
+                                <span>🎲</span>
+                                <span>Start Unsold Set</span>
+                            </button>
+                            <button 
+                                className="w-full px-6 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-xl font-semibold text-sm shadow-lg transition flex items-center justify-center gap-2"
+                                onClick={() => setBiddingState('AUCTION_COMPLETE')}
+                            >
+                                <span>✅</span>
+                                <span>Finish Auction</span>
+                            </button>
+                                    </div>
+                                        </div>
+                                        </div>
+                                        </div>
+        );
+    };
+
+    // STATE 7: Auction Completed
+    const renderAuctionCompleted = () => {
+        const totalPlayers = players ? players.length : 0;
+        const totalSold = players ? players.filter(p => p.auctionStatus === "sold").length : 0;
+        const totalUnsold = players ? players.filter(p => p.auctionStatus === "unsold").length : 0;
+
+        return (
+            <div className="w-full h-full flex items-center justify-center">
+                <div className="bg-gradient-to-r from-purple-700 to-indigo-800 rounded-3xl shadow-2xl p-8 w-full min-h-full">
+                    <div className="flex flex-col md:flex-row items-center gap-8">
+                        {/* Icon Section */}
+                        <div className="w-40 h-40 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-6xl font-bold shadow-xl flex-shrink-0">
+                            🏆
+                                    </div>
+                        
+                        {/* Info Section */}
+                        <div className="flex-1 text-center md:text-left">
+                            <h1 className="text-5xl font-bold mb-2">Auction Completed!</h1>
+                            <p className="text-xl text-purple-100 mb-1">All sets have been processed successfully</p>
+                            <p className="text-lg text-purple-200 mb-4">Congratulations on completing the auction!</p>
+                            
+                            <div className="grid grid-cols-3 gap-4 max-w-md mx-auto md:mx-0">
+                                <div className="bg-white bg-opacity-20 rounded-xl p-4">
+                                    <p className="text-sm text-purple-100 mb-1">Total Players</p>
+                                    <p className="text-2xl font-bold">{totalPlayers}</p>
+                                </div>
+                                <div className="bg-white bg-opacity-20 rounded-xl p-4">
+                                    <p className="text-sm text-purple-100 mb-1">Sold</p>
+                                    <p className="text-2xl font-bold text-green-300">{totalSold}</p>
+                                </div>
+                                <div className="bg-white bg-opacity-20 rounded-xl p-4">
+                                    <p className="text-sm text-purple-100 mb-1">Unsold</p>
+                                    <p className="text-2xl font-bold text-red-300">{totalUnsold}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Action Section */}
+                        <div className="flex-shrink-0 w-full md:w-64 space-y-3">
+                            <button 
+                                onClick={() => navigate(`/p/${currUser._id}/t/auction/${auctionId}`)}
+                                className="w-full px-6 py-4 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-2xl font-bold text-lg shadow-xl transition transform hover:scale-105 flex items-center justify-center gap-2"
+                            >
+                                <span>📊</span>
+                                <span>View Results</span>
+                            </button>
+                            <button 
+                                onClick={() => navigate(`/p/${currUser._id}/t/auction/${auctionId}`)}
+                                className="w-full px-6 py-3 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-xl font-semibold text-sm shadow-lg transition flex items-center justify-center gap-2"
+                            >
+                                <span>🏠</span>
+                                <span>Go to Dashboard</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // STATE 3: Active Bidding - Top Section Only
+    const renderActiveBiddingTop = () => {
+        if (!player || !player._id) return renderLoadingState();
+
+        const currentBid = player.bidding && player.bidding.length > 0 
+            ? player.bidding[player.bidding.length - 1] 
+            : null;
+        const currentBidTeam = currentBid ? teams.find(t => t._id === currentBid.team) : null;
+
+        return (
+            <div className="w-full h-full flex items-center justify-center">
+                {/* Current Player Card */}
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl shadow-2xl p-8 w-full min-h-full">
+                    <div className="flex flex-col md:flex-row items-center gap-8">
+                        {/* Player Image/Number */}
+                        <div className="w-40 h-40 bg-white rounded-full flex items-center justify-center text-6xl font-bold text-blue-600 shadow-xl flex-shrink-0">
+                            #{player.jerseyNumber || '?'}
+                        </div>
+                        
+                        {/* Player Info */}
+                        <div className="flex-1 text-center md:text-left">
+                            <div className="flex flex-wrap items-center gap-3 justify-center md:justify-start mb-2">
+                                <h1 className="text-5xl font-bold">{player.name}</h1>
+                                <span className="px-4 py-2 bg-white bg-opacity-20 rounded-xl text-lg font-semibold">
+                                    {player.role || 'Player'}
+                                </span>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4 max-w-md mx-auto md:mx-0 mt-4">
+                                <div className="bg-white bg-opacity-20 rounded-xl p-4">
+                                    <p className="text-sm text-blue-100 mb-1">Base Price</p>
+                                    <p className="text-3xl font-bold">{getTeamBudgetForView(player.basePrice)}</p>
+                                </div>
+                                <div className="bg-yellow-500 rounded-xl p-4 text-black">
+                                    <p className="text-sm text-yellow-900 mb-1">Current Bid</p>
+                                    <p className="text-3xl font-bold">
+                                        {currentBid ? getTeamBudgetForView(currentBid.price) : getTeamBudgetForView(player.basePrice)}
+                                    </p>
+                                    {currentBidTeam && (
+                                        <p className="text-sm text-yellow-900 font-semibold mt-1 flex items-center gap-2">
+                                            <span className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs" 
+                                                style={{backgroundColor: currentBidTeam.color || '#f59e0b'}}>
+                                                {getTeamInitials(currentBidTeam.name)}
+                                            </span>
+                                            {currentBidTeam.name}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Bidding History Sidebar */}
+                        <div className="w-full md:w-64 flex-shrink-0">
+                            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-2xl p-4 max-h-80 overflow-y-auto">
+                                <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                                    <span>📊</span>
+                                    <span>Bidding History</span>
+                                </h3>
+                                <div className="space-y-2">
+                                    {player.bidding && player.bidding.length > 0 ? (
+                                        player.bidding.slice().reverse().map((bid, index) => {
+                                            const bidTeam = teams.find(t => t._id === bid.team);
+                                            const isLatest = index === 0;
+                                            return (
+                                                <div 
+                                                    key={index}
+                                                    className={`rounded-lg p-2 ${isLatest ? 'bg-yellow-500 bg-opacity-20 border-2 border-yellow-500' : 'bg-white bg-opacity-5'}`}
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                                                                style={{backgroundColor: bidTeam?.color || '#6b7280', color: 'white'}}>
+                                                                {getTeamInitials(bidTeam?.name || 'T')}
+                                                            </div>
+                                                            <span className={`text-sm ${isLatest ? 'font-semibold' : ''}`}>
+                                                                {bidTeam?.name || 'Team'}
+                                                            </span>
+                                                        </div>
+                                                        <span className={`${isLatest ? 'font-bold text-yellow-300' : 'text-blue-200'}`}>
+                                                            {getTeamBudgetForView(bid.price)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    ) : (
+                                        <div className="text-center text-blue-200 text-sm py-4">
+                                            No bids yet. Start bidding!
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // STATE 3: Active Bidding (Original - Now Bottom Section)
+    const renderActiveBidding = () => {
+        if (!player || !player._id) return renderLoadingState();
+
+        const currentBid = player.bidding && player.bidding.length > 0 
+            ? player.bidding[player.bidding.length - 1] 
+            : null;
+        const currentBidTeam = currentBid ? teams.find(t => t._id === currentBid.team) : null;
+
+        return (
+            <div className="w-full space-y-6">
+                {/* Current Player Card */}
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl shadow-2xl p-8 mb-6">
+                    <div className="flex flex-col md:flex-row items-center gap-8">
+                        {/* Player Image/Number */}
+                        <div className="w-40 h-40 bg-white rounded-full flex items-center justify-center text-6xl font-bold text-blue-600 shadow-xl flex-shrink-0">
+                            #{player.jerseyNumber || '?'}
+                        </div>
+                        
+                        {/* Player Info */}
+                        <div className="flex-1 text-center md:text-left">
+                            <div className="flex flex-wrap items-center gap-3 justify-center md:justify-start mb-2">
+                                <h1 className="text-5xl font-bold">{player.name}</h1>
+                                <span className="px-4 py-2 bg-white bg-opacity-20 rounded-xl text-lg font-semibold">
+                                    {player.role || 'Player'}
+                                </span>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4 max-w-md mx-auto md:mx-0 mt-4">
+                                <div className="bg-white bg-opacity-20 rounded-xl p-4">
+                                    <p className="text-sm text-blue-100 mb-1">Base Price</p>
+                                    <p className="text-3xl font-bold">{getTeamBudgetForView(player.basePrice)}</p>
+                                </div>
+                                <div className="bg-yellow-500 rounded-xl p-4 text-black">
+                                    <p className="text-sm text-yellow-900 mb-1">Current Bid</p>
+                                    <p className="text-3xl font-bold">
+                                        {currentBid ? getTeamBudgetForView(currentBid.price) : getTeamBudgetForView(player.basePrice)}
+                                    </p>
+                                    {currentBidTeam && (
+                                        <p className="text-sm text-yellow-900 font-semibold mt-1 flex items-center gap-2">
+                                            <span className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs" 
+                                                style={{backgroundColor: currentBidTeam.color || '#f59e0b'}}>
+                                                {getTeamInitials(currentBidTeam.name)}
+                                            </span>
+                                            {currentBidTeam.name}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Bidding History Sidebar */}
+                        <div className="w-full md:w-64 flex-shrink-0">
+                            <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-2xl p-4 max-h-80 overflow-y-auto">
+                                <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                                    <span>📊</span>
+                                    <span>Bidding History</span>
+                                </h3>
+                                <div className="space-y-2">
+                                    {player.bidding && player.bidding.length > 0 ? (
+                                        player.bidding.slice().reverse().map((bid, index) => {
+                                            const bidTeam = teams.find(t => t._id === bid.team);
+                                            const isLatest = index === 0;
+                                            return (
+                                                <div 
+                                                    key={index}
+                                                    className={`rounded-lg p-2 ${isLatest ? 'bg-yellow-500 bg-opacity-20 border-2 border-yellow-500' : 'bg-white bg-opacity-5'}`}
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                                                                style={{backgroundColor: bidTeam?.color || '#6b7280', color: 'white'}}>
+                                                                {getTeamInitials(bidTeam?.name || 'T')}
+                                                            </div>
+                                                            <span className={`text-sm ${isLatest ? 'font-semibold' : ''}`}>
+                                                                {bidTeam?.name || 'Team'}
+                                                            </span>
+                                                        </div>
+                                                        <span className={`${isLatest ? 'font-bold text-yellow-300' : 'text-blue-200'}`}>
+                                                            {getTeamBudgetForView(bid.price)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    ) : (
+                                        <div className="text-center text-blue-200 text-sm py-4">
+                                            No bids yet. Start bidding!
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Team Selection Grid */}
+                <div className="mb-6">
+                    <h2 className="text-2xl font-bold mb-4 text-center">Click Team to Bid (Auto Increment)</h2>
+                    
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3 max-h-96 overflow-y-auto">
+                        {teams && teams.map((team, index) => {
+                            const canBid = canTeamBid(team._id);
+                            const teamPlayers = teamPlayerMap.find(tm => tm.team === team._id);
+                            const playerCount = teamPlayers ? teamPlayers.players.length : 0;
+                            
+                            return (
+                                <div 
+                                    key={index}
+                                    onClick={() => canBid && handleTeamClick(team)}
+                                    className={`bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-3 transition border-2 
+                                        ${canBid ? 'cursor-pointer hover:bg-opacity-20 border-transparent hover:border-blue-400' : 'cursor-not-allowed opacity-50 border-transparent'}`}
+                                >
+                                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg mx-auto mb-2"
+                                        style={{backgroundColor: team.color || '#6b7280'}}>
+                                        {team.logo && team.logo.url ? (
+                                            <img src={getTeamLogo(team)} alt={team.name} className="w-full h-full rounded-full object-cover" />
+                                        ) : (
+                                            getTeamInitials(team.name)
+                                        )}
+                                    </div>
+                                    <h3 className="text-center font-bold text-xs mb-1 truncate">{team.name}</h3>
+                                    <p className="text-center text-xs text-blue-200">{getTeamBudgetForView(team.remainingBudget)}</p>
+                                    <p className="text-center text-xs text-green-300">{playerCount}/{auction.maxTeamMember || 11}</p>
+                                </div>
+                            );
+                        })}
+                        
+                        {/* Unsold Option */}
+                        <div 
+                            onClick={() => handlePlayerSold()}
+                            className="bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-3 cursor-pointer hover:bg-opacity-20 transition border-2 border-transparent hover:border-gray-400"
+                        >
+                            <div className="w-12 h-12 bg-gray-600 rounded-full flex items-center justify-center text-white font-bold text-lg mx-auto mb-2">
+                                ❌
+                        </div>
+                            <h3 className="text-center font-bold text-xs mb-1">Unsold</h3>
+                            <p className="text-center text-xs text-blue-200">No bid</p>
+                    </div>
+                </div>
+            </div>
+
+                {/* Action Buttons */}
+                <div className="grid md:grid-cols-2 gap-4">
+                    <button 
+                        onClick={() => handlePlayerSold()}
+                        className="px-8 py-5 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-2xl font-bold text-2xl shadow-2xl transition transform hover:scale-105 flex items-center justify-center gap-3"
+                    >
+                        <span>✅</span>
+                        <span>SOLD</span>
+                    </button>
+                    <button 
+                        onClick={() => handleBidUndo(player)}
+                        disabled={!player.bidding || player.bidding.length === 0}
+                        className={`px-8 py-5 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 rounded-2xl font-bold text-2xl shadow-2xl transition transform hover:scale-105 flex items-center justify-center gap-3 text-black ${(!player.bidding || player.bidding.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                        <span>↩️</span>
+                        <span>UNDO</span>
+                    </button>
+                </div>
+
+                {/* Set Progress (Bottom) */}
+                <div className="mt-6 bg-white bg-opacity-10 backdrop-blur-sm rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <div>
+                            <p className="text-sm text-blue-200">Current Set</p>
+                            <p className="text-xl font-bold">{currentSet?.name || 'Set'}</p>
+                        </div>
+                    </div>
+                    <div className="mt-3">
+                        {currentSet && currentSet._id && (
+                            <>
+                                <div className="w-full bg-white bg-opacity-20 rounded-full h-3">
+                                    <div 
+                                        className="bg-green-500 h-3 rounded-full transition-all duration-300" 
+                                        style={{width: `${(calculateSetProgress(currentSet).processed / calculateSetProgress(currentSet).total) * 100}%`}}
+                                    ></div>
+                                </div>
+                                <p className="text-sm text-blue-200 mt-2">
+                                    {calculateSetProgress(currentSet).processed}/{calculateSetProgress(currentSet).total} players processed
+                                </p>
+                            </>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className='flex flex-col w-full min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-indigo-900 text-white'>
             {/* Top Bar */}
-            <div className="bg-black bg-opacity-40 backdrop-blur-sm px-4 sm:px-6 lg:px-12 xl:px-20 py-3 shadow-lg flex-shrink-0">
+            <div className="bg-black bg-opacity-40 backdrop-blur-sm px-4 sm:px-6 lg:px-12 xl:px-12 py-3 shadow-lg flex-shrink-0">
                 <div className="w-full flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                     <div className="flex items-center gap-4">
                         <h2 className="font-bold text-xl">{auction?.name || 'Auction'}</h2>
@@ -665,8 +1682,9 @@ export default function AuctionBidding(props) {
                             <span className="hidden md:inline">Sound: {allowMusic ? 'ON' : 'OFF'}</span>
                         </button>
                         <button 
-                            onClick={() => { /* undo logic */ }}
-                            className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black rounded-lg font-bold transition flex items-center gap-2"
+                            onClick={() => handleBidUndo(player)}
+                            disabled={!player || !player.bidding || player.bidding.length === 0}
+                            className={`px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black rounded-lg font-bold transition flex items-center gap-2 ${(!player || !player.bidding || player.bidding.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                             <span>⏪</span>
                             <span className="hidden md:inline">Undo</span>
@@ -683,80 +1701,112 @@ export default function AuctionBidding(props) {
             </div>
             
             {/* Main Content */}
-            <div className='flex-1 flex flex-col px-4 sm:px-6 lg:px-12 xl:px-20 py-4 overflow-auto'>
-                <div className='w-full'>
-
-                <div className='flex flex-col gap-2 h-full max-h-full overflow-auto bg-gray-100 rounded-lg'>
-
-                    <div className={`${"PlayerPannel-1"}   flex flex-col gap-2 w-full overflow-auto `}>
-                        <div className='bg-gray-300 py-3 flex  flex-row justify-between items-center font-medium px-3 normal-case '>
-                            <div className='font-medium'>{(auctionDetails && auctionDetails.currentSet && Object.keys(auctionDetails.currentSet).length > 0 && auctionDetails.currentSet.name) ? (`Current set -  ${auctionDetails.currentSet.name} , Remaining player - ${auctionDetails.remainingPlayerInCurrentSet ? auctionDetails.remainingPlayerInCurrentSet : "0"}`) : ("Please select next set")} </div>
-                            {auctionDetails && auctionDetails.selectSet && <div onClick={() => { selectNextSet() }} className='button cursor-pointer rounded bg-gray-400 px-2 p-1'>
-                                Select next set
-                            </div>}
-                            {auctionDetails && auctionDetails.shouldNext && <div onClick={() => { pickUpRandomPlayer() }} className='button cursor-pointer rounded bg-gray-400 px-2 p-1'>
-                                Pick up random player
-                            </div>}
-
-                            {player && Object.keys(player).length > 0 && <div onClick={() => { confirmPlayerSoldUnsold() }} className='button cursor-pointer rounded bg-gray-400 px-2 p-1'>
-                                {player.bidding.length == 0 ? "Un sold" : "Sold to " + getTeamName(player.bidding[player.bidding.length - 1].team)}
-                            </div>}
-                        </div>
-                        <div className='flex-1 flex flex-col md:flex-row  w-full h-full flex-wrap items-center pt-2 overflow-auto justify-start gap-2 md:justify-center mx-auto'>
-                            {!auctionDetails.shouldNext ? <>
-                                <div className='PlayerProfile flex flex-col w-[100%] md:w-[49%]'>
-                                    {getPlayerCard(player)}
-                                </div>
-                                <div className='PlayerProfile flex flex-col w-[100%] md:w-[49%] max-h-full items-center overflow-auto'>
-                                    {(player.bidding && player.bidding.length > 0) ? <div className='flex max-w-[400px] w-full flex-col gap-[1px] overflow-auto'>
-                                        {getBiddingView()}
-                                    </div> : <div className='normal-case font-medium'>
-                                        Start bidding
-                                    </div>}
-                                </div>
-                            </> : <>
-                                <div className='flex flex-row normal-case font-medium'>Please select the player</div>
-                            </>}
+            <div className='flex-1 flex flex-col px-4 sm:px-6 lg:px-12 xl:px-12 py-6 overflow-auto relative'>
+                {renderMainContent()}
+                {isAPICallInProgress && (
+                    <div className="absolute inset-0 bg-black bg-opacity-40 backdrop-blur-sm rounded-2xl flex items-center justify-center z-50">
+                        <div className="bg-white bg-opacity-20 rounded-xl p-6 text-center shadow-2xl">
+                            <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                            <p className="text-lg font-semibold">Processing...</p>
                         </div>
                     </div>
-                    <div className={`${"TeamPannel-1"}TeamPannel-1  flex flex-col gap-2 w-full overflow-auto py-3`}>
-                        <div className='flex flex-row justify-center flex-wrap bg-gray-200 gap-2 p-2'>
-                            {teams && teams.length && teams.map((team, _index) => {
-                                return (<div key={"teams-" + _index} onClick={() => { handleTeamClick(team) }} className={`flex max-w-[200px] flex-col gap-2 items-center ${canTeamBid(team._id) ? "bg-blue-300 cursor-pointer" : "bg-green-500 cursor-not-allowed"} rounded p-3 `}>
-                                    <div className="w-12 h-12 md:w-24 md:h-24 relative flex flex-col items-center">
-                                        <label className="relative w-full h-full rounded-full overflow-hidden border-2 border-gray-300 cursor-pointer">
-                                            {
-                                                team.logo && team.logo.url ? (
-                                                    <img
-                                                        className="w-full h-full bg-cover bg-center"
-                                                        src={getTeamLogo(team)}
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                                                        {defaultTeamLogo}
-                                                    </div>
-                                                )
-                                            }
-                                        </label>
-                                    </div>
-                                    <div className='flex flex-col gap-1'>
-                                        <div className='text-md font-medium capitalize'>
-                                            {team.name}
-                                        </div>
-                                        <div className='text-xs font-medium'>
-                                            Remaining - {getTeamBudgetForView(team.remainingBudget)}
-                                        </div>
-                                        <div className='text-xs font-medium'>
-                                            Total Players - {getTeamPlayerCount(team)}
-                                        </div>
-                                    </div>
-                                </div>)
-                            })}
-                        </div>
-                    </div>
-                </div>
-                </div>
+                )}
             </div>
+
+            {/* Set Selection Modal */}
+            <AuctionModal
+                isOpen={showSetSelectionModal}
+                onClose={() => setShowSetSelectionModal(false)}
+                title="Select Set"
+                icon="📂"
+                size="lg"
+            >
+                <div className="space-y-4">
+                    <p className="text-gray-600 text-center mb-6">
+                        Choose a set to start or continue bidding
+                    </p>
+
+                    {/* Available Sets Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-96 overflow-y-auto p-1">
+                        {sets && sets.filter(s => s.state === "idle").map((set, index) => {
+                            const setProgress = calculateSetProgress(set);
+                            const progressPercent = setProgress.total > 0 
+                                ? ((setProgress.processed / setProgress.total) * 100).toFixed(0) 
+                                : 0;
+                            const isDisabled = isAPICallInProgress;
+
+                            return (
+                                <div
+                                    key={index}
+                                    onClick={() => !isDisabled && handleSetSelection(set)}
+                                    className={`bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4 transition-all shadow-md 
+                                        ${isDisabled 
+                                            ? 'opacity-50 cursor-not-allowed' 
+                                            : 'hover:from-blue-100 hover:to-indigo-100 hover:border-blue-500 cursor-pointer hover:shadow-xl'}`}
+                                >
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div className="flex-1">
+                                            <h3 className="text-lg font-bold text-gray-800 mb-1">{set.name}</h3>
+                                            <p className="text-sm text-gray-600">Order: {set.order || index + 1}</p>
+                                        </div>
+                                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
+                                            {index + 1}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-3 gap-2 mb-3">
+                                        <div className="bg-white rounded-lg p-2 text-center">
+                                            <p className="text-xs text-gray-500">Total</p>
+                                            <p className="text-lg font-bold text-gray-800">{setProgress.total}</p>
+                                        </div>
+                                        <div className="bg-white rounded-lg p-2 text-center">
+                                            <p className="text-xs text-gray-500">Remaining</p>
+                                            <p className="text-lg font-bold text-blue-600">{setProgress.remaining}</p>
+                                        </div>
+                                        <div className="bg-white rounded-lg p-2 text-center">
+                                            <p className="text-xs text-gray-500">Processed</p>
+                                            <p className="text-lg font-bold text-green-600">{setProgress.processed}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Progress Bar */}
+                                    {setProgress.total > 0 && (
+                                        <div className="w-full bg-gray-200 rounded-full h-2">
+                                            <div 
+                                                className="bg-gradient-to-r from-green-500 to-emerald-600 h-2 rounded-full transition-all duration-300" 
+                                                style={{width: `${progressPercent}%`}}
+                                            ></div>
+                                        </div>
+                                    )}
+
+                                    <div className="mt-3 flex items-center justify-center gap-2">
+                                        <span className="text-sm font-semibold text-blue-600">Click to Start →</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Empty State */}
+                    {sets && sets.filter(s => s.state === "idle").length === 0 && (
+                        <div className="text-center py-12">
+                            <div className="text-6xl mb-4">🎯</div>
+                            <h3 className="text-xl font-bold text-gray-800 mb-2">No Sets Available</h3>
+                            <p className="text-gray-600">All sets have been started or completed.</p>
+                        </div>
+                    )}
+
+                    {/* Cancel Button */}
+                    <div className="flex justify-center pt-4 border-t">
+                        <button
+                            onClick={() => setShowSetSelectionModal(false)}
+                            className="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-lg transition"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </AuctionModal>
         </div>
     )
 }

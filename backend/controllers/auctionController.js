@@ -68,10 +68,10 @@ exports.auctionLogin = async function (req, res) {
   try {
     const { name, organizer, password } = req.body;
     const user = req.user;
-    
+
     // For backward compatibility: accept organizer as string (username) or use authenticated user
     let query = { name: name };
-    
+
     if (organizer) {
       // If organizer is provided as username, try to find by username first
       const organizerUser = await UserModel.findOne({ username: organizer });
@@ -85,7 +85,7 @@ exports.auctionLogin = async function (req, res) {
       // Use authenticated user's ID
       query.organizer = user._id;
     }
-    
+
     let auction = await AuctionModel.findOne(query);
     if (!auction) {
       return res
@@ -303,14 +303,14 @@ exports.createNewAuction = async function (req, res) {
   try {
     const { name, password } = req.body;
     const user = req.user;
-    
+
     if (!user) {
       return res.status(401).json({
         success: false,
         message: "Authentication required",
       });
     }
-    
+
     // Check if auction with same name exists for this organizer
     let auction = await AuctionModel.findOne({ name: name, organizer: user._id.toString() });
     if (auction) {
@@ -382,6 +382,14 @@ exports.updateNewAuctionSet = async (req, res) => {
       });
     }
 
+    // First, set all currently running sets to idle (only ONE set can be running at a time)
+    let updatedSet2 = await AuctionSetModel.updateMany(
+      { auction: auction._id, state: "running" },
+      { state: "idle" },
+      { upsert: false }
+    );
+
+    // Then, update the selected set to the new state
     let updatedSet = await AuctionSetModel.updateOne({ _id: set._id }, set, { upsert: false });
     let sets = await AuctionSetModel.find({ auction: auction._id });
 
@@ -403,10 +411,32 @@ exports.updateNewAuctionSet = async (req, res) => {
       }
     }
 
+    // Fetch full auction data (same as getAuctionDetails)
+    let auctionData = await AuctionModel.findOne({ _id: auction._id });
+    if (!auctionData) {
+      return res.status(400).json({
+        success: false,
+        message: "Auction not found",
+      });
+    }
+
+    let teams = await AuctionTeamModel.find({ auction: auction._id });
+    let allPlayers = await AuctionPlayerModel.find({ auction: auction._id });
+    let allSets = await AuctionSetModel.find({ auction: auction._id });
+    
+    // Remove password from auction object
+    auctionData.password = undefined;
+
     return res.status(200).json({
       success: true,
       message: "Set is updated to " + set.state,
-      auction: updatedSet
+      auction: updatedSet, // Backward compatible
+      auctionData: { // NEW: Full auction data
+        auction: auctionData,
+        teams: teams,
+        players: allPlayers,
+        sets: allSets,
+      }
     });
 
   } catch (e) {
@@ -607,6 +637,18 @@ exports.updateNewAuctionPlayer = async (req, res) => {
         message: "Player is required",
       });
     }
+
+    // Get auctionId from the first player to fetch full auction data
+    const firstPlayer = await AuctionPlayerModel.findById(players[0]._id);
+    if (!firstPlayer) {
+      return res.status(400).json({
+        success: false,
+        message: "Player not found",
+      });
+    }
+    const auctionId = firstPlayer.auction;
+
+    // Update players
     for (let i = 0; i < players.length; i++) {
       let player = players[i];
       try {
@@ -622,17 +664,36 @@ exports.updateNewAuctionPlayer = async (req, res) => {
         } else {
           res.status(500).json({
             success: false,
-            message: "internal server error : " + e,
+            message: "internal server error : " + error,
           });
         }
       }
     }
 
-
-    return res.status(200).json({
-      success: true,
-      message: "Player Updated",
-    });
+    let auction = await AuctionModel.findOne({ _id: auctionId });
+    if (auction) {
+      let teams = await AuctionTeamModel.find({ auction: auctionId });
+      let players = await AuctionPlayerModel.find({ auction: auctionId });
+      let sets = await AuctionSetModel.find({ auction: auctionId });
+      auction.password = undefined;
+      // Fetch full auction data (same as getAuctionDetails)
+      return res.status(200).json({
+        success: true,
+        message: "Player Updated",
+        result: players, // Backward compatible - return updated players
+        auctionData: { // NEW: Full auction data
+          auction: auction,
+          teams: teams,
+          players: players,
+          sets: sets,
+        }
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Auction details not found",
+      });
+    }
 
   } catch (e) {
     res.status(500).json({
