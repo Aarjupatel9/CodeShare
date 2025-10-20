@@ -13,14 +13,20 @@ export default function AuctionSettings({
         e.preventDefault();
         const payload = {
             _id: auction._id,
+            name: auctionEditable.name,
             maxTeamMember: auctionEditable.maxTeamMember,
             minTeamMember: auctionEditable.minTeamMember,
             budgetPerTeam: auctionEditable.budgetPerTeam,
             auctionLiveEnabled: auctionEditable.auctionLiveEnabled
         };
         
+        if (!payload.name || payload.name.trim() === '') {
+            toast.error("⚠️ Auction name is required", { duration: 3000 });
+            return;
+        }
+        
         if (isNaN(payload.budgetPerTeam) || isNaN(payload.minTeamMember) || isNaN(payload.maxTeamMember)) {
-            toast.error("Please enter valid numbers", { duration: 3000 });
+            toast.error("⚠️ Please enter valid numbers", { duration: 3000 });
             return;
         }
         
@@ -48,6 +54,28 @@ export default function AuctionSettings({
 
             {/* Settings Grid */}
             <div className="grid md:grid-cols-2 gap-6 mb-8">
+                {/* Auction Name */}
+                <div className="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-xl p-6 border border-yellow-100 md:col-span-2">
+                    <label htmlFor="auctionName" className="block text-sm font-semibold text-gray-700 mb-2 text-left">
+                        🏆 Auction Name
+                    </label>
+                    <input
+                        id="auctionName"
+                        type="text"
+                        placeholder="e.g., IPL 2025 Auction"
+                        value={auctionEditable.name || ''}
+                        className="w-full px-4 py-3 border-2 border-yellow-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-lg font-semibold"
+                        onChange={(e) => {
+                            setAuctionEditable((old) => {
+                                old = structuredClone(old);
+                                old.name = e.target.value;
+                                return old;
+                            });
+                        }}
+                    />
+                    <p className="text-xs text-gray-600 mt-2">The display name for your auction</p>
+                </div>
+
                 {/* Budget per Team */}
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
                     <label htmlFor="budgetPerTeam" className="block text-sm font-semibold text-gray-700 mb-2 text-left">

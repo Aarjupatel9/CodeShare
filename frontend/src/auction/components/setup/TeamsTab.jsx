@@ -4,10 +4,25 @@ import { getTeamBudgetForView } from '../../Utility';
 export default function TeamsTab({ 
     teams, 
     playersCopy, 
-    addTeam, 
+    addTeam,
+    editTeam,
     handleImageUpload, 
     handleTeamPermenentRemove 
 }) {
+    // Fix team logo URL (use cached version from database)
+    const getTeamLogo = (team) => {
+        if (!team || !team.logo || !team.logo.url) return null;
+        
+        try {
+            const url = new URL(team.logo.url);
+            const originalHostname = url.hostname;
+            const correctedHostname = originalHostname.replace(`${team.logo.bucket}.`, "");
+            return `https://${correctedHostname}/${team.logo.bucket}/${team.logo.key}`;
+        } catch (error) {
+            console.error("Error processing logo URL:", error);
+            return team.logo.url; // Fallback to original URL
+        }
+    };
     return (
         <div>
             {/* Action Buttons */}
@@ -52,9 +67,10 @@ export default function TeamsTab({
                                 {/* Team Logo */}
                                 <label className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-gray-300 cursor-pointer flex-shrink-0">
                                     {team.logo && team.logo.url ? (
-                                        <div
-                                            className="w-full h-full bg-cover bg-center"
-                                            style={{ backgroundImage: `url(${team.logo.url})` }}
+                                        <img 
+                                            src={getTeamLogo(team)} 
+                                            alt={team.name}
+                                            className="w-full h-full object-cover"
                                         />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white font-bold text-xl">
@@ -81,6 +97,15 @@ export default function TeamsTab({
                                 
                                 {/* Action Buttons */}
                                 <div className="flex items-center gap-2">
+                                    <button 
+                                        onClick={() => { editTeam(team) }}
+                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                                        title="Edit team"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                        </svg>
+                                    </button>
                                     <button 
                                         onClick={() => { handleTeamPermenentRemove(team) }}
                                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"

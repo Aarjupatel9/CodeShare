@@ -186,7 +186,7 @@ export default function AuctionDashboard(props) {
                                     </span>
                                 )}
                             </div>
-                            <p className="text-gray-600">Organizer: {currUser?.username || 'You'} • Created: {auction?.createdAt ? new Date(auction.createdAt).toLocaleDateString() : '-'}</p>
+                            <p className="text-gray-600 text-left">Organizer: {currUser?.username || '-'} • Created: {auction?.createdAt ? new Date(auction.createdAt).toLocaleDateString() : '-'}</p>
                         </div>
                         <button 
                             onClick={() => {

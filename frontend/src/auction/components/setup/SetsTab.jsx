@@ -29,18 +29,23 @@ export default function SetsTab({ sets, playersCopy, createNewAuctionSet, handle
             ) : (
                 <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-2">
                     {sets.map((set, index) => {
-                        // Calculate player counts for this set
+                        // Calculate player counts for this set (INCLUDING unsold)
                         const setPlayers = playersCopy.filter(p => p.auctionSet === set._id);
                         const totalPlayers = setPlayers.length;
-                        const completedPlayers = setPlayers.filter(p => p.auctionStatus === 'sold').length;
+                        const soldPlayers = setPlayers.filter(p => p.auctionStatus === 'sold').length;
+                        const unsoldPlayers = setPlayers.filter(p => p.auctionStatus === 'unsold').length;
+                        const completedPlayers = soldPlayers + unsoldPlayers; // Both sold and unsold are processed
                         const pendingPlayers = totalPlayers - completedPlayers;
                         const progressPercent = totalPlayers > 0 ? Math.round((completedPlayers / totalPlayers) * 100) : 0;
                         
-                        // Determine status badge
+                        // Determine status badge (with completed state)
+                        const isCompleted = set.state === 'completed' || (totalPlayers > 0 && pendingPlayers === 0);
                         const isActive = set.state === 'active' || set.state === 'running';
-                        const statusBadge = isActive 
-                            ? { bg: 'bg-green-100', text: 'text-green-700', label: 'Active', icon: '✅' }
-                            : { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Pending', icon: '⏳' };
+                        const statusBadge = isCompleted
+                            ? { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Completed', icon: '🎉' }
+                            : isActive 
+                                ? { bg: 'bg-green-100', text: 'text-green-700', label: 'Active', icon: '✅' }
+                                : { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Pending', icon: '⏳' };
 
                         return (
                             <div key={set._id || index} className={`bg-white rounded-xl p-5 ${isActive ? 'border-2 border-green-500' : 'border border-gray-200'}`}>
@@ -67,7 +72,8 @@ export default function SetsTab({ sets, playersCopy, createNewAuctionSet, handle
                                 
                                 <div className="flex items-center gap-6 text-sm text-gray-600 mb-3">
                                     <span>🎯 {totalPlayers} Players</span>
-                                    <span>✅ {completedPlayers} Completed</span>
+                                    <span>✅ {soldPlayers} Sold</span>
+                                    <span>❌ {unsoldPlayers} Unsold</span>
                                     <span>⏳ {pendingPlayers} Pending</span>
                                 </div>
                                 

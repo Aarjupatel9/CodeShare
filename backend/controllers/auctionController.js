@@ -491,6 +491,68 @@ exports.createNewAuctionTeam = async (req, res) => {
     });
   }
 };
+
+exports.updateNewAuctionTeam = async (req, res) => {
+  try {
+    const { team } = req.body;
+    if (!team || !team._id) {
+      return res.status(200).json({
+        success: false,
+        message: "Team ID is required",
+      });
+    }
+
+    // Check if another team with the same name exists in the same auction
+    const existingTeam = await AuctionTeamModel.findById(team._id);
+    if (!existingTeam) {
+      return res.status(404).json({
+        success: false,
+        message: "Team not found",
+      });
+    }
+
+    // If name is being changed, check for duplicates
+    if (team.name && team.name !== existingTeam.name) {
+      const duplicateTeam = await AuctionTeamModel.findOne({ 
+        name: team.name, 
+        auction: existingTeam.auction,
+        _id: { $ne: team._id } 
+      });
+      
+      if (duplicateTeam) {
+        return res.status(200).json({
+          success: false,
+          message: "Team with this name already exists in this auction",
+        });
+      }
+    }
+
+    // Update team fields
+    const updateData = {};
+    if (team.name) updateData.name = team.name;
+    if (team.owner !== undefined) updateData.owner = team.owner;
+    if (team.budget) updateData.budget = team.budget;
+
+    const updatedTeam = await AuctionTeamModel.findByIdAndUpdate(
+      team._id, 
+      updateData, 
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Team updated successfully",
+      result: updatedTeam,
+    });
+
+  } catch (e) {
+    res.status(500).json({
+      success: false,
+      message: "internal server error : " + e,
+    });
+  }
+};
+
 exports.removeNewAuctionTeam = async (req, res) => {
   try {
     const { team } = req.body;

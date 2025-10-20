@@ -45,6 +45,7 @@ export default function AuctionSetup(props) {
     // Modal states
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [showAddTeamModal, setShowAddTeamModal] = useState(false);
+    const [showEditTeamModal, setShowEditTeamModal] = useState(false);
     const [showAssignTeamModal, setShowAssignTeamModal] = useState(false);
     const [showEditPriceModal, setShowEditPriceModal] = useState(false);
     const [showAssignSetModal, setShowAssignSetModal] = useState(false);
@@ -396,6 +397,17 @@ export default function AuctionSetup(props) {
         setShowAddTeamModal(true);
     }
 
+    const editTeam = (team) => {
+        // Populate form with existing team data
+        setTeamFormData({ 
+            _id: team._id,
+            name: team.name, 
+            owner: team.owner || '', 
+            budget: auction?.budgetPerTeam || team.budget || '' 
+        });
+        setShowEditTeamModal(true);
+    }
+
     const handleAddTeamSubmit = (e) => {
         e.preventDefault();
         if (teamFormData.name.length < 1) {
@@ -412,6 +424,35 @@ export default function AuctionSetup(props) {
             budget: teamFormData.budget || auction.budgetPerTeam 
         });
         setShowAddTeamModal(false);
+    }
+
+    const handleEditTeamSubmit = (e) => {
+        e.preventDefault();
+        if (!teamFormData.name || teamFormData.name.trim().length < 1) {
+            toast.error("⚠️ Please enter team name", { duration: 2000 });
+            return;
+        }
+        if (!teamFormData.owner || teamFormData.owner.trim().length < 1) {
+            toast.error("⚠️ Please enter team owner name", { duration: 2000 });
+            return;
+        }
+        
+        AuctionService.updateAuctionTeam({ 
+            team: {
+                _id: teamFormData._id,
+                name: teamFormData.name,
+                owner: teamFormData.owner,
+                budget: teamFormData.budget
+            }
+        }).then((res) => {
+            toast.success("✅ Team updated successfully!", { duration: 3000 });
+            setTeamFormData({ name: '', owner: '', budget: '' });
+            setShowEditTeamModal(false);
+            getAuctionData();
+        }).catch((error) => {
+            console.error(error);
+            toast.error(`⚠️ Error updating team: ${error.toString()}`, { duration: 3000 });
+        });
     }
 
     const addNewTeam = (data) => {
@@ -607,6 +648,7 @@ export default function AuctionSetup(props) {
                                         teams={teams}
                                         playersCopy={playersCopy}
                                         addTeam={addTeam}
+                                        editTeam={editTeam}
                                         handleImageUpload={handleImageUpload}
                                         handleTeamPermenentRemove={handleTeamPermenentRemove}
                                     />
@@ -812,6 +854,78 @@ export default function AuctionSetup(props) {
                             className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-bold transition shadow-lg"
                         >
                             Create Team
+                        </button>
+                    </div>
+                </form>
+            </AuctionModal>
+
+            {/* Edit Team Modal */}
+            <AuctionModal
+                isOpen={showEditTeamModal}
+                onClose={() => setShowEditTeamModal(false)}
+                title="Edit Team"
+                icon="✏️"
+                size="md"
+                headerGradient="from-blue-600 to-indigo-600"
+            >
+                <form onSubmit={handleEditTeamSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2 text-left">
+                            Team Name *
+                        </label>
+                        <input
+                            type="text"
+                            value={teamFormData.name}
+                            onChange={(e) => setTeamFormData({ ...teamFormData, name: e.target.value })}
+                            placeholder="e.g., Royal Challengers"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2 text-left">
+                            Team Owner *
+                        </label>
+                        <input
+                            type="text"
+                            value={teamFormData.owner}
+                            onChange={(e) => setTeamFormData({ ...teamFormData, owner: e.target.value })}
+                            placeholder="e.g., Virat Kohli"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2 text-left">
+                            Team Budget
+                        </label>
+                        <input
+                            type="number"
+                            value={teamFormData.budget}
+                            onChange={(e) => setTeamFormData({ ...teamFormData, budget: e.target.value })}
+                            placeholder="e.g., 100000000"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                        <p className="text-xs text-gray-600 mt-1">
+                            Leave blank to use auction default budget
+                        </p>
+                    </div>
+
+                    <div className="flex gap-3 mt-6">
+                        <button
+                            type="button"
+                            onClick={() => setShowEditTeamModal(false)}
+                            className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg font-medium transition"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-bold transition shadow-lg"
+                        >
+                            Update Team
                         </button>
                     </div>
                 </form>
