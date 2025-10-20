@@ -1,52 +1,35 @@
-import React, { useEffect, useContext, useState } from 'react';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import AuctionService from '../services/auctionService';
 import auctionApi from '../services/api/auctionApi';
 import toast from 'react-hot-toast';
-import * as xlsx from 'xlsx';
 import { io } from "socket.io-client";
-import { backArrowIcon, downArrowIcon } from '../assets/svgs';
-import AuctionTeamView from './AuctionTeamView';
+import { getTeamLogoUrl } from './utils/assetUtils';
+import { getBackendSocketUrl } from '../hooks/useConfig';
 
-var SOCKET_ADDRESS = process.env.REACT_APP_SOCKET_ADDRESS;
-var defaultViewSelection = { liveBidding: false, team: false, playerDetails: false };
-
-const requiredPlayerColumnForDisplay = ["playerNumber", "name", "team", "auctionStatus", "basePrice", "soldPrice", "auctionSet", "role", "bowlingHand", "bowlingType", "battingHand", "battingPossition", "battingType", "commnets"];
-const filterFields = ["auctionSet", "team", "auctionStatus"];
-
-export default function AuctionLiveView(props) {
+export default function AuctionLiveView() {
     const [auction, setAuction] = useState({});
     const [sets, setSets] = useState([]);
     const [teams, setTeams] = useState([]);
     const [players, setPlayers] = useState([]);
-    const [playersCopy, setPlayersCopy] = useState([]);
-
     const [currentPlayer, setCurrentPlayer] = useState({});
-    const [teamPlayerMap, setTeamPlayerMap] = useState([]);
-    const [currentTeamPlayerMap, setCurrentTeamPlayerMap] = useState(null);
     const [isLinkValid, setIsLinkValid] = useState(false);
     const [socket, setSocket] = useState(null);
-    const [view, setView] = useState({ ...defaultViewSelection, liveBidding: true });
-    const [selectedPlayer, setSelectedPlayer] = useState(null);
-    const [setPlayerMap, setSetPlayerMap] = useState([]);
     
-    // Viewer count (mock for now, TODO: integrate with WebSocket)
+    // Live stats
     const [viewerCount, setViewerCount] = useState(0);
+    const [recentSoldPlayers, setRecentSoldPlayers] = useState([]);
+    const [leaderboardData, setLeaderboardData] = useState([]);
+    const [teamPlayerMap, setTeamPlayerMap] = useState([]);
     
-    // Recent sold players and leaderboard from API
-    const [recentSoldFromAPI, setRecentSoldFromAPI] = useState([]);
-    const [leaderboardFromAPI, setLeaderboardFromAPI] = useState([]);
-
-    const [playerListFilters, setPlayerListFilters] = useState({
-        auctionStatus: [],
-        team: [],
-        auctionSet: []
+    // Collapsible states
+    const [expandedStats, setExpandedStats] = useState({
+        leaderboard: false,
+        recent: false,
+        stats: false
     });
-    const [selectedPlayerListFilters, setSelectedPlayerListFilters] = useState({
-        auctionStatus: null,
-        team: null,
-        auctionSet: null
-    });
+    const [expandedTeams, setExpandedTeams] = useState({});
+    const [showAllPlayers, setShowAllPlayers] = useState({}); // Track which teams show all players
 
     const { auctionId } = useParams();
     const navigate = useNavigate();
@@ -58,20 +41,17 @@ export default function AuctionLiveView(props) {
     
     const fetchLiveData = async () => {
         try {
-            // Fetch recent sold players
             const recentRes = await auctionApi.getRecentSoldPlayers(auctionId, 10);
             if (recentRes.success) {
-                setRecentSoldFromAPI(recentRes.data);
+                setRecentSoldPlayers(recentRes.data);
             }
             
-            // Fetch leaderboard
             const leaderRes = await auctionApi.getAuctionLeaderboard(auctionId);
             if (leaderRes.success) {
-                setLeaderboardFromAPI(leaderRes.data);
+                setLeaderboardData(leaderRes.data);
             }
         } catch (error) {
             console.error('Error fetching live data:', error);
-            // Silently fail for public view
         }
     };
 
@@ -89,429 +69,602 @@ export default function AuctionLiveView(props) {
     }, [isLinkValid]);
 
     function createAuctionSocket() {
+        const SOCKET_ADDRESS = getBackendSocketUrl();
         const socket = new io(SOCKET_ADDRESS, {
             query: { slug: "auction-" + auctionId },
-            path: "/auction/", // Custom path for Socket.IO
+            path: "/auction/",
         });
 
         socket.on("playerBiddingUpdate", (player) => {
             setCurrentPlayer(player);
         });
+        
         socket.on("playerSoldUpdate", (message) => {
             toast.success(message);
-            // Refresh live data when a player is sold
             fetchLiveData();
+            getAuctionData(); // Refresh team data
         });
         
-        // Viewer count tracking (TODO: Implement when backend WebSocket is ready)
-        // socket.emit('joinLiveView', auctionId);
-        // socket.on('viewerCount', (count) => {
-        //     setViewerCount(count);
-        // });
-        
-        // Mock viewer count for demo
+        // Mock viewer count
         setViewerCount(Math.floor(Math.random() * 150) + 20);
-
         setSocket(socket);
     }
-    useEffect(() => {
-        console.log("selectedPlayerListFilters", selectedPlayerListFilters)
-        var auctionStatus = selectedPlayerListFilters.auctionStatus
-        var team = selectedPlayerListFilters.team
-        var auctionSet = selectedPlayerListFilters.auctionSet
-
-        if (playersCopy && playersCopy.length > 0) {
-            let allPlayers = structuredClone(playersCopy);
-            allPlayers.sort((p1, p2) => p1.playerNumber - p2.playerNumber);
-            let filterdPlayers = allPlayers.filter((p) => {
-                let shouldDisplay = true;
-                if (auctionStatus) {
-                    shouldDisplay = (shouldDisplay && (p.auctionStatus == auctionStatus));
-                }
-                if (team) {
-                    shouldDisplay = (shouldDisplay && (p.team == team));
-                }
-                if (auctionSet) {
-                    shouldDisplay = (shouldDisplay && p.auctionSet == auctionSet);
-                }
-                return shouldDisplay;
-            });
-            setPlayers(filterdPlayers);
-        }
-    }, [selectedPlayerListFilters])
 
     const getAuctionData = () => {
         AuctionService.getPublicAuctionDetails({ auctionId: auctionId }, true).then((res) => {
-            if (res.auction) {
-                setAuction(res.auction);
-            }
-            if (res.teams) {
-                setTeams(res.teams);
-            }
+            if (res.auction) setAuction(res.auction);
+            if (res.teams) setTeams(res.teams);
             if (res.players) {
-                var statusUniqueValues = new Set();
-
-                const updatedPlayers = res.players.map(element => {
-                    statusUniqueValues.add(element.auctionStatus);
-                    element.isSelected = false;
-                    return element;
-                });
-                const auctionStatus = [];
-                statusUniqueValues.forEach((t) => {
-                    auctionStatus.push({ value: t, displayValue: t });
-                });
-                const team = res.teams.map((t) => { return { value: t._id, displayValue: t.name } });
-                const auctionSet = res.sets.map((t) => { return { value: t._id, displayValue: t.name } });
-
-                setPlayerListFilters({
-                    auctionStatus: auctionStatus ? auctionStatus : [],
-                    auctionSet: auctionSet ? auctionSet : [],
-                    team: team ? team : []
-                })
-
-                updatedPlayers.sort((p1, p2) => p1.playerNumber - p2.playerNumber);
-                setPlayers(updatedPlayers);
-                setPlayersCopy(updatedPlayers);
+                const sortedPlayers = res.players.sort((p1, p2) => p1.playerNumber - p2.playerNumber);
+                setPlayers(sortedPlayers);
             }
-            if (res.sets) {
-                var data = [];
-                var map = {};
-                res.players.forEach(element => {
-                    if (!map[element.auctionSet]) {
-                        map[element.auctionSet] = [];
-                    }
-                    map[element.auctionSet].push(element);
-                });
-                Object.keys(map).map((key) => {
-                    data.push({ set: key, players: map[key] });
-                })
-                setSetPlayerMap(data);
-                setSets(res.sets)
-            }
+            if (res.sets) setSets(res.sets);
 
+            // Build team-player map
             if (res.teams && res.players) {
-                var data = [];
-                var map = {};
+                const map = {};
                 res.teams.forEach((t) => {
                     map[t._id] = [];
-                })
-                res.players.forEach(element => {
-                    if (!map[element.team]) {
-                        map[element.team] = [];
-                    }
-                    map[element.team].push(element);
                 });
-                Object.keys(map).map((key) => {
-                    if (key != "null") {
-                        map[key] = map[key].sort((a, b) => a.soldNumber - b.soldNumber);
-                        var rb = map[key].reduce((total, p) => {
-                            return total + parseInt(p.soldPrice);
-                        }, 0);
-
-                        rb = getTeamBudget(key, res.teams) - rb;
-                        data.push({ team: key, players: map[key], remainingBudget: rb });
+                res.players.forEach(player => {
+                    if (player.team && map[player.team]) {
+                        map[player.team].push(player);
                     }
-                })
-                setTeamPlayerMap(data);
-            }
-            setIsLinkValid(true);
+                });
 
+                const teamData = [];
+                Object.keys(map).forEach((teamId) => {
+                    const team = res.teams.find(t => t._id === teamId);
+                    if (team) {
+                        const teamPlayers = map[teamId].sort((a, b) => a.soldNumber - b.soldNumber);
+                        const totalSpent = teamPlayers.reduce((sum, p) => sum + parseInt(p.soldPrice || 0), 0);
+                        const remainingBudget = parseInt(team.budget) - totalSpent;
+                        teamData.push({
+                            team: team,
+                            players: teamPlayers,
+                            totalSpent,
+                            remainingBudget,
+                            avgPrice: teamPlayers.length > 0 ? totalSpent / teamPlayers.length : 0
+                        });
+                    }
+                });
+
+                setTeamPlayerMap(teamData);
+            }
+
+            setIsLinkValid(true);
         }).catch((error) => {
             console.error(error);
-            toast.error(error);
+            toast.error("Failed to load auction data");
             setIsLinkValid(false);
-            navigate("/p/t/auction/");
         });
     }
 
     const getTeamName = (teamId) => {
-        var team = teams.find((t) => { return t._id == teamId });
-        if (team) {
-            return team.name;
-        } else {
-            return "null";
-        }
+        console.log(teamId);
+        const team = teams.find((t) => t._id === teamId);
+        return team ? team.name : "Unknown";
     }
 
-    const getTeamBudget = (teamId, teams) => {
-        var team = teams.find((t) => { return t._id == teamId });
-        if (team) {
-            return parseInt(team.budget);
-        } else {
-            return "null";
-        }
-    }
     const getTeamBudgetForView = (number) => {
         number = parseInt(number);
-        return (number / 100000) + " L";
+        return (number / 100000).toFixed(2) + " L";
     }
 
-    const getBiddingView = (player) => {
-        if (player && Object.keys(player).length > 0 && player.bidding.length > 0) {
-            var x = structuredClone(player.bidding);
-            x.reverse();
-            return x.map((b, index) => {
-                return (
-                    <div key={"getBiddingView" + player.name + "_" + index} className={`${index == 0 ? "bg-green-400" : "bg-slate-300"} flex flex-row justify-center  w-full  rounded p-2 `}>
-                        <div >
-                            {getTeamName(b.team)} -  {getTeamBudgetForView(b.price)}
-                        </div>
-                    </div>
-                )
-            })
+    const soldPlayers = players.filter(p => p.auctionStatus === 'sold');
+    const unsoldPlayers = players.filter(p => p.auctionStatus === 'unsold');
+    const pendingPlayers = players.filter(p => p.auctionStatus === 'pending');
+
+    // Get player profile initials
+    const getPlayerInitials = (name) => {
+        if (!name) return "??";
+        const parts = name.split(" ");
+        let initials = parts[0][0];
+        if (parts[1]) initials += parts[1][0];
+        return initials.toUpperCase();
+    }
+
+    // Get team logo/initials
+    const getTeamInitials = (team) => {
+        if (!team || !team.name) return "??";
+        const name = team.name.split(" ");
+        if (name.length >= 2) {
+            return (name[0][0] + name[1][0]).toUpperCase();
         }
+        return (name[0][0] + (name[0][1] || "")).toUpperCase();
     }
 
-    const getPlayerCard = (player) => {
-        if (player && Object.keys(player).length > 0) {
+    // Toggle stats sections (mobile only)
+    const toggleStats = (section) => {
+        setExpandedStats(prev => ({
+            ...prev,
+            [section]: !prev[section]
+        }));
+    };
+
+    // Toggle team expansion
+    const toggleTeam = (teamId) => {
+        setExpandedTeams(prev => ({
+            ...prev,
+            [teamId]: !prev[teamId]
+        }));
+        // Reset show all players when collapsing
+        if (expandedTeams[teamId]) {
+            setShowAllPlayers(prev => ({
+                ...prev,
+                [teamId]: false
+            }));
+        }
+    };
+
+    // Toggle show all players for a team
+    const toggleShowAllPlayers = (teamId) => {
+        setShowAllPlayers(prev => ({
+            ...prev,
+            [teamId]: !prev[teamId]
+        }));
+    };
+
+    // Get team gradient color
+    const getTeamGradient = (index) => {
+        const gradients = [
+            'from-blue-600 to-blue-800',
+            'from-yellow-500 to-yellow-700',
+            'from-red-600 to-red-800',
+            'from-purple-600 to-purple-800',
+            'from-green-600 to-green-800',
+            'from-pink-600 to-pink-800',
+            'from-indigo-600 to-indigo-800',
+            'from-orange-600 to-orange-800',
+            'from-teal-600 to-teal-800',
+            'from-cyan-600 to-cyan-800',
+        ];
+        return gradients[index % gradients.length];
+    };
+
+    // Render Current Bidding Card
+    const renderCurrentBidding = () => {
+        if (!currentPlayer || Object.keys(currentPlayer).length === 0) {
             return (
-                <div className={`flex flex-row justify-center items-center sm:gap-1 md:gap-1 lg:gap-2  rounded sm:p-1 md:p-2 `}>
-
-                    <div className="bg-slate-200 sm:max-w-[200px] md:max-w-[300px] lg:max-w-[300px] rounded-full">
-                        {getProfilePicture(player)}
-                    </div>
-
-                    <div className='flex flex-col sm:text-xs md:text-sm lg:text-lg text-start justify-start items-start '>
-                        <div className='font-medium '>Player No. - {player.playerNumber}</div>
-                        <div className='font-bold'>Name - {player.name}</div>
-                        <div className='font-medium'>Role - {player.role}</div>
-                        {player.bowlingHand && <div className='font-medium'>Bowl  -<span className='lowercase'> {player.bowlingHand} Arm - {player.bowlingType} </span></div>}
-                        {player.battingHand && <div className='font-medium '>Bat - <span className='lowercase'> {player.battingHand} Arm - {player.battingPossition} order {player.battingType}</span> </div>}
-
-                        <div className='font-medium'>Base Price - {getTeamBudgetForView(player.basePrice)}</div>
+                <div className="bg-gradient-to-br from-gray-700 to-gray-800 rounded-2xl p-8 shadow-2xl">
+                    <div className="text-center">
+                        <div className="text-6xl mb-4">⏳</div>
+                        <h3 className="text-2xl font-bold mb-2">Waiting for Next Player</h3>
+                        <p className="text-gray-300">Bidding will resume shortly...</p>
                     </div>
                 </div>
-            )
+            );
         }
-    }
 
-    const getProfilePicture = (player) => {
-        var name = player.name;
-        name = name.split(" ");
-        let sn = name[0][0];
-        if (name[1]) {
-            sn += name[1][0];
-        }
-        return (<div className='flex flex-col justify-center items-center text-6xl  w-[125px] h-[125px] max-w-[125px] max-h-[125px] md:w-[150px] md:h-[150px] md:max-w-[150px] md:max-h-[150px] lg:w-[200px] lg:h-[200px] lg:max-w-[200px] lg:max-h-[200px] capitalize'>{sn}</div>)
-    }
-    const getTeamLogo = (team) => {
-        let name = getTeamName(team);
-        name = name.split(" ");
-        if (name.length >= 2) {
-            return name[0][0] + name[1][0];
-        }
-        return name[0][0] + name[0][1];
-    }
-    const displayTeamBoard = () => {
-        setSelectedPlayer(null)
-        setCurrentTeamPlayerMap(null)
-    }
-    const getSetName = (setId) => {
-        var s = sets.find((s) => { return s._id == setId });
-        if (s) {
-            return s.name;
-        } else {
-            return "undefiend set";
-        }
-    }
+        const latestBid = currentPlayer.bidding && currentPlayer.bidding.length > 0 
+            ? currentPlayer.bidding[currentPlayer.bidding.length - 1] 
+            : null;
 
-    // Calculate sold players for display
-    const soldPlayers = players.filter(p => p.auctionStatus === 'sold');
-    const recentSold = soldPlayers.slice(-5).reverse(); // Last 5 sold, most recent first
+        return (
+            <div className="bg-gradient-to-br from-blue-600 to-purple-700 rounded-2xl shadow-2xl overflow-hidden">
+                {/* Header */}
+                <div className="bg-black bg-opacity-30 px-6 py-4 flex items-center justify-between">
+                    <h2 className="text-2xl font-bold flex items-center gap-2">
+                        <span>🎯</span>
+                        <span>Current Bidding</span>
+                    </h2>
+                    <span className="px-4 py-2 bg-red-600 rounded-full text-sm font-bold flex items-center gap-2 animate-pulse">
+                        <span className="w-2 h-2 bg-white rounded-full"></span>
+                        LIVE
+                    </span>
+                </div>
+
+                {/* Player Info */}
+                <div className="p-6 flex flex-col md:flex-row gap-6">
+                    {/* Left: Player Card */}
+                    <div className="flex-1">
+                        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-xl p-6">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="w-24 h-24 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-3xl font-bold">
+                                    {getPlayerInitials(currentPlayer.name)}
+                                </div>
+                                <div className="flex-1">
+                                    <div className="text-sm text-blue-200 mb-1">Player #{currentPlayer.playerNumber}</div>
+                                    <h3 className="text-2xl font-bold mb-1">{currentPlayer.name}</h3>
+                                    <div className="text-sm text-blue-200">{currentPlayer.role}</div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 text-sm">
+                                {currentPlayer.bowlingHand && (
+                                    <div className="bg-white bg-opacity-10 rounded-lg p-2">
+                                        <div className="text-blue-200 text-xs mb-1">Bowling</div>
+                                        <div className="font-semibold">{currentPlayer.bowlingHand} - {currentPlayer.bowlingType}</div>
+                                    </div>
+                                )}
+                                {currentPlayer.battingHand && (
+                                    <div className="bg-white bg-opacity-10 rounded-lg p-2">
+                                        <div className="text-blue-200 text-xs mb-1">Batting</div>
+                                        <div className="font-semibold">{currentPlayer.battingHand} - {currentPlayer.battingType}</div>
+                                    </div>
+                                )}
+                                <div className="bg-white bg-opacity-10 rounded-lg p-2">
+                                    <div className="text-blue-200 text-xs mb-1">Base Price</div>
+                                    <div className="font-bold text-lg">₹{getTeamBudgetForView(currentPlayer.basePrice)}</div>
+                                </div>
+                                {latestBid && (
+                                    <div className="bg-green-500 bg-opacity-30 rounded-lg p-2 border border-green-400">
+                                        <div className="text-green-200 text-xs mb-1">Current Bid</div>
+                                        <div className="font-bold text-lg text-green-100">₹{getTeamBudgetForView(latestBid.price)}</div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right: Bidding History */}
+                    <div className="flex-1">
+                        <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-xl p-6">
+                            <h4 className="text-lg font-bold mb-4 flex items-center gap-2">
+                                <span>📊</span>
+                                <span>Bidding History</span>
+                            </h4>
+                            {currentPlayer.bidding && currentPlayer.bidding.length > 0 ? (
+                                <div className="space-y-2 max-h-64 overflow-y-auto">
+                                    {[...currentPlayer.bidding].reverse().map((bid, index) => (
+                                        <div 
+                                            key={index}
+                                            className={`p-3 rounded-lg text-left ${
+                                                index === 0 
+                                                    ? 'bg-green-500 bg-opacity-40 border border-green-400' 
+                                                    : 'bg-white bg-opacity-10'
+                                            }`}
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    {index === 0 && <span className="text-lg">👑</span>}
+                                                    <span className="font-semibold">{getTeamName(bid.team)}</span>
+                                                </div>
+                                                <span className="font-bold text-lg">₹{getTeamBudgetForView(bid.price)}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="py-8 text-gray-300">
+                                    <div className="text-center">
+                                        <div className="text-4xl mb-2">⏰</div>
+                                        <p>Bidding not started yet</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     return (
         <div className='flex flex-col w-full min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 text-white'>
             {/* Modern Header */}
             <div className="bg-black bg-opacity-50 backdrop-blur-md px-4 sm:px-6 lg:px-12 xl:px-20 py-4 shadow-2xl sticky top-0 z-50">
-                <div className="w-full">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                        <div className="flex items-center gap-3 flex-wrap">
-                            <h1 className="text-2xl md:text-3xl font-bold">{auction?.name || 'Auction'}</h1>
-                            <span className="px-4 py-2 bg-red-600 rounded-full text-sm font-bold flex items-center gap-2 animate-pulse">
-                                <span className="w-3 h-3 bg-white rounded-full"></span>
-                                LIVE
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm flex-wrap">
-                            <span className="px-3 py-1 bg-white bg-opacity-20 rounded-lg backdrop-blur-sm flex items-center gap-2">
-                                <span>👥</span>
-                                <span className="font-semibold">{viewerCount} watching</span>
-                            </span>
-                        </div>
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <h1 className="text-2xl md:text-3xl font-bold">{auction?.name || 'Auction'}</h1>
+                        <span className="px-4 py-2 bg-red-600 rounded-full text-sm font-bold flex items-center gap-2 animate-pulse">
+                            <span className="w-3 h-3 bg-white rounded-full"></span>
+                            LIVE
+                        </span>
                     </div>
-                    <div className="flex items-center gap-6 text-sm text-blue-200 mt-2">
-                        <span className="flex items-center gap-1">
-                            <span>🎯</span>
-                            <span>{players.length} Players</span>
-                        </span>
-                        <span className="flex items-center gap-1">
-                            <span>✅</span>
-                            <span>{soldPlayers.length} Sold</span>
-                        </span>
-                        <span className="flex items-center gap-1">
-                            <span>⏳</span>
-                            <span>{players.length - soldPlayers.length} Remaining</span>
+                    <div className="flex items-center gap-4 text-sm flex-wrap ">
+                        <span className="px-3 py-1 bg-white bg-opacity-20 rounded-lg backdrop-blur-sm flex items-center gap-2">
+                            <span>👥</span>
+                            <span className="font-semibold">{viewerCount} watching</span>
                         </span>
                     </div>
                 </div>
             </div>
 
-            {/* Content Area */}
-            <div className='flex flex-col w-full max-w-full h-full text-sx gap-4 p-2'>
-                <div className='header flex flex-row flex-wrap justify-start gap-2 font-medium capitalize'>
-                    <div onClick={() => { navigate("/p/t/auction/" + auctionId) }} type="button" className="flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer" >Auction Home</div>
-                    {!view.liveBidding && <div onClick={() => {
-                        setView(() => {
-                            var val = structuredClone(defaultViewSelection);
-                            val.liveBidding = true;
-                            return val;
-                        })
-                    }} type="button" className="normal-case flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer" >
-                        Go to Live Bidding...</div>
-                    }
-                    {!view.team && <div onClick={() => {
-                        setView(() => {
-                            var val = structuredClone(defaultViewSelection);
-                            val.team = true;
-                            return val;
-                        })
-                    }} type="button" className="normal-case flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer" >
-                        Go to Team Details...</div>
-                    }
-                    {!view.playerDetails && <div onClick={() => {
-                        setView(() => {
-                            var val = structuredClone(defaultViewSelection);
-                            val.playerDetails = true;
-                            return val;
-                        })
-                    }} type="button" className="normal-case flex items-center justify-center flex-shrink-0 px-3 py-2 text-sm font-medium text-gray-900 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none hover:bg-gray-200 hover:text-primary-700 focus:z-10 focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:text-white dark:hover:bg-gray-700 cursor-pointer" >
-                        Go to Player Details...</div>
-                    }
+            {/* Content */}
+            <div className='px-2 md:px-6 lg:px-12 xl:px-20 py-6 space-y-6 bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 text-white'>
+                
+                {/* Current Bidding */}
+                {renderCurrentBidding()}
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    {/* Team Leaderboard */}
+                    <div className="bg-gradient-to-br from-yellow-500 to-orange-600 rounded-2xl shadow-2xl overflow-hidden">
+                        <button 
+                            onClick={() => toggleStats('leaderboard')} 
+                            className="w-full bg-black bg-opacity-30 px-6 py-4 hover:bg-opacity-40 transition md:cursor-default"
+                        >
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-xl font-bold flex items-center gap-2">
+                                    <span>🏆</span>
+                                    <span>Team Leaderboard</span>
+                                </h3>
+                                <svg 
+                                    className={`w-6 h-6 transition-transform md:hidden ${expandedStats.leaderboard ? 'rotate-180' : ''}`}
+                                    fill="none" 
+                                    stroke="currentColor" 
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </button>
+                        <div className={`p-6 max-h-96 overflow-y-auto ${expandedStats.leaderboard ? 'block' : 'hidden md:block'}`}>
+                            {leaderboardData.length > 0 ? (
+                                <div className="space-y-3">
+                                    {leaderboardData.map((team, index) => {
+                                        const teamObj = teams.find(t => t._id === team._id);
+                                        return (
+                                            <div 
+                                                key={team._id}
+                                                className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3 text-left"
+                                            >
+                                                <div className={`text-2xl font-bold w-8 ${
+                                                    index === 0 ? 'text-yellow-300' : 
+                                                    index === 1 ? 'text-gray-300' : 
+                                                    index === 2 ? 'text-orange-300' : 
+                                                    'text-white'
+                                                }`}>
+                                                    {index + 1}
+                                                </div>
+                                                <div className="w-12 h-12 bg-white bg-opacity-30 rounded-full flex items-center justify-center font-bold overflow-hidden">
+                                                    {teamObj?.logoUrl ? (
+                                                        <img src={getTeamLogoUrl(teamObj)} alt={team.name} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <span>{getTeamInitials(teamObj)}</span>
+                                                    )}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="font-bold">{team.name}</div>
+                                                    <div className="text-sm text-yellow-100">{team.playerCount} players</div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className="font-bold">₹{getTeamBudgetForView(team.budgetSpent)}</div>
+                                                    <div className="text-sm text-yellow-100">spent</div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <div className="py-8 text-white text-opacity-80">
+                                    <div className="text-center">
+                                        <div className="text-4xl mb-2">📊</div>
+                                        <p>No data yet</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Recent Sales */}
+                    <div className="bg-gradient-to-br from-green-500 to-teal-600 rounded-2xl shadow-2xl overflow-hidden">
+                        <button 
+                            onClick={() => toggleStats('recent')} 
+                            className="w-full bg-black bg-opacity-30 px-6 py-4 hover:bg-opacity-40 transition md:cursor-default"
+                        >
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-xl font-bold flex items-center gap-2">
+                                    <span>✅</span>
+                                    <span>Recent Sales</span>
+                                </h3>
+                                <svg 
+                                    className={`w-6 h-6 transition-transform md:hidden ${expandedStats.recent ? 'rotate-180' : ''}`}
+                                    fill="none" 
+                                    stroke="currentColor" 
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </button>
+                        <div className={`p-6 max-h-96 overflow-y-auto ${expandedStats.recent ? 'block' : 'hidden md:block'}`}>
+                            {recentSoldPlayers.length > 0 ? (
+                                <div className="space-y-3">
+                                    {recentSoldPlayers.map((player, index) => (
+                                        <div 
+                                            key={player._id || index}
+                                            className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-3 text-left"
+                                        >
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div className="font-bold">{player.name}</div>
+                                                <div className="text-xs bg-white bg-opacity-30 px-2 py-1 rounded">
+                                                    #{player.playerNumber}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center justify-between text-sm">
+                                                <div className="text-green-100">{getTeamName(player.team) || 'Unknown Team'}</div>
+                                                <div className="font-bold text-lg">₹{getTeamBudgetForView(player.soldPrice)}</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="py-8 text-white text-opacity-80">
+                                    <div className="text-center">
+                                        <div className="text-4xl mb-2">🎯</div>
+                                        <p>No sales yet</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Auction Stats */}
+                    <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl shadow-2xl overflow-hidden">
+                        <button 
+                            onClick={() => toggleStats('stats')} 
+                            className="w-full bg-black bg-opacity-30 px-6 py-4 hover:bg-opacity-40 transition md:cursor-default"
+                        >
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-xl font-bold flex items-center gap-2">
+                                    <span>📊</span>
+                                    <span>Auction Stats</span>
+                                </h3>
+                                <svg 
+                                    className={`w-6 h-6 transition-transform md:hidden ${expandedStats.stats ? 'rotate-180' : ''}`}
+                                    fill="none" 
+                                    stroke="currentColor" 
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </button>
+                        <div className={`p-6 space-y-4 ${expandedStats.stats ? 'block' : 'hidden md:block'}`}>
+                            <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4">
+                                <div className="text-purple-100 text-sm mb-1">Total Players</div>
+                                <div className="text-3xl font-bold">{players.length}</div>
+                            </div>
+                            <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4">
+                                <div className="text-green-100 text-sm mb-1">Sold</div>
+                                <div className="text-3xl font-bold text-green-200">{soldPlayers.length}</div>
+                            </div>
+                            <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4">
+                                <div className="text-gray-200 text-sm mb-1">Unsold</div>
+                                <div className="text-3xl font-bold text-gray-300">{unsoldPlayers.length}</div>
+                            </div>
+                            <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4">
+                                <div className="text-yellow-100 text-sm mb-1">Pending</div>
+                                <div className="text-3xl font-bold text-yellow-200">{pendingPlayers.length}</div>
+                            </div>
+                            <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4">
+                                <div className="text-blue-100 text-sm mb-1">Teams</div>
+                                <div className="text-3xl font-bold text-blue-200">{teams.length}</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div className='flex flex-col w-full h-full justify-between overflow-auto'>
 
-                    {view.liveBidding && <div className='flex flex-col w-full min-w-full h-full min-h-[300px] items-center  overflow-auto'>
-                        <div className="flex bg-slate-300 w-full flex-col px-4 py-1 space-y-1 lg:flex-row lg:items-center lg:justify-between lg:space-y-0 lg:space-x-4">
-                            <div className="flex items-center flex-1 space-x-4 p-2 font-bold uppercase">
-                                Live Bidding Updates
-                            </div>
-                        </div>
-                        <div className="flex flex-col md:flex-row max-w-full  w-full h-full flex-wrap items-center pt-2 overflow-auto justify-start gap-2 md:justify-center mx-auto" >
-                            {(currentPlayer && Object.keys(currentPlayer).length > 0) ? <>
-                                <div className='flex flex-col w-[100%] md:w-[49%]'>
-                                    {getPlayerCard(currentPlayer)}
-                                </div>
-                                <div className='flex-1 flex flex-col w-[100%] md:w-[49%] max-h-full items-center overflow-auto'>
-                                    <div className='font-medium'> Current Bidding...</div>
-                                    {(currentPlayer.bidding && currentPlayer.bidding.length > 0) ? <div className='flex max-w-[400px] w-full flex-col gap-[1px] overflow-auto'>
-                                        {getBiddingView(currentPlayer)}
-                                    </div> : <div className='normal-case font-medium'>
-                                        Bidding not start yet
-                                    </div>}
-                                </div>
-                            </> : <>
-                                <div className='flex flex-row normal-case font-medium'>Bidding status is not available, please wait for sometime</div>
-                            </>}
-                        </div>
-                    </div>}
+                {/* Teams & Players Section */}
+                <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden">
+                    <div className="bg-black bg-opacity-30 px-6 py-4">
+                        <h2 className="text-2xl font-bold flex items-center gap-2">
+                            <span>👥</span>
+                            <span>Teams & Players</span>
+                        </h2>
+                        <p className="text-sm text-gray-300 mt-1">Click on any team to view their squad</p>
+                    </div>
 
-                    {view.team &&
-                        <AuctionTeamView currentTeamPlayerMap={currentTeamPlayerMap} teamPlayerMap={teamPlayerMap} setCurrentTeamPlayerMap={setCurrentTeamPlayerMap} teams={teams} selectedPlayer={selectedPlayer} setSelectedPlayer={setSelectedPlayer} />
-                    }
-
-                    {view.playerDetails && <section className="bg-gray-100 dark:bg-gray-900 py-3 sm:py-2 w-full h-auto max-h-[100vh] px-4 mx-auto max-w-[100vw] lg:px-12 p-1 overflow-auto">
-                        {/* <div className="px-4 mx-auto max-w-screen-2xl h-full lg:px-12 p-1"> */}
-                        <div className="flex flex-col h-full mx-h-full mx-w-full bg-white shadow-md dark:bg-gray-800 sm:rounded-lg px-3">
-                            <div className="flex flex-col px-4 py-3 space-y-3 lg:flex-row lg:items-center lg:justify-between lg:space-y-0 lg:space-x-4">
-                                <div className="flex items-center flex-1 space-x-4">
-                                    <h5>
-                                        <span className="text-gray-900">{`Players: ${playersCopy.length} || Selected players: ${players.length}`}</span>
-                                    </h5>
-                                </div>
-                            </div>
-
-                            <div className="relative w-full h-full overflow-auto">
-                                <table className="w-full max-w-full text-sm text-left h-full overflow-auto text-gray-500 dark:text-gray-400">
-                                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                                        <tr>
-                                            {requiredPlayerColumnForDisplay.map(key => {
-                                                return (<th key={"filterColumnHeader_" + key} scope="col" className="px-4 py-1"><div className='flex flex-row items-center gap-2'><div>{key}</div><div className='cursor-pointer' onClick={() => { }}> {downArrowIcon}</div></div></th>)
-                                            })}
-                                        </tr>
-
-                                        {/* filters */}
-                                        <tr className='pb-2' >
-                                            {requiredPlayerColumnForDisplay.map(key => {
-                                                if (filterFields.includes(key)) {
-                                                    return (<th key={"filterColumn_" + key} scope="col" className="px-1 py-1 w-full">
-                                                        <div className="relative w-full min-w-12">
-                                                            {/* <span className="absolute inset-y-0 left-3 flex items-center cursor-pointer pointer-events-none">
-                                                                    {getFilterFieldDisplayText(key)}
-                                                                </span> */}
-                                                            <select
-                                                                onChange={(e) => {
-                                                                    var val = e.target.value;
-                                                                    val = val == "" ? null : val;
-                                                                    setSelectedPlayerListFilters((old) => {
-                                                                        old = structuredClone(old);
-                                                                        old[key] = val;
-                                                                        return old;
-                                                                    })
-                                                                }}
-                                                                name={key + "_filter_select_element"}
-                                                                id={key + "_filter_select_element"}
-                                                                defaultValue={""}
-                                                                className=" min-w-24 border border-gray-300 rounded-md py-1 px-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
-                                                            >
-                                                                <option className='min-w-24 text-black' value={""}>-</option>
-
-                                                                {playerListFilters && playerListFilters[key] && playerListFilters[key].length > 0 && playerListFilters[key].map((opt, _index) => {
-                                                                    return (
-                                                                        <option className='flex items-center min-w-24 text-black' key={key + "_filter_select_element_option_" + _index} value={opt.value} >
-                                                                            {/* <input onChange={(e) => { }} checked={true} id="checkbox-table-search-1" type="checkbox" className="bg-gray-100 border-gray-300 rounded text-primary-600 focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600" /> */}
-                                                                            {/* <label htmlFor="checkbox-table-search-1" className="sr-only">{opt.displayValue}</label> */}
-                                                                            {opt.displayValue}
-                                                                        </option>
-                                                                    )
-                                                                })}
-                                                            </select>
+                    <div className="p-2 md:p-6">
+                        <div className="text-left grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
+                            {teamPlayerMap.map((teamData, index) => {
+                                const isExpanded = expandedTeams[teamData.team._id];
+                                const showAll = showAllPlayers[teamData.team._id];
+                                const teamColor = getTeamGradient(index);
+                                const displayPlayers = showAll ? teamData.players : teamData.players.slice(0, 5);
+                                
+                                return (
+                                    <div key={teamData.team._id} className={`bg-gradient-to-br ${teamColor} rounded-xl shadow-lg overflow-hidden self-start`}>
+                                        <button 
+                                            onClick={() => toggleTeam(teamData.team._id)} 
+                                            className="w-full text-left p-4 hover:bg-black hover:bg-opacity-20 transition"
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-12 h-12 bg-white bg-opacity-30 rounded-full flex items-center justify-center font-bold text-lg overflow-hidden">
+                                                        {teamData.team.logoUrl ? (
+                                                            <img src={getTeamLogoUrl(teamData.team)} alt={teamData.team.name} className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            getTeamInitials(teamData.team)
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-bold text-lg">{teamData.team.name}</div>
+                                                        <div className="text-sm opacity-90">{teamData.players.length} players • ₹{getTeamBudgetForView(teamData.totalSpent)} spent</div>
+                                                    </div>
+                                                </div>
+                                                <svg 
+                                                    className={`w-6 h-6 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                                                    fill="none" 
+                                                    stroke="currentColor" 
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                                                </svg>
+                                            </div>
+                                        </button>
+                                        
+                                        {/* Player List */}
+                                        {isExpanded && (
+                                            <div className="bg-black bg-opacity-20">
+                                                <div className="px-4 py-3">
+                                                    <div className="text-xs opacity-90 uppercase font-semibold mb-2">Squad ({teamData.players.length})</div>
+                                                    
+                                                    {teamData.players.length > 0 ? (
+                                                        <>
+                                                            <div className={`space-y-2 ${showAll ? 'max-h-96 overflow-y-auto' : ''}`}>
+                                                                {displayPlayers.map((player) => (
+                                                                    <div key={player._id} className="bg-white bg-opacity-10 rounded-lg p-3 hover:bg-opacity-20 transition">
+                                                                        <div className="flex items-center justify-between">
+                                                                            <div className="flex items-center gap-3">
+                                                                                <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-sm font-bold">
+                                                                                    {getPlayerInitials(player.name)}
+                                                                                </div>
+                                                                                <div>
+                                                                                    <div className="font-semibold">{player.name}</div>
+                                                                                    <div className="text-xs opacity-90">{player.role} • #{player.playerNumber}</div>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="text-right">
+                                                                                <div className="font-bold">₹{getTeamBudgetForView(player.soldPrice)}</div>
+                                                                                <div className="text-xs text-green-300">✅ Sold</div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                            {teamData.players.length > 5 && (
+                                                                <div className="text-center py-2">
+                                                                    <button 
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            toggleShowAllPlayers(teamData.team._id);
+                                                                        }}
+                                                                        className="text-sm opacity-90 hover:opacity-100 hover:underline transition"
+                                                                    >
+                                                                        {showAll 
+                                                                            ? '- Show less' 
+                                                                            : `+ ${teamData.players.length - 5} more players`
+                                                                        }
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        <div className="py-4 opacity-80">
+                                                            <div className="text-center">
+                                                                <div className="text-3xl mb-2">👥</div>
+                                                                <p className="text-sm">No players yet</p>
+                                                            </div>
                                                         </div>
-                                                    </th>)
-                                                } else {
-                                                    return (<th key={"filterColumn_" + key} scope="col" className="px-4 py-1"></th>)
-                                                }
-                                            })}
-                                        </tr>
-                                    </thead>
-                                    <tbody className='overflow-auto'>
-                                        {players.length > 0 && players.map((player, rowIndex) => {
-                                            return (
-                                                <tr key={"player-" + rowIndex} className="border-b dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                                    {requiredPlayerColumnForDisplay.map((key, colIndex) => {
-                                                        if (player.hasOwnProperty(key)) {
-                                                            var value = "";
-                                                            if (key == "auctionSet") { value = getSetName(player[key]) }
-                                                            else if (key == "team") { if (player[key]) { value = getTeamName(player[key]); } else { value = "-"; } }
-                                                            else if (key == "soldPrice" || key == "basePrice") { value = getTeamBudgetForView(player[key]) }
-                                                            else { value = player[key]; }
-                                                            return (
-                                                                <td key={"player-" + rowIndex + "-" + colIndex} className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap dark:text-white">{value}</td>
-                                                            )
-                                                        }
-                                                        return null;
-                                                    })}
+                                                    )}
+                                                </div>
 
-                                                </tr>
-                                            )
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-
+                                                {/* Team Summary */}
+                                                <div className="border-t border-white border-opacity-20 px-4 py-3">
+                                                    <div className="grid grid-cols-2 gap-3 text-sm">
+                                                        <div>
+                                                            <div className="opacity-90 text-xs">Remaining Budget</div>
+                                                            <div className="font-bold">₹{getTeamBudgetForView(teamData.remainingBudget)}</div>
+                                                        </div>
+                                                        <div>
+                                                            <div className="opacity-90 text-xs">Avg Price/Player</div>
+                                                            <div className="font-bold">₹{getTeamBudgetForView(teamData.avgPrice)}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
-                    </section>}
+                    </div>
                 </div>
             </div>
         </div>
-    )
+    );
 }

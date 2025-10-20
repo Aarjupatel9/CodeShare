@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auction Live View - Prototype</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes pulse-ring {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.1); }
+        }
+        .pulse-ring {
+            animation: pulse-ring 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 text-white min-h-screen">
+    
+    <!-- Header -->
+    <div class="bg-black bg-opacity-50 backdrop-blur-md px-4 sm:px-6 lg:px-12 xl:px-20 py-4 shadow-2xl sticky top-0 z-50">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div class="flex items-center gap-3 flex-wrap">
+                <h1 class="text-2xl md:text-3xl font-bold">IPL 2025 Mega Auction</h1>
+                <span class="px-4 py-2 bg-red-600 rounded-full text-sm font-bold flex items-center gap-2 pulse-ring">
+                    <span class="w-3 h-3 bg-white rounded-full"></span>
+                    LIVE
+                </span>
+            </div>
+            <div class="flex items-center gap-4 text-sm flex-wrap">
+                <span class="px-3 py-1 bg-white bg-opacity-20 rounded-lg backdrop-blur-sm flex items-center gap-2">
+                    <span>👥</span>
+                    <span class="font-semibold">1,247 watching</span>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="px-4 sm:px-6 lg:px-12 xl:px-20 py-6 space-y-6">
+        
+        <!-- Current Bidding Card (Hero Section) -->
+        <div class="bg-gradient-to-br from-blue-600 to-purple-700 rounded-2xl shadow-2xl overflow-hidden">
+            <!-- Header -->
+            <div class="bg-black bg-opacity-30 px-6 py-4 flex items-center justify-between">
+                <h2 class="text-2xl font-bold flex items-center gap-2">
+                    <span>🎯</span>
+                    <span>Current Bidding</span>
+                </h2>
+                <span class="px-4 py-2 bg-red-600 rounded-full text-sm font-bold flex items-center gap-2 pulse-ring">
+                    <span class="w-2 h-2 bg-white rounded-full"></span>
+                    LIVE
+                </span>
+            </div>
+
+            <!-- Player Info -->
+            <div class="p-6 flex flex-col md:flex-row gap-6">
+                <!-- Left: Player Card -->
+                <div class="flex-1">
+                    <div class="bg-white bg-opacity-10 backdrop-blur-md rounded-xl p-6">
+                        <div class="flex items-center gap-4 mb-4">
+                            <div class="w-24 h-24 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-3xl font-bold">
+                                VK
+                            </div>
+                            <div class="flex-1">
+                                <div class="text-sm text-blue-200 mb-1">Player #18</div>
+                                <h3 class="text-2xl font-bold mb-1">Virat Kohli</h3>
+                                <div class="text-sm text-blue-200">All Rounder</div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div class="bg-white bg-opacity-10 rounded-lg p-2">
+                                <div class="text-blue-200 text-xs mb-1">Bowling</div>
+                                <div class="font-semibold">Right - Fast</div>
+                            </div>
+                            <div class="bg-white bg-opacity-10 rounded-lg p-2">
+                                <div class="text-blue-200 text-xs mb-1">Batting</div>
+                                <div class="font-semibold">Right - Top Order</div>
+                            </div>
+                            <div class="bg-white bg-opacity-10 rounded-lg p-2">
+                                <div class="text-blue-200 text-xs mb-1">Base Price</div>
+                                <div class="font-bold text-lg">₹2.00 L</div>
+                            </div>
+                            <div class="bg-green-500 bg-opacity-30 rounded-lg p-2 border border-green-400">
+                                <div class="text-green-200 text-xs mb-1">Current Bid</div>
+                                <div class="font-bold text-lg text-green-100">₹15.50 L</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Bidding History -->
+                <div class="flex-1">
+                    <div class="bg-white bg-opacity-10 backdrop-blur-md rounded-xl p-6">
+                        <h4 class="text-lg font-bold mb-4 flex items-center gap-2">
+                            <span>📊</span>
+                            <span>Bidding History</span>
+                        </h4>
+                        <div class="space-y-2 max-h-64 overflow-y-auto">
+                            <!-- Latest Bid (Highlighted) -->
+                            <div class="p-3 rounded-lg bg-green-500 bg-opacity-40 border border-green-400">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-lg">👑</span>
+                                        <span class="font-semibold">Mumbai Indians</span>
+                                    </div>
+                                    <span class="font-bold text-lg">₹15.50 L</span>
+                                </div>
+                            </div>
+                            <!-- Previous Bids -->
+                            <div class="p-3 rounded-lg bg-white bg-opacity-10">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-semibold">Royal Challengers</span>
+                                    <span class="font-bold text-lg">₹15.00 L</span>
+                                </div>
+                            </div>
+                            <div class="p-3 rounded-lg bg-white bg-opacity-10">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-semibold">Chennai Super Kings</span>
+                                    <span class="font-bold text-lg">₹12.50 L</span>
+                                </div>
+                            </div>
+                            <div class="p-3 rounded-lg bg-white bg-opacity-10">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-semibold">Mumbai Indians</span>
+                                    <span class="font-bold text-lg">₹10.00 L</span>
+                                </div>
+                            </div>
+                            <div class="p-3 rounded-lg bg-white bg-opacity-10">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-semibold">Royal Challengers</span>
+                                    <span class="font-bold text-lg">₹8.00 L</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Three Column Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <!-- Team Leaderboard -->
+            <div class="bg-gradient-to-br from-yellow-500 to-orange-600 rounded-2xl shadow-2xl overflow-hidden">
+                <button onclick="toggleStats('leaderboard')" class="w-full bg-black bg-opacity-30 px-6 py-4 hover:bg-opacity-40 transition md:cursor-default">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold flex items-center gap-2">
+                            <span>🏆</span>
+                            <span>Team Leaderboard</span>
+                        </h3>
+                        <svg id="arrow-leaderboard" class="w-6 h-6 transition-transform md:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                </button>
+                <div id="leaderboard" class="p-6 max-h-96 overflow-y-auto space-y-3 hidden md:block">
+                    <!-- 1st Place -->
+                    <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3">
+                        <div class="text-2xl font-bold w-8 text-yellow-300">1</div>
+                        <div class="w-12 h-12 bg-white bg-opacity-30 rounded-full flex items-center justify-center font-bold">
+                            MI
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-bold">Mumbai Indians</div>
+                            <div class="text-sm text-yellow-100">8 players</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold">₹85.50 L</div>
+                            <div class="text-sm text-yellow-100">spent</div>
+                        </div>
+                    </div>
+
+                    <!-- 2nd Place -->
+                    <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3">
+                        <div class="text-2xl font-bold w-8 text-gray-300">2</div>
+                        <div class="w-12 h-12 bg-white bg-opacity-30 rounded-full flex items-center justify-center font-bold">
+                            CSK
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-bold">Chennai Super Kings</div>
+                            <div class="text-sm text-yellow-100">7 players</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold">₹72.00 L</div>
+                            <div class="text-sm text-yellow-100">spent</div>
+                        </div>
+                    </div>
+
+                    <!-- 3rd Place -->
+                    <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3">
+                        <div class="text-2xl font-bold w-8 text-orange-300">3</div>
+                        <div class="w-12 h-12 bg-white bg-opacity-30 rounded-full flex items-center justify-center font-bold">
+                            RCB
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-bold">Royal Challengers</div>
+                            <div class="text-sm text-yellow-100">6 players</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold">₹68.50 L</div>
+                            <div class="text-sm text-yellow-100">spent</div>
+                        </div>
+                    </div>
+
+                    <!-- 4th Place -->
+                    <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3">
+                        <div class="text-2xl font-bold w-8 text-white">4</div>
+                        <div class="w-12 h-12 bg-white bg-opacity-30 rounded-full flex items-center justify-center font-bold">
+                            KKR
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-bold">Kolkata Knight Riders</div>
+                            <div class="text-sm text-yellow-100">5 players</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold">₹55.00 L</div>
+                            <div class="text-sm text-yellow-100">spent</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Sales -->
+            <div class="bg-gradient-to-br from-green-500 to-teal-600 rounded-2xl shadow-2xl overflow-hidden">
+                <button onclick="toggleStats('recent')" class="w-full bg-black bg-opacity-30 px-6 py-4 hover:bg-opacity-40 transition md:cursor-default">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold flex items-center gap-2">
+                            <span>✅</span>
+                            <span>Recent Sales</span>
+                        </h3>
+                        <svg id="arrow-recent" class="w-6 h-6 transition-transform md:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                </button>
+                <div id="recent" class="p-6 max-h-96 overflow-y-auto space-y-3 hidden md:block">
+                    <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="font-bold">Rohit Sharma</div>
+                            <div class="text-xs bg-white bg-opacity-30 px-2 py-1 rounded">#25</div>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <div class="text-green-100">Mumbai Indians</div>
+                            <div class="font-bold text-lg">₹16.00 L</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="font-bold">MS Dhoni</div>
+                            <div class="text-xs bg-white bg-opacity-30 px-2 py-1 rounded">#7</div>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <div class="text-green-100">Chennai Super Kings</div>
+                            <div class="font-bold text-lg">₹15.00 L</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="font-bold">Jasprit Bumrah</div>
+                            <div class="text-xs bg-white bg-opacity-30 px-2 py-1 rounded">#93</div>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <div class="text-green-100">Mumbai Indians</div>
+                            <div class="font-bold text-lg">₹18.00 L</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="font-bold">Hardik Pandya</div>
+                            <div class="text-xs bg-white bg-opacity-30 px-2 py-1 rounded">#33</div>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <div class="text-green-100">Gujarat Titans</div>
+                            <div class="font-bold text-lg">₹14.50 L</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="font-bold">Ravindra Jadeja</div>
+                            <div class="text-xs bg-white bg-opacity-30 px-2 py-1 rounded">#8</div>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <div class="text-green-100">Chennai Super Kings</div>
+                            <div class="font-bold text-lg">₹12.00 L</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Auction Stats -->
+            <div class="bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl shadow-2xl overflow-hidden">
+                <button onclick="toggleStats('stats')" class="w-full bg-black bg-opacity-30 px-6 py-4 hover:bg-opacity-40 transition md:cursor-default">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold flex items-center gap-2">
+                            <span>📊</span>
+                            <span>Auction Stats</span>
+                        </h3>
+                        <svg id="arrow-stats" class="w-6 h-6 transition-transform md:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                </button>
+                <div id="stats" class="p-6 space-y-4 hidden md:block">
+                    <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4">
+                        <div class="text-purple-100 text-sm mb-1">Total Players</div>
+                        <div class="text-3xl font-bold">350</div>
+                    </div>
+                    <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4">
+                        <div class="text-green-100 text-sm mb-1">Sold</div>
+                        <div class="text-3xl font-bold text-green-200">142</div>
+                    </div>
+                    <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4">
+                        <div class="text-gray-200 text-sm mb-1">Unsold</div>
+                        <div class="text-3xl font-bold text-gray-300">58</div>
+                    </div>
+                    <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4">
+                        <div class="text-yellow-100 text-sm mb-1">Pending</div>
+                        <div class="text-3xl font-bold text-yellow-200">150</div>
+                    </div>
+                    <div class="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4">
+                        <div class="text-blue-100 text-sm mb-1">Teams</div>
+                        <div class="text-3xl font-bold text-blue-200">10</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Teams & Players Section -->
+        <div class="mt-6">
+            <div class="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden">
+                <div class="bg-black bg-opacity-30 px-6 py-4">
+                    <h2 class="text-2xl font-bold flex items-center gap-2">
+                        <span>👥</span>
+                        <span>Teams & Players</span>
+                    </h2>
+                    <p class="text-sm text-gray-300 mt-1">Click on any team to view their squad</p>
+                </div>
+
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        
+                        <!-- Team Card 1 - Mumbai Indians (Expanded) -->
+                        <div class="bg-gradient-to-br from-blue-600 to-blue-800 rounded-xl shadow-lg overflow-hidden">
+                            <button onclick="toggleTeam('team1')" class="w-full text-left p-4 hover:bg-black hover:bg-opacity-20 transition">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-12 h-12 bg-white bg-opacity-30 rounded-full flex items-center justify-center font-bold text-lg">
+                                            MI
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-lg">Mumbai Indians</div>
+                                            <div class="text-sm text-blue-200">8 players • ₹85.50 L spent</div>
+                                        </div>
+                                    </div>
+                                    <svg id="arrow-team1" class="w-6 h-6 transition-transform transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                            </button>
+                            
+                            <!-- Player List (Expanded by default) -->
+                            <div id="team1" class="bg-black bg-opacity-20">
+                                <div class="px-4 py-3 space-y-2">
+                                    <div class="text-xs text-blue-200 uppercase font-semibold mb-2">Squad (8)</div>
+                                    
+                                    <div class="bg-white bg-opacity-10 rounded-lg p-3 hover:bg-opacity-20 transition">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-sm font-bold">
+                                                    RS
+                                                </div>
+                                                <div>
+                                                    <div class="font-semibold">Rohit Sharma</div>
+                                                    <div class="text-xs text-blue-200">Batsman • #25</div>
+                                                </div>
+                                            </div>
+                                            <div class="text-right">
+                                                <div class="font-bold">₹16.00 L</div>
+                                                <div class="text-xs text-green-300">✅ Sold</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-white bg-opacity-10 rounded-lg p-3 hover:bg-opacity-20 transition">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-sm font-bold">
+                                                    JB
+                                                </div>
+                                                <div>
+                                                    <div class="font-semibold">Jasprit Bumrah</div>
+                                                    <div class="text-xs text-blue-200">Bowler • #93</div>
+                                                </div>
+                                            </div>
+                                            <div class="text-right">
+                                                <div class="font-bold">₹18.00 L</div>
+                                                <div class="text-xs text-green-300">✅ Sold</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-white bg-opacity-10 rounded-lg p-3 hover:bg-opacity-20 transition">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-sm font-bold">
+                                                    SK
+                                                </div>
+                                                <div>
+                                                    <div class="font-semibold">Suryakumar Yadav</div>
+                                                    <div class="text-xs text-blue-200">Batsman • #63</div>
+                                                </div>
+                                            </div>
+                                            <div class="text-right">
+                                                <div class="font-bold">₹12.50 L</div>
+                                                <div class="text-xs text-green-300">✅ Sold</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="text-center py-2">
+                                        <button class="text-sm text-blue-200 hover:text-white transition">+ 5 more players</button>
+                                    </div>
+                                </div>
+
+                                <!-- Team Summary -->
+                                <div class="border-t border-white border-opacity-20 px-4 py-3">
+                                    <div class="grid grid-cols-2 gap-3 text-sm">
+                                        <div>
+                                            <div class="text-blue-200 text-xs">Remaining Budget</div>
+                                            <div class="font-bold">₹14.50 L</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-blue-200 text-xs">Avg Price/Player</div>
+                                            <div class="font-bold">₹10.69 L</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Team Card 2 - Chennai Super Kings (Collapsed) -->
+                        <div class="bg-gradient-to-br from-yellow-500 to-yellow-700 rounded-xl shadow-lg overflow-hidden">
+                            <button onclick="toggleTeam('team2')" class="w-full text-left p-4 hover:bg-black hover:bg-opacity-20 transition">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-12 h-12 bg-white bg-opacity-30 rounded-full flex items-center justify-center font-bold text-lg">
+                                            CSK
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-lg">Chennai Super Kings</div>
+                                            <div class="text-sm text-yellow-200">7 players • ₹72.00 L spent</div>
+                                        </div>
+                                    </div>
+                                    <svg id="arrow-team2" class="w-6 h-6 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                            </button>
+                            
+                            <!-- Player List (Collapsed) -->
+                            <div id="team2" class="bg-black bg-opacity-20 hidden">
+                                <div class="px-4 py-3 space-y-2">
+                                    <div class="text-xs text-yellow-200 uppercase font-semibold mb-2">Squad (7)</div>
+                                    
+                                    <div class="bg-white bg-opacity-10 rounded-lg p-3 hover:bg-opacity-20 transition">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-sm font-bold">
+                                                    MD
+                                                </div>
+                                                <div>
+                                                    <div class="font-semibold">MS Dhoni</div>
+                                                    <div class="text-xs text-yellow-200">WK-Batsman • #7</div>
+                                                </div>
+                                            </div>
+                                            <div class="text-right">
+                                                <div class="font-bold">₹15.00 L</div>
+                                                <div class="text-xs text-green-300">✅ Sold</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-white bg-opacity-10 rounded-lg p-3 hover:bg-opacity-20 transition">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-sm font-bold">
+                                                    RJ
+                                                </div>
+                                                <div>
+                                                    <div class="font-semibold">Ravindra Jadeja</div>
+                                                    <div class="text-xs text-yellow-200">All Rounder • #8</div>
+                                                </div>
+                                            </div>
+                                            <div class="text-right">
+                                                <div class="font-bold">₹12.00 L</div>
+                                                <div class="text-xs text-green-300">✅ Sold</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="text-center py-2">
+                                        <button class="text-sm text-yellow-200 hover:text-white transition">+ 5 more players</button>
+                                    </div>
+                                </div>
+
+                                <div class="border-t border-white border-opacity-20 px-4 py-3">
+                                    <div class="grid grid-cols-2 gap-3 text-sm">
+                                        <div>
+                                            <div class="text-yellow-200 text-xs">Remaining Budget</div>
+                                            <div class="font-bold">₹28.00 L</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-yellow-200 text-xs">Avg Price/Player</div>
+                                            <div class="font-bold">₹10.29 L</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Team Card 3 - Royal Challengers (Collapsed) -->
+                        <div class="bg-gradient-to-br from-red-600 to-red-800 rounded-xl shadow-lg overflow-hidden">
+                            <button onclick="toggleTeam('team3')" class="w-full text-left p-4 hover:bg-black hover:bg-opacity-20 transition">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-12 h-12 bg-white bg-opacity-30 rounded-full flex items-center justify-center font-bold text-lg">
+                                            RCB
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-lg">Royal Challengers</div>
+                                            <div class="text-sm text-red-200">6 players • ₹68.50 L spent</div>
+                                        </div>
+                                    </div>
+                                    <svg id="arrow-team3" class="w-6 h-6 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                            </button>
+                            
+                            <div id="team3" class="bg-black bg-opacity-20 hidden">
+                                <div class="px-4 py-3 space-y-2">
+                                    <div class="text-xs text-red-200 uppercase font-semibold mb-2">Squad (6)</div>
+                                    
+                                    <div class="bg-white bg-opacity-10 rounded-lg p-3 hover:bg-opacity-20 transition">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center text-sm font-bold">
+                                                    VK
+                                                </div>
+                                                <div>
+                                                    <div class="font-semibold">Virat Kohli</div>
+                                                    <div class="text-xs text-red-200">Batsman • #18</div>
+                                                </div>
+                                            </div>
+                                            <div class="text-right">
+                                                <div class="font-bold">₹15.50 L</div>
+                                                <div class="text-xs text-green-300">✅ Sold</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="text-center py-2">
+                                        <button class="text-sm text-red-200 hover:text-white transition">+ 5 more players</button>
+                                    </div>
+                                </div>
+
+                                <div class="border-t border-white border-opacity-20 px-4 py-3">
+                                    <div class="grid grid-cols-2 gap-3 text-sm">
+                                        <div>
+                                            <div class="text-red-200 text-xs">Remaining Budget</div>
+                                            <div class="font-bold">₹31.50 L</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-red-200 text-xs">Avg Price/Player</div>
+                                            <div class="font-bold">₹11.42 L</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Team Card 4 - Kolkata Knight Riders (Collapsed) -->
+                        <div class="bg-gradient-to-br from-purple-600 to-purple-800 rounded-xl shadow-lg overflow-hidden">
+                            <button onclick="toggleTeam('team4')" class="w-full text-left p-4 hover:bg-black hover:bg-opacity-20 transition">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-12 h-12 bg-white bg-opacity-30 rounded-full flex items-center justify-center font-bold text-lg">
+                                            KKR
+                                        </div>
+                                        <div>
+                                            <div class="font-bold text-lg">Kolkata Knight Riders</div>
+                                            <div class="text-sm text-purple-200">5 players • ₹55.00 L spent</div>
+                                        </div>
+                                    </div>
+                                    <svg id="arrow-team4" class="w-6 h-6 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                    </svg>
+                                </div>
+                            </button>
+                            
+                            <div id="team4" class="bg-black bg-opacity-20 hidden">
+                                <div class="px-4 py-3">
+                                    <div class="text-center py-4 text-purple-200">
+                                        <div class="text-3xl mb-2">👥</div>
+                                        <p class="text-sm">5 players in squad</p>
+                                    </div>
+                                </div>
+
+                                <div class="border-t border-white border-opacity-20 px-4 py-3">
+                                    <div class="grid grid-cols-2 gap-3 text-sm">
+                                        <div>
+                                            <div class="text-purple-200 text-xs">Remaining Budget</div>
+                                            <div class="font-bold">₹45.00 L</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-purple-200 text-xs">Avg Price/Player</div>
+                                            <div class="font-bold">₹11.00 L</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Waiting State (Alternative to Current Bidding) -->
+        <div class="mt-6 hidden">
+            <div class="bg-gradient-to-br from-gray-700 to-gray-800 rounded-2xl p-8 text-center shadow-2xl">
+                <div class="text-6xl mb-4">⏳</div>
+                <h3 class="text-2xl font-bold mb-2">Waiting for Next Player</h3>
+                <p class="text-gray-300">Bidding will resume shortly...</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function toggleTeam(teamId) {
+            const teamElement = document.getElementById(teamId);
+            const arrowElement = document.getElementById('arrow-' + teamId);
+            
+            if (teamElement.classList.contains('hidden')) {
+                teamElement.classList.remove('hidden');
+                arrowElement.classList.add('rotate-180');
+            } else {
+                teamElement.classList.add('hidden');
+                arrowElement.classList.remove('rotate-180');
+            }
+        }
+
+        function toggleStats(statsId) {
+            // Only toggle on mobile screens
+            if (window.innerWidth >= 768) return; // md breakpoint
+            
+            const statsElement = document.getElementById(statsId);
+            const arrowElement = document.getElementById('arrow-' + statsId);
+            
+            if (statsElement.classList.contains('hidden')) {
+                statsElement.classList.remove('hidden');
+                arrowElement.classList.add('rotate-180');
+            } else {
+                statsElement.classList.add('hidden');
+                arrowElement.classList.remove('rotate-180');
+            }
+        }
+    </script>
+
+    <!-- Toggle Demo Button (for testing) -->
+    <div class="fixed bottom-6 right-6">
+        <button onclick="alert('This is a prototype. Click on team cards to expand/collapse player lists!')" 
+                class="px-6 py-3 bg-white text-purple-900 rounded-lg font-bold shadow-lg hover:shadow-xl transition">
+            🎨 Prototype - Click Teams!
+        </button>
+    </div>
+
+</body>
+</html>
+

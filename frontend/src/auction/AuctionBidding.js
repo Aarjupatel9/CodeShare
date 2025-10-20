@@ -12,7 +12,8 @@ import heartBeatSound from "../assets/heart-beat-sound.mp3";
 import { UserContext } from '../context/UserContext';
 import AuctionModal from './components/AuctionModal';
 import { getTeamLogoUrl } from './utils/assetUtils';
-const SOCKET_ADDRESS = process.env.REACT_APP_SOCKET_ADDRESS;
+import { getBackendSocketUrl } from '../hooks/useConfig';
+const SOCKET_ADDRESS = () => getBackendSocketUrl();
 //auctionStatus : idle, bidding, sold, unsold
 
 export default function AuctionBidding(props) {
@@ -154,7 +155,7 @@ export default function AuctionBidding(props) {
         if (socket) {
             socket.disconnect();
         }
-        const newSocket = new io(SOCKET_ADDRESS, {
+        const newSocket = new io((SOCKET_ADDRESS()), {
             query: { slug: "auction-" + auctionId },
             path: "/auction/", // Custom path for Socket.IO
         });
