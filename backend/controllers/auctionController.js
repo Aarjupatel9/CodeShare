@@ -2,7 +2,10 @@ const AuctionModel = require("../models/auctionModel");
 const AuctionTeamModel = require("../models/auctionTeamModel");
 const AuctionPlayerModel = require("../models/auctionPlayerModel");
 const AuctionSetModel = require("../models/auctionSetModel");
+const FileModel = require("../models/fileModel");
 const UserModel = require('../models/userModels');
+const fs = require('fs');
+const path = require('path');
 
 const {
   genJWTToken,
@@ -869,44 +872,113 @@ exports.getAuctionDetails = async (req, res) => {
 
 exports.saveTeamLogo = async (req, res, next) => {
   try {
-    const team = req.body.team;
-    if (!team) {
+    const { teamId, imageData, fileName, mimeType, fileSize } = req.body;
+    
+    if (!teamId) {
       return res.status(400).json({
         success: false,
-        message: "Inavlaid request body",
+        message: "Team ID is required",
       });
     }
-    var fileObject = {
-      name: req.file.originalname,
-      url: req.file.location,
-      key: req.file.key,
-      type: req.file.mimetype,
-      contentType: req.file.contentType,
-      encoding: req.file.encoding,
-      bucket: req.file.bucket,
-      metadata: req.file.metadata,
-      etag: req.file.etag,
-      acl: req.file.acl,
-    };
 
-    try {
-      const t = await AuctionTeamModel.updateOne(
-        { _id: team },
-        { $set: { logo: fileObject } },
-        { upsert: false }
-      );
-    } catch (e) {
-      console.error(e)
-      return res.status(200).json({
+    if (!imageData || !fileName || !mimeType) {
+      return res.status(400).json({
         success: false,
-        message: `Error team logo uploading, : ${e}`,
+        message: "Image data, file name, and mime type are required",
       });
     }
+
+    // Verify team exists
+    const team = await AuctionTeamModel.findById(teamId);
+    if (!team) {
+      return res.status(404).json({
+        success: false,
+        message: "Team not found",
+      });
+    }
+
+    // Remove data URL prefix if present (data:image/png;base64,...)
+    let base64Data = imageData;
+    if (imageData.includes('base64,')) {
+      base64Data = imageData.split('base64,')[1];
+    }
+
+    // Determine file extension from mimeType
+    const ext = mimeType.split('/')[1] || 'png';
+    const newFileName = `${teamId}.${ext}`;
+    
+    // Define upload directory and file path
+    const uploadDir = path.join(__dirname, '../public/uploads/teams');
+    const filePath = path.join(uploadDir, newFileName);
+
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    // Delete old logo files for this team (different extensions)
+    const existingFiles = fs.readdirSync(uploadDir).filter(file => file.startsWith(teamId + '.'));
+    existingFiles.forEach(file => {
+      const oldFilePath = path.join(uploadDir, file);
+      try {
+        fs.unlinkSync(oldFilePath);
+      } catch (err) {
+        console.error(`Error deleting old logo file: ${err.message}`);
+      }
+    });
+
+    // Write new file to disk
+    const buffer = Buffer.from(base64Data, 'base64');
+    fs.writeFileSync(filePath, buffer);
+
+    // Generate public URL
+    const logoUrl = `/uploads/teams/${newFileName}`;
+
+    // Create or update file record in File model (as backup)
+    let fileRecord = await FileModel.findOne({ 
+      entityType: 'team', 
+      entityId: teamId,
+      fileType: 'image'
+    });
+
+    if (fileRecord) {
+      // Update existing file
+      fileRecord.name = newFileName;
+      fileRecord.originalName = fileName;
+      fileRecord.mimeType = mimeType;
+      fileRecord.size = fileSize || buffer.length;
+      fileRecord.data = base64Data;
+      fileRecord = await fileRecord.save();
+    } else {
+      // Create new file
+      fileRecord = new FileModel({
+        name: newFileName,
+        originalName: fileName,
+        mimeType: mimeType,
+        size: fileSize || buffer.length,
+        data: base64Data,
+        entityType: 'team',
+        entityId: teamId,
+        fileType: 'image',
+        uploadedBy: req.user?._id,
+      });
+      fileRecord = await fileRecord.save();
+    }
+
+    // Update team with logo URL
+    await AuctionTeamModel.updateOne(
+      { _id: teamId },
+      { $set: { logoUrl: logoUrl } },
+      { upsert: false }
+    );
 
     res.status(200).json({
       success: true,
       message: "Logo successfully uploaded",
-      result: fileObject,
+      result: {
+        logoUrl: logoUrl,
+        fileId: fileRecord._id,
+      },
     });
   } catch (err) {
     console.error(`Internal server error: ${err.message}`);

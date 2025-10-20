@@ -20,7 +20,7 @@ router.route("/update").post(authenticateUser(), authenticateAuction(), updateNe
 router.route("/team/create").post(authenticateUser(), authenticateAuction(), createNewAuctionTeam);
 router.route("/team/update").post(authenticateUser(), authenticateAuction(), updateNewAuctionTeam);
 router.route("/team/remove").post(authenticateUser(), authenticateAuction(), removeNewAuctionTeam);
-router.route("/team/logo").post(authenticateUser(), authenticateAuction(), multerUpload.single("file"), saveTeamLogo);
+router.route("/team/logo/upload").post(authenticateUser(), authenticateAuction(), saveTeamLogo);
 
 router.route("/player/create").post(authenticateUser(), authenticateAuction(), createNewAuctionPlayer);
 router.route("/player/remove").post(authenticateUser(), authenticateAuction(), removeNewAuctionPlayer);

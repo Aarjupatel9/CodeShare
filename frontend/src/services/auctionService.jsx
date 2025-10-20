@@ -481,19 +481,20 @@ class AuctionService {
     })
   }
 
-  saveTeamLogo(formData) {
+  saveTeamLogo(data) {
     return new Promise(function (resolve, reject) {
       const fetchPostOptions = {
         method: 'POST',
         credentials: 'include',
         headers: {
+          'Content-Type': 'application/json;charset=UTF-8',
           'Access-Control-Allow-Origin': '*',
-          slug: formData.get('slug'),
-          filesize: formData.get('fileSize'),
+          'Access-Control-Allow-Method': 'GET,POST,PUT,DELETE,OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type,Authorization',
         },
-        body: formData,
+        body: JSON.stringify(data),
       }
-      fetch(backend_url + '/api/auction/team/logo', fetchPostOptions)
+      fetch(backend_url + '/api/auction/team/logo/upload', fetchPostOptions)
         .then((response) => {
           return response.json()
         })

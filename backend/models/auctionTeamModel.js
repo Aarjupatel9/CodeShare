@@ -51,6 +51,10 @@ const teamSchema = new mongoose.Schema(
                 type: Date,
                 required: false,
             }
+        },
+        logoUrl: {
+            type: String,  // Public URL for logo (e.g., /uploads/teams/teamId.png)
+            required: false,
         }
     },
     { timestamps: true }

@@ -95,27 +95,65 @@ export default function AuctionSetup(props) {
         }
 
         const file = event.target.files[0];
+        if (!file) {
+            return;
+        }
+
+        // Check file size (4MB limit)
         if (file.size > 4e6) {
-            toast.error("Please upload a file smaller than 2 MB");
+            toast.error("⚠️ Please upload a file smaller than 4 MB");
             return false;
         }
 
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("fileSize", file.size * 8);
-        formData.append("team", team._id);
-        const toastId = toast.loading("Uploading team logo...");
-        AuctionService.saveTeamLogo(formData).then((res) => {
-            toast.success(res.message, {
-                id: toastId,
-            });
-            getAuctionData();
-        }).catch((error) => {
+        // Check file type
+        if (!file.type.startsWith('image/')) {
+            toast.error("⚠️ Please upload an image file");
+            return false;
+        }
+
+        const toastId = toast.loading("📤 Uploading team logo...");
+
+        try {
+            // Convert file to base64
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const base64Data = e.target.result;
+                    
+                    const uploadData = {
+                        teamId: team._id,
+                        imageData: base64Data,
+                        fileName: file.name,
+                        mimeType: file.type,
+                        fileSize: file.size,
+                    };
+
+                    const res = await AuctionService.saveTeamLogo(uploadData);
+                    toast.success("✅ " + res.message, {
+                        id: toastId,
+                    });
+                    getAuctionData();
+                } catch (error) {
+                    console.error(error);
+                    toast.error("❌ " + error, {
+                        id: toastId,
+                    });
+                }
+            };
+
+            reader.onerror = () => {
+                toast.error("❌ Failed to read file", {
+                    id: toastId,
+                });
+            };
+
+            reader.readAsDataURL(file);
+        } catch (error) {
             console.error(error);
-            toast.error(error, {
+            toast.error("❌ " + error, {
                 id: toastId,
             });
-        });
+        }
     };
 
     useEffect(() => {

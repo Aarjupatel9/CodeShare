@@ -28,20 +28,7 @@ export default function AuctionTeamView(props) {
     }
     const getTeamLogo = (teamId) => {
         let team = teams.find((t) => { return t._id == teamId });
-        if (team && team.logo && team.logo.url && team.logo.key) {
-            try {
-                const url = new URL(team.logo.url);
-                const originalHostname = url.hostname; // e.g., codeshare.public-images.s3.ap-south-1.amazonaws.com
-                // Remove the bucket name from the hostname
-                const correctedHostname = originalHostname.replace(`${team.logo.bucket}.`, ""); // Removes "codeshare.public-images."
-                // Construct the new URL
-                return `https://${correctedHostname}/${team.logo.bucket}/${team.logo.key}`;
-
-            } catch (error) {
-                console.error("Error processing logo URL:", error);
-                return null;
-            }
-        }
+        return team?.logoUrl || null;
     }
 
 

@@ -9,19 +9,8 @@ export default function TeamsTab({
     handleImageUpload, 
     handleTeamPermenentRemove 
 }) {
-    // Fix team logo URL (use cached version from database)
     const getTeamLogo = (team) => {
-        if (!team || !team.logo || !team.logo.url) return null;
-        
-        try {
-            const url = new URL(team.logo.url);
-            const originalHostname = url.hostname;
-            const correctedHostname = originalHostname.replace(`${team.logo.bucket}.`, "");
-            return `https://${correctedHostname}/${team.logo.bucket}/${team.logo.key}`;
-        } catch (error) {
-            console.error("Error processing logo URL:", error);
-            return team.logo.url; // Fallback to original URL
-        }
+        return team?.logoUrl || null;
     };
     return (
         <div>
@@ -66,7 +55,7 @@ export default function TeamsTab({
                             <div key={team._id || index} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
                                 {/* Team Logo */}
                                 <label className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-gray-300 cursor-pointer flex-shrink-0">
-                                    {team.logo && team.logo.url ? (
+                                    {getTeamLogo(team) ? (
                                         <img 
                                             src={getTeamLogo(team)} 
                                             alt={team.name}

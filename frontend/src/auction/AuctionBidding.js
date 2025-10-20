@@ -593,20 +593,8 @@ export default function AuctionBidding(props) {
     }
 
     const getTeamLogo = (team) => {
-
-        try {
-            const url = new URL(team.logo.url);
-            const originalHostname = url.hostname; // e.g., codeshare.public-images.s3.ap-south-1.amazonaws.com
-            // Remove the bucket name from the hostname
-            const correctedHostname = originalHostname.replace(`${team.logo.bucket}.`, ""); // Removes "codeshare.public-images."
-            // Construct the new URL
-            return `https://${correctedHostname}/${team.logo.bucket}/${team.logo.key}`;
-
-        } catch (error) {
-            console.error("Error processing logo URL:", error);
-            return null;
-        }
-    }
+        return team?.logoUrl || null;
+    };
 
     // ============================================
     // NEW: Helper Functions for UI State & Calculations
@@ -812,7 +800,7 @@ export default function AuctionBidding(props) {
                             >
                                 <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg mx-auto mb-2"
                                     style={{backgroundColor: team.color || '#6b7280'}}>
-                                    {team.logo && team.logo.url ? (
+                                    {getTeamLogo(team) ? (
                                         <img src={getTeamLogo(team)} alt={team.name} className="w-full h-full rounded-full object-cover" />
                                     ) : (
                                         getTeamInitials(team.name)
@@ -823,9 +811,9 @@ export default function AuctionBidding(props) {
                                 <p className="text-center text-xs text-green-300">{playerCount}/{auction.maxTeamMember || 11}</p>
                             </div>
                         );
-                    })}
+                        })}
+                    </div>
                 </div>
-            </div>
         );
     };
 
@@ -838,7 +826,7 @@ export default function AuctionBidding(props) {
         return (
             <div className="grid md:grid-cols-2 gap-4">
                 {/* Combined Sold/Unsold Button - Smart behavior based on bids */}
-                <button
+                    <button
                     onClick={() => confirmPlayerSoldUnsold()}
                     className={`px-8 py-5 rounded-2xl font-bold text-2xl shadow-2xl transition transform  flex items-center justify-center gap-3 ${
                         hasBids 
@@ -856,8 +844,8 @@ export default function AuctionBidding(props) {
                 >
                     <span>↩️</span>
                     <span>UNDO</span>
-                </button>
-            </div>
+                    </button>
+                </div>
         );
     };
 
@@ -968,15 +956,15 @@ export default function AuctionBidding(props) {
         const totalPlayers = players ? players.length : 0;
         const totalTeams = teams ? teams.length : 0;
 
-        return (
+    return (
             <div className="w-full h-full flex items-center justify-center">
                 <div className="bg-gradient-to-r from-gray-700 to-gray-800 rounded-3xl shadow-2xl p-8 w-full min-h-full">
                     <div className="flex flex-col md:flex-row items-center gap-8">
                         {/* Icon Section */}
                         <div className="w-40 h-40 bg-white bg-opacity-10 rounded-full flex items-center justify-center text-6xl font-bold shadow-xl flex-shrink-0">
                             📋
-                        </div>
-                        
+                </div>
+
                         {/* Info Section */}
                         <div className="flex-1 text-center md:text-left">
                             <h1 className="text-5xl font-bold mb-2">No Set Selected</h1>
@@ -1008,9 +996,9 @@ export default function AuctionBidding(props) {
                                 <span>Select Set to Begin</span>
                             </button>
                         </div>
-                    </div>
-                </div>
-            </div>
+                                </div>
+                                </div>
+                        </div>
         );
     };
 
@@ -1032,7 +1020,7 @@ export default function AuctionBidding(props) {
                         <div className="flex-shrink-0 text-center">
                             <div className={`w-40 h-40 bg-white rounded-full flex items-center justify-center text-6xl font-bold shadow-xl ${lastSoldPlayer ? (isUnsold ? 'text-red-600' : 'text-blue-600') : 'bg-opacity-10 opacity-30'}`}>
                                 {lastSoldPlayer ? `#${lastSoldPlayer.jerseyNumber || '?'}` : '?'}
-                            </div>
+                    </div>
                         </div>
                         
                         {/* Center: Player Info (sold/unsold details) or empty placeholder */}
@@ -1068,7 +1056,7 @@ export default function AuctionBidding(props) {
                                                                 <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
                                                                     style={{backgroundColor: soldTeam.color || '#f59e0b', color: 'white'}}>
                                                                     {getTeamInitials(soldTeam.name)}
-                                                                </div>
+                                                    </div>
                                                                 <p className="text-lg font-bold">{soldTeam.name}</p>
                                                             </>
                                                         )}
@@ -1678,7 +1666,7 @@ export default function AuctionBidding(props) {
                                 >
                                     <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg mx-auto mb-2"
                                         style={{backgroundColor: team.color || '#6b7280'}}>
-                                        {team.logo && team.logo.url ? (
+                                        {getTeamLogo(team) ? (
                                             <img src={getTeamLogo(team)} alt={team.name} className="w-full h-full rounded-full object-cover" />
                                         ) : (
                                             getTeamInitials(team.name)
