@@ -1,5 +1,6 @@
 import React from 'react';
 import { getTeamBudgetForView } from '../../Utility';
+import { getTeamLogoUrl } from '../../utils/assetUtils';
 
 export default function TeamsTab({ 
     teams, 
@@ -9,9 +10,8 @@ export default function TeamsTab({
     handleImageUpload, 
     handleTeamPermenentRemove 
 }) {
-    const getTeamLogo = (team) => {
-        return team?.logoUrl || null;
-    };
+
+
     return (
         <div>
             {/* Action Buttons */}
@@ -55,9 +55,9 @@ export default function TeamsTab({
                             <div key={team._id || index} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
                                 {/* Team Logo */}
                                 <label className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-gray-300 cursor-pointer flex-shrink-0">
-                                    {getTeamLogo(team) ? (
+                                    {getTeamLogoUrl(team) ? (
                                         <img 
-                                            src={getTeamLogo(team)} 
+                                            src={getTeamLogoUrl(team)} 
                                             alt={team.name}
                                             className="w-full h-full object-cover"
                                         />

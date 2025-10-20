@@ -2,6 +2,8 @@ import "./App.css";
 import { Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { UserProvider } from "./context/UserContext";
+import { useEffect } from "react";
+import { preloadConfig } from "./hooks/useConfig";
 
 // Pages
 import MainPage from "./pages/MainPage";
@@ -28,6 +30,10 @@ import PrivateRoute from "./components/routes/PrivateRoute";
 import PublicRoute from "./components/routes/PublicRoute";
 
 function App() {
+  // Preload config on app initialization
+  useEffect(() => {
+    preloadConfig();
+  }, []);
   return (
     <div className="App">
       <Toaster />

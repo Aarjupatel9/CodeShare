@@ -11,6 +11,7 @@ import { getTeamName, getTeamBudgetForView } from "./Utility";
 import heartBeatSound from "../assets/heart-beat-sound.mp3";
 import { UserContext } from '../context/UserContext';
 import AuctionModal from './components/AuctionModal';
+import { getTeamLogoUrl } from './utils/assetUtils';
 const SOCKET_ADDRESS = process.env.REACT_APP_SOCKET_ADDRESS;
 //auctionStatus : idle, bidding, sold, unsold
 
@@ -592,9 +593,6 @@ export default function AuctionBidding(props) {
         });
     }
 
-    const getTeamLogo = (team) => {
-        return team?.logoUrl || null;
-    };
 
     // ============================================
     // NEW: Helper Functions for UI State & Calculations
@@ -800,8 +798,8 @@ export default function AuctionBidding(props) {
                             >
                                 <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg mx-auto mb-2"
                                     style={{backgroundColor: team.color || '#6b7280'}}>
-                                    {getTeamLogo(team) ? (
-                                        <img src={getTeamLogo(team)} alt={team.name} className="w-full h-full rounded-full object-cover" />
+                                    {getTeamLogoUrl(team) ? (
+                                        <img src={getTeamLogoUrl(team)} alt={team.name} className="w-full h-full rounded-full object-cover" />
                                     ) : (
                                         getTeamInitials(team.name)
                                     )}
@@ -1666,8 +1664,8 @@ export default function AuctionBidding(props) {
                                 >
                                     <div className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg mx-auto mb-2"
                                         style={{backgroundColor: team.color || '#6b7280'}}>
-                                        {getTeamLogo(team) ? (
-                                            <img src={getTeamLogo(team)} alt={team.name} className="w-full h-full rounded-full object-cover" />
+                                        {getTeamLogoUrl(team) ? (
+                                            <img src={getTeamLogoUrl(team)} alt={team.name} className="w-full h-full rounded-full object-cover" />
                                         ) : (
                                             getTeamInitials(team.name)
                                         )}

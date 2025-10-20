@@ -1,6 +1,7 @@
 import { backArrowIcon, defaultTeamLogo } from "../assets/svgs";
 import { getTeamName, getTeamBudgetForView } from "./Utility";
 import { getPlayerWidget } from "./Widgets";
+import { getTeamLogoUrl } from "./utils/assetUtils";
 
 export default function AuctionTeamView(props) {
 
@@ -28,7 +29,7 @@ export default function AuctionTeamView(props) {
     }
     const getTeamLogo = (teamId) => {
         let team = teams.find((t) => { return t._id == teamId });
-        return team?.logoUrl || null;
+        return getTeamLogoUrl(team);
     }
 
 
