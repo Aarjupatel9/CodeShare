@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import * as xlsx from 'xlsx';
 import { backArrowIcon } from '../assets/svgs';
 import AuctionTeamView from './AuctionTeamView';
-import { getTeamBudget } from './Utility';
+import { getTeamBudget, getTeamBudgetForView } from './Utility';
 import { UserContext } from '../context/UserContext';
 import AuctionNavbar from './components/AuctionNavbar';
 
@@ -224,7 +224,7 @@ export default function AuctionDashboard(props) {
                     
                     <div className="bg-white rounded-xl shadow-md p-5 text-center border border-gray-100 hover:shadow-lg transition">
                         <div className="text-3xl mb-2">💰</div>
-                        <p className="text-2xl font-bold text-gray-900">₹{auctionStats.totalBudget}Cr</p>
+                        <p className="text-2xl font-bold text-gray-900">₹{getTeamBudgetForView(auctionStats.totalBudget)}</p>
                         <p className="text-sm text-gray-600">Total Budget</p>
                     </div>
                 </div>
