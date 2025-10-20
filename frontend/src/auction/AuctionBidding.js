@@ -80,11 +80,11 @@ export default function AuctionBidding(props) {
           processAuctionData(res);
         }).catch((error) => {
             console.error(error);
-            if (error == "TokenExpiredError" || error.toString().includes("TokenExpiredError") || error.toString().includes("token expired")) {
-                toast.error("Your session has expired. Please login again to continue.");
+            if (error.toString().includes("jwt expired") || error.toString().includes("TokenExpiredError") || error.toString().includes("token expired")) {
+                toast.error("⏱️ Session expired. Please log in again to continue.");
                 navigate("/auth/login");
             } else {
-                toast.error(error.toString(), { duration: 3000 });
+                toast.error(`⚠️ Error: ${error.toString()}`, { duration: 3000 });
             }
         }).finally(() => {
             setIsAPICallInProgress(false);
@@ -179,7 +179,7 @@ export default function AuctionBidding(props) {
                 }
             }
             if (isAuctionOver) {
-                toast.success("Auction is completed, no team can bid now, thank you!!", { duration: 3000 })
+                toast.success("🏆 Auction completed! Thank you for participating.", { duration: 3000 })
             } else {
                 console.debug("auction is running");
             }
@@ -255,7 +255,7 @@ export default function AuctionBidding(props) {
                     if (res && res.auctionData) {
                         processAuctionData(res.auctionData);
                     }
-                    toast.success("Set is complete, select next set to continue.", { duration: 3000 });
+                    toast.success(`🎉 Set '${runningSet?.name}' completed! Select the next set to continue.`, { duration: 3000 });
                 }).catch((err) => {
                     toast.error(err, { duration: 3000 });
                     console.error(err);
@@ -315,7 +315,7 @@ export default function AuctionBidding(props) {
             }
         })
         if (idlePlayer.length == 0) {
-            toast.error("idlePlayer undefined bug in pickup randome player", { duration: 3000 });
+            toast.error("⚠️ No players available to pick. All players in this set have been processed.", { duration: 3000 });
             return;
         }
         console.debug("idlePlayer", idlePlayer)
@@ -326,7 +326,7 @@ export default function AuctionBidding(props) {
             if (res && res.auctionData) {
                 processAuctionData(res.auctionData);
             }
-            toast.success("Start bidding for player " + randomPlayer.name + " at base price " + getTeamBudgetForView(randomPlayer.basePrice), { duration: 3000 })
+            toast.success(`🎯 Now bidding: ${randomPlayer.name} • Base Price: ${getTeamBudgetForView(randomPlayer.basePrice)}`, { duration: 3000 })
         }).catch((err) => {
             toast.error(err);
             console.error(err);
@@ -369,7 +369,7 @@ export default function AuctionBidding(props) {
 
             const newBiddingState = structuredClone(player.bidding);
             if (newBiddingState.length > 0 && newBiddingState[newBiddingState.length - 1].team == team._id) {
-                toast.error("Can not bid repeatativelly", { duration: 2000 });
+                toast.error("⚠️ Same team cannot bid twice in a row", { duration: 2000 });
                 return;
             }
 
@@ -381,7 +381,7 @@ export default function AuctionBidding(props) {
                 nextBid = player.basePrice;
             }
             if (nextBid > team.remainingBudget) {
-                toast.error("Not enough purse to bid the player", { duration: 3000 });
+                toast.error("💸 Insufficient budget! This team doesn't have enough funds to bid.", { duration: 3000 });
                 return;
             }
 
@@ -398,9 +398,9 @@ export default function AuctionBidding(props) {
                 if (res && res.auctionData) {
                     processAuctionData(res.auctionData);
                 }
-                toast.success("Current bid at " + getTeamBudgetForView(nextBid) + " of team " + team.name, { duration: 3000 });
+                toast.success(`💰 ${team.name} bids ${getTeamBudgetForView(nextBid)}!`, { duration: 3000 });
             }).catch((err) => {
-                toast.error(err.toString(), { duration: 3000 });
+                toast.error(`⚠️ Error: ${err.toString()}`, { duration: 3000 });
                 console.error(err);
             }).finally(() => {
                 setIsAPICallInProgress(false);
@@ -438,7 +438,7 @@ export default function AuctionBidding(props) {
 
             const newBiddingState = structuredClone(player.bidding);
             if (newBiddingState.length == 0) {
-                toast.error("Can not undo for unbidded player", { duration: 3000 });
+                toast.error("⚠️ Cannot undo - no bids placed yet", { duration: 3000 });
                 return;
             }
 
@@ -456,7 +456,7 @@ export default function AuctionBidding(props) {
             if (res && res.auctionData) {
                 processAuctionData(res.auctionData);
             }
-                toast.success("Undo last bid from team " + getTeamName(popedBid.team), { duration: 3000 });
+                toast.success(`↩️ Bid undone - ${getTeamName(popedBid.team)}'s bid removed`, { duration: 3000 });
             }).catch((err) => {
                 toast.error(err, { duration: 3000 });
                 console.error(err);
@@ -532,11 +532,11 @@ export default function AuctionBidding(props) {
                     if (res && res.auctionData) {
                         processAuctionData(res.auctionData);
                     }
-                    toast.success("Player - " + player.name + " is unsold", { duration: 3000 })
+                    toast.success(`❌ ${player.name} marked as UNSOLD`, { duration: 3000 })
                     socket.emit("playerSoldUpdate", "Player - " + player.name + " is unsold");
                     setPlayer({});
                 }).catch((err) => {
-                    toast.error(err, { duration: 3000 });
+                    toast.error(`⚠️ Error: ${err}`, { duration: 3000 });
                     console.error(err);
                 }).finally(() => {
                     setIsAPICallInProgress(false);
@@ -551,12 +551,12 @@ export default function AuctionBidding(props) {
                     if (res && res.auctionData) {
                         processAuctionData(res.auctionData);
                     }
-                    let message = "" + player.name + " is sold to team - " + getTeamName(biddingState[biddingState.length - 1].team) + " at price " + getTeamBudgetForView(biddingState[biddingState.length - 1].price);
+                    let message = `✅ SOLD! ${player.name} → ${getTeamName(biddingState[biddingState.length - 1].team)} for ${getTeamBudgetForView(biddingState[biddingState.length - 1].price)}`;
                     toast.success(message, { duration: 5000 });
                     socket.emit("playerSoldUpdate", message);
                     setPlayer({});
                 }).catch((err) => {
-                    toast.error(err, { duration: 3000 });
+                    toast.error(`⚠️ Error: ${err}`, { duration: 3000 });
                     console.error(err);
                 }).finally(() => {
                     setIsAPICallInProgress(false);
@@ -582,9 +582,9 @@ export default function AuctionBidding(props) {
             if (res && res.auctionData) {
                 processAuctionData(res.auctionData);
             }
-            toast.success("Set '" + set.name + "' is now active. Pick a player to start bidding!", { duration: 3000 });
+            toast.success(`📂 Set '${set.name}' activated! Pick a player to begin.`, { duration: 3000 });
         }).catch((err) => {
-            toast.error(err, { duration: 3000 });
+            toast.error(`⚠️ Error: ${err}`, { duration: 3000 });
             console.error(err);
         }).finally(() => {
             setIsAPICallInProgress(false);
@@ -755,7 +755,7 @@ export default function AuctionBidding(props) {
         })();
 
         return (
-            <div className="min-h-[20rem] md:h-96 w-full flex items-center justify-center">
+            <div className="min-h-[20rem] lg:h-96 w-full flex items-center justify-center">
                 <div className="w-full h-full flex items-center justify-center">
                     {topSectionContent}
                 </div>
