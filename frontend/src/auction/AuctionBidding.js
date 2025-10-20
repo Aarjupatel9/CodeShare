@@ -121,10 +121,12 @@ export default function AuctionBidding(props) {
             }
         }).catch((error) => {
             console.error(error);
-            if (error == "TokenExpiredError") {
-                navigate("/auth/login")
+            if (error == "TokenExpiredError" || error.toString().includes("TokenExpiredError") || error.toString().includes("token expired")) {
+                toast.error("Your session has expired. Please login again to continue.");
+                navigate("/auth/login");
+            } else {
+                toast.error(error.toString(), { duration: 3000 });
             }
-            toast.error(error, { duration: 3000 });
         }).finally(() => {
             setIsAPICallInProgress(false);
         });
@@ -645,8 +647,8 @@ export default function AuctionBidding(props) {
     return (
         <div className='flex flex-col w-full min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-indigo-900 text-white'>
             {/* Top Bar */}
-            <div className="bg-black bg-opacity-40 backdrop-blur-sm px-4 py-3 shadow-lg flex-shrink-0">
-                <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div className="bg-black bg-opacity-40 backdrop-blur-sm px-4 sm:px-6 lg:px-12 xl:px-20 py-3 shadow-lg flex-shrink-0">
+                <div className="w-full flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                     <div className="flex items-center gap-4">
                         <h2 className="font-bold text-xl">{auction?.name || 'Auction'}</h2>
                         <span className="px-3 py-1 bg-red-600 text-white rounded-full text-sm font-semibold flex items-center gap-2">
@@ -681,8 +683,8 @@ export default function AuctionBidding(props) {
             </div>
             
             {/* Main Content */}
-            <div className='flex-1 flex flex-col p-4 overflow-auto'>
-                <div className='max-w-7xl mx-auto w-full'>
+            <div className='flex-1 flex flex-col px-4 sm:px-6 lg:px-12 xl:px-20 py-4 overflow-auto'>
+                <div className='w-full'>
 
                 <div className='flex flex-col gap-2 h-full max-h-full overflow-auto bg-gray-100 rounded-lg'>
 

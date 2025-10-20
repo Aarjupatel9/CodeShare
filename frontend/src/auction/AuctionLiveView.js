@@ -1,6 +1,7 @@
 import React, { useEffect, useContext, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import AuctionService from '../services/auctionService';
+import auctionApi from '../services/api/auctionApi';
 import toast from 'react-hot-toast';
 import * as xlsx from 'xlsx';
 import { io } from "socket.io-client";
@@ -31,6 +32,10 @@ export default function AuctionLiveView(props) {
     
     // Viewer count (mock for now, TODO: integrate with WebSocket)
     const [viewerCount, setViewerCount] = useState(0);
+    
+    // Recent sold players and leaderboard from API
+    const [recentSoldFromAPI, setRecentSoldFromAPI] = useState([]);
+    const [leaderboardFromAPI, setLeaderboardFromAPI] = useState([]);
 
     const [playerListFilters, setPlayerListFilters] = useState({
         auctionStatus: [],
@@ -48,7 +53,27 @@ export default function AuctionLiveView(props) {
 
     useEffect(() => {
         getAuctionData();
+        fetchLiveData();
     }, [])
+    
+    const fetchLiveData = async () => {
+        try {
+            // Fetch recent sold players
+            const recentRes = await auctionApi.getRecentSoldPlayers(auctionId, 10);
+            if (recentRes.success) {
+                setRecentSoldFromAPI(recentRes.data);
+            }
+            
+            // Fetch leaderboard
+            const leaderRes = await auctionApi.getAuctionLeaderboard(auctionId);
+            if (leaderRes.success) {
+                setLeaderboardFromAPI(leaderRes.data);
+            }
+        } catch (error) {
+            console.error('Error fetching live data:', error);
+            // Silently fail for public view
+        }
+    };
 
     useEffect(() => {
         if (isLinkValid) {
@@ -74,6 +99,8 @@ export default function AuctionLiveView(props) {
         });
         socket.on("playerSoldUpdate", (message) => {
             toast.success(message);
+            // Refresh live data when a player is sold
+            fetchLiveData();
         });
         
         // Viewer count tracking (TODO: Implement when backend WebSocket is ready)
@@ -295,8 +322,8 @@ export default function AuctionLiveView(props) {
     return (
         <div className='flex flex-col w-full min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 text-white'>
             {/* Modern Header */}
-            <div className="bg-black bg-opacity-50 backdrop-blur-md px-4 py-4 shadow-2xl sticky top-0 z-50">
-                <div className="max-w-7xl mx-auto">
+            <div className="bg-black bg-opacity-50 backdrop-blur-md px-4 sm:px-6 lg:px-12 xl:px-20 py-4 shadow-2xl sticky top-0 z-50">
+                <div className="w-full">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                         <div className="flex items-center gap-3 flex-wrap">
                             <h1 className="text-2xl md:text-3xl font-bold">{auction?.name || 'Auction'}</h1>

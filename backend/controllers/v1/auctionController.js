@@ -7,10 +7,12 @@ const { genJWTToken } = require("../../services/authService");
 /**
  * Get all auctions for authenticated user
  * GET /api/v1/auctions
+ * Query params: ?include=summary (optional)
  */
 exports.getAuctions = async (req, res) => {
   try {
     const user = req.user;
+    const includeSummary = req.query.include === 'summary';
     
     if (!user) {
       return res.status(401).json({
@@ -25,6 +27,50 @@ exports.getAuctions = async (req, res) => {
     })
       .select('-password')
       .sort({ createdAt: -1 });
+
+    // If summary requested, add team/player counts
+    if (includeSummary) {
+      const auctionsWithSummary = await Promise.all(
+        auctions.map(async (auction) => {
+          const [teamCount, playerStats] = await Promise.all([
+            AuctionTeamModel.countDocuments({ auction: auction._id }),
+            AuctionPlayerModel.aggregate([
+              { $match: { auction: auction._id } },
+              {
+                $group: {
+                  _id: "$auctionStatus",
+                  count: { $sum: 1 }
+                }
+              }
+            ])
+          ]);
+
+          const playerStatusMap = {};
+          playerStats.forEach(item => {
+            playerStatusMap[item._id] = item.count;
+          });
+
+          const totalPlayers = playerStats.reduce((sum, item) => sum + item.count, 0);
+
+          return {
+            ...auction.toObject(),
+            summary: {
+              teamCount,
+              playerCount: totalPlayers,
+              soldCount: playerStatusMap['sold'] || 0,
+              unsoldCount: playerStatusMap['unsold'] || 0,
+              pendingCount: totalPlayers - (playerStatusMap['sold'] || 0) - (playerStatusMap['unsold'] || 0)
+            }
+          };
+        })
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "Auctions with summary retrieved successfully",
+        data: auctionsWithSummary,
+      });
+    }
 
     res.status(200).json({
       success: true,

@@ -4,7 +4,6 @@ import { getTeamBudgetForView } from '../../Utility';
 export default function TeamsTab({ 
     teams, 
     playersCopy, 
-    getMSExelForPlayerAdd, 
     addTeam, 
     handleImageUpload, 
     handleTeamPermenentRemove 
@@ -12,17 +11,10 @@ export default function TeamsTab({
     return (
         <div>
             {/* Action Buttons */}
-            <div className="mb-6 flex flex-col md:flex-row gap-4">
-                <button 
-                    onClick={() => { getMSExelForPlayerAdd() }}
-                    className="flex-1 px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold shadow-lg transition flex items-center justify-center gap-2"
-                >
-                    <span>📤</span>
-                    <span>Upload Teams (Excel)</span>
-                </button>
+            <div className="mb-6">
                 <button 
                     onClick={() => { addTeam() }}
-                    className="flex-1 px-6 py-4 bg-white hover:bg-gray-50 border-2 border-blue-600 text-blue-600 rounded-xl font-bold transition flex items-center justify-center gap-2"
+                    className="w-full md:w-auto px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold shadow-lg transition flex items-center justify-center gap-2"
                 >
                     <span>➕</span>
                     <span>Add Team Manually</span>

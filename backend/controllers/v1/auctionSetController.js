@@ -5,13 +5,48 @@ const AuctionModel = require("../../models/auctionModel");
 /**
  * Get all sets for an auction
  * GET /api/v1/auctions/:auctionId/sets
+ * Query params: ?include=stats (optional)
  */
 exports.getSets = async (req, res) => {
   try {
     const { auctionId } = req.params;
+    const includeStats = req.query.include === 'stats';
 
     const sets = await AuctionSetModel.find({ auction: auctionId })
       .sort({ order: 1, createdAt: 1 });
+
+    // If stats requested, add player counts and completion stats
+    if (includeStats) {
+      const setsWithStats = await Promise.all(
+        sets.map(async (set) => {
+          const players = await AuctionPlayerModel.find({ 
+            auction: auctionId,
+            auctionSet: set._id 
+          });
+
+          const totalPlayers = players.length;
+          const completedPlayers = players.filter(p => p.auctionStatus === 'sold').length;
+          const pendingPlayers = totalPlayers - completedPlayers;
+          const progressPercent = totalPlayers > 0 ? Math.round((completedPlayers / totalPlayers) * 100) : 0;
+
+          return {
+            ...set.toObject(),
+            stats: {
+              totalPlayers,
+              completedPlayers,
+              pendingPlayers,
+              progressPercent
+            }
+          };
+        })
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "Sets with stats retrieved successfully",
+        data: setsWithStats,
+      });
+    }
 
     res.status(200).json({
       success: true,

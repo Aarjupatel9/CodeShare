@@ -3,6 +3,8 @@
  * Handles all HTTP requests to the backend
  */
 
+import toast from 'react-hot-toast';
+
 class ApiClient {
   constructor() {
     this.baseURL = null;
@@ -180,8 +182,10 @@ class ApiClient {
    */
   handleTokenExpiration() {
     localStorage.removeItem('currentUser');
-    // Optionally reload or redirect
-    // window.location.href = '/auth/login';
+    toast.error("Your session has expired. Please login again to continue.", { duration: 4000 });
+    setTimeout(() => {
+      window.location.href = '/auth/login';
+    }, 1000);
   }
 }
 

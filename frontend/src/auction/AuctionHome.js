@@ -2,9 +2,11 @@ import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from "react-hot-toast";
 import AuctionService from '../services/auctionService';
+import auctionApi from '../services/api/auctionApi';
 import authService from '../services/authService';
 import { UserContext } from '../context/UserContext';
 import AuctionNavbar from './components/AuctionNavbar';
+import PasswordModal from './components/PasswordModal';
 
 // Modal Component - defined outside to prevent re-creation
 const Modal = ({ isOpen, onClose, title, children }) => {
@@ -33,10 +35,12 @@ export default function AuctionHome() {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [joinTab, setJoinTab] = useState('myAuctions'); // 'myAuctions' or 'joinOther'
   const [myAuctions, setMyAuctions] = useState([]);
   const [loadingAuctions, setLoadingAuctions] = useState(true);
   const [selectedAuction, setSelectedAuction] = useState(null);
+  const [isJoining, setIsJoining] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -51,26 +55,13 @@ export default function AuctionHome() {
     password: ''
   });
 
-  // Mock stats (TODO: Replace with real API when backend is ready)
+  // Real stats from API
   const [auctionStats, setAuctionStats] = useState({
     total: 0,
     active: 0,
     completed: 0,
     setup: 0
   });
-
-  // Calculate stats from myAuctions
-  useEffect(() => {
-    if (myAuctions && myAuctions.length > 0) {
-      const stats = {
-        total: myAuctions.length,
-        active: myAuctions.filter(a => a.state === 'running').length,
-        completed: myAuctions.filter(a => a.state === 'completed').length,
-        setup: myAuctions.filter(a => a.state === 'setup').length
-      };
-      setAuctionStats(stats);
-    }
-  }, [myAuctions]);
 
   // Get status badge color and text
   const getStatusBadge = (state) => {
@@ -118,30 +109,40 @@ export default function AuctionHome() {
   const fetchMyAuctions = useCallback(async () => {
     try {
       setLoadingAuctions(true);
-      const response = await fetch((await (await fetch('/config.json')).json()).backend_url + '/api/v1/auctions', {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      const res = await response.json();
+      
+      // Fetch auctions with summary data (includes team/player counts)
+      const res = await auctionApi.getAuctions(true);
+      
       if (res.success) {
         setMyAuctions(res.data || []);
       }
     } catch (error) {
       console.error('Error fetching auctions:', error);
+      toast.error('Failed to load auctions');
     } finally {
       setLoadingAuctions(false);
     }
   }, []);
 
-  // Fetch user's auctions once authenticated
+  const fetchAuctionStats = useCallback(async () => {
+    try {
+      const res = await auctionApi.getAuctionStats();
+      
+      if (res.success) {
+        setAuctionStats(res.data);
+      }
+    } catch (error) {
+      console.error('Error fetching auction stats:', error);
+    }
+  }, []);
+
+  // Fetch user's auctions and stats once authenticated
   useEffect(() => {
     if (currUser && !isAuthChecking) {
       fetchMyAuctions();
+      fetchAuctionStats();
     }
-  }, [currUser, isAuthChecking, fetchMyAuctions]);
+  }, [currUser, isAuthChecking, fetchMyAuctions, fetchAuctionStats]);
 
   const resetForm = () => {
     setFormData({ 
@@ -214,8 +215,8 @@ export default function AuctionHome() {
       })
       .catch((error) => {
         toast.dismiss(toastId);
-        if (error === "TokenExpiredError" || error.toString().includes("TokenExpiredError")) {
-          toast.error("Session expired. Please login again.");
+        if (error === "TokenExpiredError" || error.toString().includes("TokenExpiredError") || error.toString().includes("token expired")) {
+          toast.error("Your session has expired. Please login again to continue.");
           navigate('/auth/login');
         } else {
           toast.error(error.toString(), { duration: 3000 });
@@ -224,34 +225,54 @@ export default function AuctionHome() {
       });
   };
 
-  const handleJoinMyAuction = (auction, password) => {
-    const toastId = toast.loading("Joining auction...");
+  // Handle opening password modal for joining
+  const handleOpenPasswordModal = (auction) => {
+    setSelectedAuction(auction);
+    setShowPasswordModal(true);
+  };
+
+  // Handle password submission from password modal
+  const handlePasswordSubmit = (password) => {
+    if (!selectedAuction) return;
+    
+    setIsJoining(true);
     const organizerName = currUser?.username || currUser?.email?.split('@')[0] || '';
+    
     AuctionService.getAuction({
-      name: auction.name,
+      name: selectedAuction.name,
       organizer: organizerName,
       password: password
     })
       .then((res) => {
-        toast.dismiss(toastId);
         toast.success(res.message, { duration: 2000 });
         if (res.auction && res.auction._id) {
           localStorage.setItem("currentAuction", JSON.stringify(res.auction));
+          setShowPasswordModal(false);
           setShowJoinModal(false);
+          setSelectedAuction(null);
           resetForm();
           navigate(`/p/${currUser._id}/t/auction/${res.auction._id}`);
         }
       })
       .catch((error) => {
-        toast.dismiss(toastId);
-        if (error === "TokenExpiredError" || error.toString().includes("TokenExpiredError")) {
-          toast.error("Session expired. Please login again.");
+        if (error === "TokenExpiredError" || error.toString().includes("TokenExpiredError") || error.toString().includes("token expired")) {
+          toast.error("Your session has expired. Please login again to continue.");
           navigate('/auth/login');
         } else {
           toast.error(error.toString(), { duration: 3000 });
         }
         console.error(error);
+      })
+      .finally(() => {
+        setIsJoining(false);
       });
+  };
+
+  // Handle quick join from recent auction cards
+  const handleQuickJoinAuction = (auction) => {
+    // Directly open password modal for quick join
+    setSelectedAuction(auction);
+    setShowPasswordModal(true);
   };
 
   const handleJoinOtherAuction = (e) => {
@@ -277,8 +298,8 @@ export default function AuctionHome() {
       })
       .catch((error) => {
         toast.dismiss(toastId);
-        if (error === "TokenExpiredError" || error.toString().includes("TokenExpiredError")) {
-          toast.error("Session expired. Please login again.");
+        if (error === "TokenExpiredError" || error.toString().includes("TokenExpiredError") || error.toString().includes("token expired")) {
+          toast.error("Your session has expired. Please login again to continue.");
           navigate('/auth/login');
         } else {
           toast.error(error.toString(), { duration: 3000 });
@@ -308,7 +329,7 @@ export default function AuctionHome() {
       />
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-6 w-full">
+      <div className="w-full px-4 sm:px-6 lg:px-12 xl:px-20 py-6">
         
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -356,12 +377,12 @@ export default function AuctionHome() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
               {myAuctions.slice(0, 6).map((auction) => {
                 const badge = getStatusBadge(auction.state);
-                // Mock counts (TODO: Replace with real data from API)
-                const mockTeamCount = Math.floor(Math.random() * 8) + 4;
-                const mockPlayerCount = Math.floor(Math.random() * 40) + 20;
+                // Use real data from API summary
+                const teamCount = auction.summary?.teamCount || 0;
+                const playerCount = auction.summary?.playerCount || 0;
                 
                 return (
-                  <div key={auction._id} className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-5 border border-gray-100 cursor-pointer" onClick={() => navigate(`/p/${currUser._id}/t/auction/${auction._id}`)}>
+                  <div key={auction._id} className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-5 border border-gray-100 cursor-pointer" onClick={() => handleQuickJoinAuction(auction)}>
                     <div className="flex items-start justify-between mb-3">
                       <div>
                         <h3 className="font-bold text-gray-900 text-left text-lg mb-1">{auction.name}</h3>
@@ -373,13 +394,13 @@ export default function AuctionHome() {
                       </span>
                     </div>
                     <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
-                      <span>👥 {mockTeamCount} Teams</span>
-                      <span>🎯 {mockPlayerCount} Players</span>
+                      <span>👥 {teamCount} Teams</span>
+                      <span>🎯 {playerCount} Players</span>
                     </div>
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/p/${currUser._id}/t/auction/${auction._id}`);
+                        handleQuickJoinAuction(auction);
                       }}
                       className={`w-full px-4 py-2.5 ${
                         auction.state === 'running' 
@@ -617,40 +638,31 @@ export default function AuctionHome() {
               </div>
             ) : (
               <div className="space-y-3 max-h-96 overflow-y-auto">
-                {myAuctions.map((auction) => (
-                  <div key={auction._id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <h4 className="font-bold text-gray-900 text-lg mb-1">{auction.name}</h4>
-                        <p className="text-sm text-gray-600">
-                          Created: {new Date(auction.createdAt).toLocaleDateString()}
-                        </p>
+                {myAuctions.map((auction) => {
+                  const badge = getStatusBadge(auction.state);
+                  return (
+                    <div key={auction._id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <h4 className="font-bold text-gray-900 text-lg mb-1">{auction.name}</h4>
+                          <p className="text-sm text-gray-600 mb-2">
+                            Created: {new Date(auction.createdAt).toLocaleDateString()}
+                          </p>
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 ${badge.bg} ${badge.text} rounded-full text-xs font-semibold`}>
+                            <span>{badge.icon}</span>
+                            <span>{badge.label}</span>
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => handleOpenPasswordModal(auction)}
+                          className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition text-sm whitespace-nowrap self-start"
+                        >
+                          Join →
+                        </button>
                       </div>
                     </div>
-                    
-                    <form onSubmit={(e) => {
-                      e.preventDefault();
-                      const password = e.target.elements.password.value;
-                      handleJoinMyAuction(auction, password);
-                    }}>
-                      <div className="flex gap-2">
-                        <input
-                          type="password"
-                          name="password"
-                          placeholder="Enter password"
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                          required
-                        />
-                        <button
-                          type="submit"
-                          className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition text-sm"
-          >
-            Join
-          </button>
-        </div>
-      </form>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -740,6 +752,18 @@ export default function AuctionHome() {
           </form>
         )}
       </Modal>
+
+      {/* Password Modal */}
+      <PasswordModal
+        isOpen={showPasswordModal}
+        onClose={() => {
+          setShowPasswordModal(false);
+          setSelectedAuction(null);
+        }}
+        onSubmit={handlePasswordSubmit}
+        auctionName={selectedAuction?.name || ''}
+        isLoading={isJoining}
+      />
       </div>
   );
 }

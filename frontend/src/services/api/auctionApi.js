@@ -8,10 +8,60 @@ import apiClient from './apiClient';
 class AuctionApi {
   /**
    * Get all auctions
+   * @param {boolean} includeSummary - Include team/player counts
    */
-  async getAuctions() {
+  async getAuctions(includeSummary = false) {
     try {
-      const response = await apiClient.get('/api/v1/auctions');
+      const url = includeSummary ? '/api/v1/auctions?include=summary' : '/api/v1/auctions';
+      const response = await apiClient.get(url);
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Get auction statistics
+   */
+  async getAuctionStats() {
+    try {
+      const response = await apiClient.get('/api/v1/auctions/stats');
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Get auction summary with stats
+   */
+  async getAuctionSummary(auctionId) {
+    try {
+      const response = await apiClient.get(`/api/v1/auctions/${auctionId}/summary`);
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Get recent sold players (public)
+   */
+  async getRecentSoldPlayers(auctionId, limit = 10) {
+    try {
+      const response = await apiClient.get(`/api/v1/auctions/${auctionId}/recent-sold?limit=${limit}`);
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Get auction leaderboard (public)
+   */
+  async getAuctionLeaderboard(auctionId) {
+    try {
+      const response = await apiClient.get(`/api/v1/auctions/${auctionId}/leaderboard`);
       return response;
     } catch (error) {
       throw this.handleError(error);
@@ -100,10 +150,14 @@ class AuctionApi {
 
   /**
    * Get teams for auction
+   * @param {boolean} includeStats - Include player counts and budget stats
    */
-  async getTeams(auctionId) {
+  async getTeams(auctionId, includeStats = false) {
     try {
-      const response = await apiClient.get(`/api/v1/auctions/${auctionId}/teams`);
+      const url = includeStats 
+        ? `/api/v1/auctions/${auctionId}/teams?include=stats` 
+        : `/api/v1/auctions/${auctionId}/teams`;
+      const response = await apiClient.get(url);
       return response;
     } catch (error) {
       throw this.handleError(error);
@@ -255,10 +309,14 @@ class AuctionApi {
 
   /**
    * Get sets for auction
+   * @param {boolean} includeStats - Include player counts and completion stats
    */
-  async getSets(auctionId) {
+  async getSets(auctionId, includeStats = false) {
     try {
-      const response = await apiClient.get(`/api/v1/auctions/${auctionId}/sets`);
+      const url = includeStats 
+        ? `/api/v1/auctions/${auctionId}/sets?include=stats` 
+        : `/api/v1/auctions/${auctionId}/sets`;
+      const response = await apiClient.get(url);
       return response;
     } catch (error) {
       throw this.handleError(error);

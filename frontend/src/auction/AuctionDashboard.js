@@ -1,6 +1,7 @@
 import React, { useEffect, useContext, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import AuctionService from '../services/auctionService';
+import auctionApi from '../services/api/auctionApi';
 import authService from '../services/authService';
 import toast from 'react-hot-toast';
 import * as xlsx from 'xlsx';
@@ -23,7 +24,7 @@ export default function AuctionDashboard(props) {
     const { auctionId } = useParams();
     const navigate = useNavigate();
 
-    // Calculate quick stats (mock for now, TODO: get from API)
+    // Real stats from API
     const [auctionStats, setAuctionStats] = useState({
         teamCount: 0,
         playerCount: 0,
@@ -32,23 +33,27 @@ export default function AuctionDashboard(props) {
     });
 
     useEffect(() => {
-        getAuctionData()
+        getAuctionData();
+        fetchAuctionSummary();
     }, [])
 
-    // Update stats when data changes
-    useEffect(() => {
-        if (teams && players) {
-            const soldCount = players.filter(p => p.auctionStatus === 'sold').length;
-            const totalBudget = teams.reduce((sum, t) => sum + (t.budget || 0), 0);
+    const fetchAuctionSummary = async () => {
+        try {
+            const res = await auctionApi.getAuctionSummary(auctionId);
             
-            setAuctionStats({
-                teamCount: teams.length,
-                playerCount: players.length,
-                soldCount,
-                totalBudget
-            });
+            if (res.success) {
+                const { stats } = res.data;
+                setAuctionStats({
+                    teamCount: stats.teams.total,
+                    playerCount: stats.players.total,
+                    soldCount: stats.players.sold,
+                    totalBudget: stats.teams.totalBudget
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching auction summary:', error);
         }
-    }, [teams, players]);
+    };
 
     const getAuctionData = () => {
         AuctionService.getAuctionDetails({ auctionId: auctionId }).then((res) => {
@@ -89,10 +94,12 @@ export default function AuctionDashboard(props) {
             }
         }).catch((error) => {
             console.error(error);
-            if (error == "TokenExpiredError") {
-                navigate("/auth/login")
+            if (error == "TokenExpiredError" || error.toString().includes("TokenExpiredError") || error.toString().includes("token expired")) {
+                toast.error("Your session has expired. Please login again to continue.");
+                navigate("/auth/login");
+            } else {
+                toast.error(error.toString(), { duration: 3000 });
             }
-            toast.error(error, { duration: 3000 });
         });
     }
 
@@ -165,7 +172,7 @@ export default function AuctionDashboard(props) {
                 onLogout={handleLogout}
             />
             
-            <div className='max-w-7xl mx-auto px-4 py-6 w-full'>
+            <div className='w-full px-4 sm:px-6 lg:px-12 xl:px-20 py-6'>
                 {/* Auction Header */}
                 <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-100">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">

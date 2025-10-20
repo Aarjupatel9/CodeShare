@@ -6,13 +6,50 @@ const imageService = require("../../services/imageService");
 /**
  * Get all teams for an auction
  * GET /api/v1/auctions/:auctionId/teams
+ * Query params: ?include=stats (optional)
  */
 exports.getTeams = async (req, res) => {
   try {
     const { auctionId } = req.params;
+    const includeStats = req.query.include === 'stats';
 
     const teams = await AuctionTeamModel.find({ auction: auctionId })
       .sort({ createdAt: -1 });
+
+    // If stats requested, add player counts and budget details
+    if (includeStats) {
+      const teamsWithStats = await Promise.all(
+        teams.map(async (team) => {
+          const players = await AuctionPlayerModel.find({ 
+            auction: auctionId,
+            team: team._id 
+          });
+
+          const playerCount = players.length;
+          const soldPlayers = players.filter(p => p.auctionStatus === 'sold');
+          const budgetSpent = soldPlayers.reduce((sum, p) => sum + (parseFloat(p.soldPrice) || 0), 0);
+          const budgetRemaining = parseFloat(team.budget) - budgetSpent;
+          const budgetUsedPercent = team.budget > 0 ? Math.round((budgetSpent / parseFloat(team.budget)) * 100) : 0;
+
+          return {
+            ...team.toObject(),
+            stats: {
+              playerCount,
+              soldCount: soldPlayers.length,
+              budgetSpent,
+              budgetRemaining,
+              budgetUsedPercent
+            }
+          };
+        })
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "Teams with stats retrieved successfully",
+        data: teamsWithStats,
+      });
+    }
 
     res.status(200).json({
       success: true,

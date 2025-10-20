@@ -6,6 +6,7 @@ export default function PlayersTab({
     players,
     playersCopy,
     teams,
+    sets,
     playerListFilters,
     selectedPlayerListFilters,
     setSelectedPlayerListFilters,
@@ -16,6 +17,11 @@ export default function PlayersTab({
     handlePlayerSetAssign,
     handlePlayerPermenentRemove
 }) {
+    // Helper function to get set name
+    const getSetName = (setId) => {
+        const set = sets?.find(s => s._id === setId);
+        return set ? set.name : null;
+    };
     return (
         <div>
             {/* Action Buttons */}
@@ -32,15 +38,6 @@ export default function PlayersTab({
                 >
                     <span>➕</span>
                     <span>Add Player Manually</span>
-                </button>
-                <button 
-                    onClick={() => {
-                        toast.success('Template columns: playerNumber, name, role, basePrice, auctionSet');
-                    }}
-                    className="px-6 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold transition flex items-center justify-center gap-2"
-                >
-                    <span>📥</span>
-                    <span className="hidden md:inline">Download Template</span>
                 </button>
             </div>
 
@@ -210,6 +207,11 @@ export default function PlayersTab({
                                                 </span>
                                             )}
                                             <span>Base: {getTeamBudgetForView(player.basePrice)}</span>
+                                            {getSetName(player.auctionSet) && (
+                                                <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-medium">
+                                                    📦 {getSetName(player.auctionSet)}
+                                                </span>
+                                            )}
                                             <span className={`px-2 py-1 ${statusBadge.bg} ${statusBadge.text} rounded text-xs font-semibold`}>
                                                 {statusBadge.label}
                                             </span>
