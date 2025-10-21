@@ -39,6 +39,12 @@ const auctionSchema = new mongoose.Schema(
             type: Boolean,
             required: false,
             default: false
+        },
+        enableViewerAnalytics: {
+            type: Boolean,
+            required: false,
+            default: false,
+            comment: 'Track viewer count every minute for analytics'
         }
     },
     { timestamps: true }

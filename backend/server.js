@@ -7,8 +7,7 @@ const PORT = process.env.PORT || 8080;
 app.listen(PORT, (err) => {
     if (err) {
         console.error("Error occurred while starting the server..." + err);
-        return
+        return;
     }
-    console.info(`server started on PORT --> ${PORT}`);
-})
-
+    console.info(`🚀 Server started on PORT --> ${PORT}`);
+});

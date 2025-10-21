@@ -17,7 +17,8 @@ export default function AuctionSettings({
             maxTeamMember: auctionEditable.maxTeamMember,
             minTeamMember: auctionEditable.minTeamMember,
             budgetPerTeam: auctionEditable.budgetPerTeam,
-            auctionLiveEnabled: auctionEditable.auctionLiveEnabled
+            auctionLiveEnabled: auctionEditable.auctionLiveEnabled,
+            enableViewerAnalytics: auctionEditable.enableViewerAnalytics
         };
         
         if (!payload.name || payload.name.trim() === '') {
@@ -125,6 +126,43 @@ export default function AuctionSettings({
                         </label>
                     </div>
                     <p className="text-xs text-gray-600 mt-2">Allow public viewers to watch live bidding</p>
+                </div>
+
+                {/* Enable Viewer Analytics */}
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-100 md:col-span-2">
+                    <label htmlFor="enableViewerAnalytics" className="block text-sm font-semibold text-gray-700 mb-3 text-left">
+                        📊 Viewer Analytics Tracking
+                    </label>
+                    <div className="flex items-center gap-4">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                                id="enableViewerAnalytics"
+                                type="checkbox"
+                                checked={auctionEditable.enableViewerAnalytics || false}
+                                className="sr-only peer"
+                                onChange={(e) => {
+                                    setAuctionEditable((old) => {
+                                        old = structuredClone(old);
+                                        old.enableViewerAnalytics = e.target.checked;
+                                        return old;
+                                    });
+                                }}
+                            />
+                            <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-purple-600"></div>
+                            <span className="ml-3 text-lg font-semibold text-gray-900">
+                                {auctionEditable.enableViewerAnalytics ? 'Enabled' : 'Disabled'}
+                            </span>
+                        </label>
+                    </div>
+                    <p className="text-xs text-gray-600 mt-2">Track viewer count every minute for analytics dashboard (snapshots stored for 90 days)</p>
+                    {auctionEditable.enableViewerAnalytics && (
+                        <div className="mt-3 p-3 bg-purple-100 rounded-lg">
+                            <p className="text-xs text-purple-800">
+                                <strong>ℹ️ Analytics Details:</strong> Viewer count will be sampled every 5 seconds and aggregated every minute. 
+                                This data will be available in your analytics dashboard for trend analysis.
+                            </p>
+                        </div>
+                    )}
                 </div>
 
                 {/* Max Team Members */}

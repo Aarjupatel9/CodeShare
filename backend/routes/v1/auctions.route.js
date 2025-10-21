@@ -17,7 +17,9 @@ const {
     getAuctionStats,
     getAuctionSummary,
     getRecentSoldPlayers,
-    getAuctionLeaderboard
+    getAuctionLeaderboard,
+    saveViewerSnapshot,
+    getViewerAnalytics
 } = require("../../controllers/v1/auctionStatsController");
 
 const {
@@ -29,6 +31,9 @@ const {
 
 // Public live view route (unified API for live view page)
 router.get("/:id/live-data", checkLiveViewEnabled, getLiveViewData);
+
+// Internal route (called by socket server - requires internal API key)
+router.post("/:id/analytics/snapshot", saveViewerSnapshot);
 
 // Protected routes - require user authentication
 router.use(authenticateUser());
@@ -49,6 +54,9 @@ router.delete("/:id", authenticateAuction(), deleteAuction);
 
 // Auction summary
 router.get("/:id/summary", getAuctionSummary);
+
+// Viewer analytics
+router.get("/:id/analytics/viewers", getViewerAnalytics);
 
 // Auction session management
 router.post("/:id/login", loginAuction);

@@ -382,7 +382,7 @@ export default function AuctionHome() {
                 const playerCount = auction.summary?.playerCount || 0;
                 
                 return (
-                  <div key={auction._id} className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-5 border border-gray-100 cursor-pointer" onClick={() => handleQuickJoinAuction(auction)}>
+                  <div key={auction._id} className="flex flex-col bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-5 border border-gray-100 cursor-pointer" onClick={() => handleQuickJoinAuction(auction)}>
                     <div className="flex items-start justify-between mb-3">
                       <div>
                         <h3 className="font-bold text-gray-900 text-left text-lg mb-1">{auction.name}</h3>
@@ -402,7 +402,7 @@ export default function AuctionHome() {
                         e.stopPropagation();
                         handleQuickJoinAuction(auction);
                       }}
-                      className={`w-full px-4 py-2.5 ${
+                      className={`mt-auto w-full px-4 py-2.5 ${
                         auction.state === 'running' 
                           ? 'bg-green-600 hover:bg-green-700' 
                           : auction.state === 'setup'

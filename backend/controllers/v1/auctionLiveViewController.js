@@ -48,9 +48,9 @@ exports.getLiveViewData = async (req, res) => {
     
     // Parallel queries for better performance
     const [auction, teams, allPlayers] = await Promise.all([
-      // 1. Get auction (minimal fields)
+      // 1. Get auction (minimal fields + analytics flag for socket server)
       AuctionModel.findById(id)
-        .select('_id name state createdAt')
+        .select('_id name state createdAt enableViewerAnalytics')
         .lean(),
       
       // 2. Get teams (minimal fields)

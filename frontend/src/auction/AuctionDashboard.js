@@ -31,6 +31,11 @@ export default function AuctionDashboard(props) {
         soldCount: 0,
         totalBudget: 0
     });
+    
+    // Viewer analytics
+    const [viewerAnalytics, setViewerAnalytics] = useState(null);
+    const [showAnalytics, setShowAnalytics] = useState(false);
+    const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
     useEffect(() => {
         getAuctionData();
@@ -52,6 +57,60 @@ export default function AuctionDashboard(props) {
             }
         } catch (error) {
             console.error('Error fetching auction summary:', error);
+        }
+    };
+    
+    const fetchViewerAnalytics = async () => {
+        if (analyticsLoading) return; // Prevent duplicate calls
+        
+        setAnalyticsLoading(true);
+        try {
+            const res = await auctionApi.getViewerAnalytics(auctionId, 'all');
+            
+            if (res.success && res.data.snapshots && res.data.snapshots.length > 0) {
+                const snapshots = res.data.snapshots;
+                
+                // Calculate summary stats on client side
+                const summary = {
+                    totalSnapshots: snapshots.length,
+                    overallPeak: Math.max(...snapshots.map(s => s.peakViewers || s.viewerCount)),
+                    overallAvg: Math.round(
+                        snapshots.reduce((sum, s) => sum + (s.avgViewers || s.viewerCount), 0) / snapshots.length
+                    ),
+                    overallMin: Math.min(...snapshots.map(s => s.minViewers || s.viewerCount)),
+                    duration: 0
+                };
+                
+                // Calculate duration (first to last snapshot)
+                if (snapshots.length > 1) {
+                    const firstSnapshot = new Date(snapshots[0].timestamp);
+                    const lastSnapshot = new Date(snapshots[snapshots.length - 1].timestamp);
+                    summary.duration = Math.round((lastSnapshot - firstSnapshot) / 60000); // minutes
+                }
+                
+                setViewerAnalytics({
+                    snapshots,
+                    summary
+                });
+            } else {
+                // No analytics data
+                setViewerAnalytics(null);
+            }
+        } catch (error) {
+            console.error('Error fetching viewer analytics:', error);
+            setViewerAnalytics(null);
+        } finally {
+            setAnalyticsLoading(false);
+        }
+    };
+    
+    const toggleAnalytics = () => {
+        const newShowState = !showAnalytics;
+        setShowAnalytics(newShowState);
+        
+        // Fetch analytics only when expanding for the first time
+        if (newShowState && !viewerAnalytics && !analyticsLoading) {
+            fetchViewerAnalytics();
         }
     };
 
@@ -227,6 +286,143 @@ export default function AuctionDashboard(props) {
                         <p className="text-2xl font-bold text-gray-900">₹{getTeamBudgetForView(auctionStats.totalBudget)}</p>
                         <p className="text-sm text-gray-600">Total Budget</p>
                     </div>
+                </div>
+
+                {/* Viewer Analytics */}
+                <div className="bg-white rounded-xl shadow-md border border-gray-100 mb-6 overflow-hidden">
+                    <button 
+                        onClick={toggleAnalytics}
+                        className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition"
+                    >
+                        <div className="flex items-center gap-2">
+                            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                                <span>📊</span>
+                                <span>Viewer Analytics</span>
+                            </h2>
+                            {viewerAnalytics && (
+                                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
+                                    {viewerAnalytics.summary.totalSnapshots} snapshots
+                                </span>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {analyticsLoading && (
+                                <span className="text-sm text-gray-500">Loading...</span>
+                            )}
+                            <svg 
+                                className={`w-6 h-6 transition-transform ${showAnalytics ? 'rotate-180' : ''}`}
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                    </button>
+                    
+                    {showAnalytics && (
+                        <div className="px-6 pb-6">
+                            {analyticsLoading ? (
+                                <div className="text-center py-12">
+                                    <div className="text-4xl mb-3">📊</div>
+                                    <p className="text-gray-600">Loading analytics...</p>
+                                </div>
+                            ) : viewerAnalytics ? (
+                                <>
+                                    <div className="flex items-center justify-end mb-4">
+                                        <button 
+                                            onClick={fetchViewerAnalytics}
+                                            className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1"
+                                        >
+                                            <span>🔄</span>
+                                            <span>Refresh</span>
+                                        </button>
+                                    </div>
+                        
+                        {/* Summary Stats */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 text-center">
+                                <div className="text-3xl font-bold text-blue-600">{viewerAnalytics.summary.overallPeak}</div>
+                                <div className="text-sm text-gray-600 mt-1">Peak Viewers</div>
+                            </div>
+                            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 text-center">
+                                <div className="text-3xl font-bold text-green-600">{viewerAnalytics.summary.overallAvg}</div>
+                                <div className="text-sm text-gray-600 mt-1">Avg Viewers</div>
+                            </div>
+                            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 text-center">
+                                <div className="text-3xl font-bold text-purple-600">{viewerAnalytics.summary.overallMin}</div>
+                                <div className="text-sm text-gray-600 mt-1">Min Viewers</div>
+                            </div>
+                            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 text-center">
+                                <div className="text-3xl font-bold text-gray-700">
+                                    {Math.floor(viewerAnalytics.summary.duration / 60)}h {viewerAnalytics.summary.duration % 60}m
+                                </div>
+                                <div className="text-sm text-gray-600 mt-1">Duration</div>
+                            </div>
+                        </div>
+                        
+                        {/* Simple Trend Display */}
+                        <div className="bg-gray-50 rounded-lg p-4">
+                            <h4 className="text-sm font-semibold text-gray-700 mb-3">Viewer Trend</h4>
+                            <div className="space-y-2 max-h-64 overflow-y-auto">
+                                {viewerAnalytics.snapshots.slice(-20).reverse().map((snapshot, index) => {
+                                    const time = new Date(snapshot.timestamp).toLocaleTimeString('en-US', {
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    });
+                                    const isRecent = index < 5;
+                                    
+                                    return (
+                                        <div 
+                                            key={index}
+                                            className={`flex items-center justify-between p-2 rounded ${
+                                                isRecent ? 'bg-blue-100' : 'bg-white'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-xs text-gray-500 font-mono w-16">{time}</span>
+                                                <div className="flex items-center gap-2">
+                                                    <div 
+                                                        className="h-2 rounded-full bg-blue-500"
+                                                        style={{ width: `${Math.min((snapshot.viewerCount / viewerAnalytics.summary.overallPeak) * 200, 200)}px` }}
+                                                    ></div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-3 text-sm">
+                                                <span className="text-gray-600">
+                                                    Avg: <span className="font-semibold">{snapshot.avgViewers}</span>
+                                                </span>
+                                                <span className="text-blue-600">
+                                                    Peak: <span className="font-semibold">{snapshot.peakViewers}</span>
+                                                </span>
+                                                <span className="text-gray-700 font-bold">{snapshot.viewerCount}</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <div className="text-xs text-gray-500 mt-3 text-center">
+                                Showing last {Math.min(viewerAnalytics.snapshots.length, 20)} snapshots (1-minute intervals)
+                            </div>
+                        </div>
+                                </>
+                            ) : (
+                                <div className="text-center py-12">
+                                    <div className="text-4xl mb-3">📊</div>
+                                    <h3 className="text-lg font-bold text-gray-900 mb-2">No Analytics Data</h3>
+                                    <p className="text-gray-600 mb-4">
+                                        Enable "Viewer Analytics" in auction settings to start tracking
+                                    </p>
+                                    <button 
+                                        onClick={() => openManagementBoard()}
+                                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition"
+                                    >
+                                        Go to Settings →
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Quick Actions */}

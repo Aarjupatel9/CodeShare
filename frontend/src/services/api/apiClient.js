@@ -77,6 +77,10 @@ class ApiClient {
 
     try {
       const response = await fetch(url, fetchOptions);
+      if (response.status === 401 || response.status === 403) {
+        this.handleTokenExpiration();
+      }
+      
       const data = await response.json();
       
       // Handle token expiration globally

@@ -225,8 +225,11 @@ export default function AuctionLiveView() {
             fetchAllLiveData(); // Refresh all data with single API call
         });
 
-        // Mock viewer count
-        setViewerCount(Math.floor(Math.random() * 150) + 20);
+        // Listen for viewer count updates (real-time)
+        socket.on("viewerCountUpdate", (count) => {
+            setViewerCount(count);
+        });
+
         setSocket(socket);
     }
 

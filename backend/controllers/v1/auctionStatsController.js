@@ -3,6 +3,7 @@ const AuctionModel = require("../../models/auctionModel");
 const AuctionTeamModel = require("../../models/auctionTeamModel");
 const AuctionPlayerModel = require("../../models/auctionPlayerModel");
 const AuctionSetModel = require("../../models/auctionSetModel");
+const ViewerAnalytics = require("../../models/viewerAnalyticsModel");
 
 /**
  * Get auction statistics for authenticated user
@@ -270,6 +271,133 @@ exports.getAuctionLeaderboard = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
+    });
+  }
+};
+
+/**
+ * Save viewer analytics snapshot (called by socket server)
+ * POST /api/v1/auctions/:id/analytics/snapshot
+ */
+exports.saveViewerSnapshot = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { timestamp, viewerCount, avgViewers, peakViewers, minViewers, sampleCount } = req.body;
+    
+    // Verify internal request (security - called from socket server)
+    const internalKey = req.headers['x-internal-request'];
+    if (internalKey !== process.env.INTERNAL_API_KEY) {
+      return res.status(403).json({
+        success: false,
+        message: 'Unauthorized - Invalid internal API key'
+      });
+    }
+    
+    // Check if analytics is enabled for this auction
+    const auction = await AuctionModel.findById(id).select('enableViewerAnalytics').lean();
+    
+    if (!auction) {
+      return res.status(404).json({
+        success: false,
+        message: 'Auction not found'
+      });
+    }
+    
+    // Only save if analytics enabled
+    if (!auction.enableViewerAnalytics) {
+      return res.status(200).json({
+        success: true,
+        message: 'Analytics disabled for this auction - snapshot not saved'
+      });
+    }
+    
+    // Save snapshot
+    await ViewerAnalytics.create({
+      auction: id,
+      timestamp: timestamp || new Date(),
+      viewerCount: viewerCount || 0,
+      avgViewers: avgViewers || viewerCount || 0,
+      peakViewers: peakViewers || viewerCount || 0,
+      minViewers: minViewers || viewerCount || 0,
+      sampleCount: sampleCount || 1
+    });
+    
+    console.log(`✅ Viewer snapshot saved: Auction ${id}, ${viewerCount} viewers (avg: ${avgViewers}, peak: ${peakViewers})`);
+    
+    res.status(200).json({
+      success: true,
+      message: 'Snapshot saved successfully'
+    });
+    
+  } catch (error) {
+    console.error('Error saving viewer snapshot:', error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error: " + error.message
+    });
+  }
+};
+
+/**
+ * Get viewer analytics for an auction
+ * GET /api/v1/auctions/:id/analytics/viewers
+ */
+exports.getViewerAnalytics = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { timeRange } = req.query; // 'hour', 'day', 'all'
+    
+    // Build query based on time range
+    let query = { auction: id };
+    
+    if (timeRange === 'hour') {
+      query.timestamp = { $gte: new Date(Date.now() - 3600000) };
+    } else if (timeRange === 'day') {
+      query.timestamp = { $gte: new Date(Date.now() - 86400000) };
+    }
+    
+    // Get snapshots
+    const snapshots = await ViewerAnalytics.find(query)
+      .select('timestamp viewerCount avgViewers peakViewers minViewers sampleCount')
+      .sort({ timestamp: 1 })
+      .lean();
+    
+    // Calculate summary stats
+    // let summary = {
+    //   totalSnapshots: snapshots.length,
+    //   overallPeak: 0,
+    //   overallAvg: 0,
+    //   overallMin: Infinity,
+    //   duration: 0
+    // };
+    
+    // if (snapshots.length > 0) {
+    //   summary.overallPeak = Math.max(...snapshots.map(s => s.peakViewers || s.viewerCount));
+    //   summary.overallMin = Math.min(...snapshots.map(s => s.minViewers || s.viewerCount));
+    //   summary.overallAvg = Math.round(
+    //     snapshots.reduce((sum, s) => sum + (s.avgViewers || s.viewerCount), 0) / snapshots.length
+    //   );
+      
+    //   // Calculate duration
+    //   const firstSnapshot = new Date(snapshots[0].timestamp);
+    //   const lastSnapshot = new Date(snapshots[snapshots.length - 1].timestamp);
+    //   summary.duration = Math.round((lastSnapshot - firstSnapshot) / 60000); // minutes
+    // }
+    
+    res.status(200).json({
+      success: true,
+      message: "Viewer analytics retrieved successfully",
+      data: {
+        snapshots,
+        // summary
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error in getViewerAnalytics:', error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error: " + error.message
     });
   }
 };

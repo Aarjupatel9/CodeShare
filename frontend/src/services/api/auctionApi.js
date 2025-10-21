@@ -82,6 +82,22 @@ class AuctionApi {
   }
 
   /**
+   * Get viewer analytics for an auction
+   * @param {string} auctionId - Auction ID
+   * @param {string} timeRange - 'hour', 'day', or 'all' (optional)
+   */
+  async getViewerAnalytics(auctionId, timeRange = 'all') {
+    try {
+      const response = await apiClient.get(
+        `/api/v1/auctions/${auctionId}/analytics/viewers?timeRange=${timeRange}`
+      );
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Get auction details
    */
   async getAuction(auctionId, isPublic = false) {
