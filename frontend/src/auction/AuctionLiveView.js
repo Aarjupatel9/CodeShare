@@ -15,7 +15,7 @@ export default function AuctionLiveView() {
     const [currentPlayer, setCurrentPlayer] = useState({});
     const [isLinkValid, setIsLinkValid] = useState(false);
     const [socket, setSocket] = useState(null);
-
+    
     // Live stats
     const [viewerCount, setViewerCount] = useState(0);
     const [recentSoldPlayers, setRecentSoldPlayers] = useState([]);
@@ -26,11 +26,17 @@ export default function AuctionLiveView() {
     // Collapsible states
     const [expandedStats, setExpandedStats] = useState({
         leaderboard: false,
-        recent: false,
-        stats: false
+        recent: false
     });
     const [expandedTeams, setExpandedTeams] = useState({});
     const [showAllPlayers, setShowAllPlayers] = useState({}); // Track which teams show all players
+    
+    // Player search states
+    const [allPlayers, setAllPlayers] = useState([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [teamFilter, setTeamFilter] = useState('all');
+    const [filteredPlayers, setFilteredPlayers] = useState([]);
 
     const { auctionId } = useParams();
     const navigate = useNavigate();
@@ -38,6 +44,34 @@ export default function AuctionLiveView() {
     useEffect(() => {
         fetchAllLiveData();
     }, [])
+    
+    // Filter players based on search and filters
+    useEffect(() => {
+        let filtered = allPlayers;
+        
+        // Search by name or player number
+        if (searchQuery) {
+            filtered = filtered.filter(player => 
+                player.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                player.playerNumber.toString().includes(searchQuery)
+            );
+        }
+        
+        // Filter by status
+        if (statusFilter !== 'all') {
+            filtered = filtered.filter(player => player.auctionStatus === statusFilter);
+        }
+        
+        // Filter by team
+        if (teamFilter !== 'all') {
+            filtered = filtered.filter(player => {
+                const playerTeamId = player.team;
+                return playerTeamId?.toString() === teamFilter;
+            });
+        }
+        
+        setFilteredPlayers(filtered);
+    }, [searchQuery, statusFilter, teamFilter, allPlayers])
 
     useEffect(() => {
         var stats = {
@@ -46,19 +80,29 @@ export default function AuctionLiveView() {
             pendingPlayers: players.filter(p => p.auctionStatus === 'idle').length,
         };
         setAuctionsStats(stats)
-        console.log("stats",stats);
     }, [players])
 
     const fetchAllLiveData = async () => {
         try {
             const res = await auctionApi.getLiveViewData(auctionId);
-
+            
             if (res.success) {
-                const { auction, teams, soldPlayers } = res.data;
-
+                const { auction, teams } = res.data;
+                let { players: allPlayersData } = res.data;
+                
                 // Set basic data
                 setAuction(auction);
                 setTeams(teams);
+                allPlayersData = allPlayersData.map((p)=>{
+                    return {
+                        ...p,
+                        teamName: getTeamName(p.team, teams)
+                    }
+                })
+                setAllPlayers(allPlayersData);
+                
+                // Filter sold players for processing
+                const soldPlayers = allPlayersData.filter(p => p.auctionStatus === 'sold');
                 setPlayers(soldPlayers);
 
                 // Process data on client side (saves server resources)
@@ -266,7 +310,7 @@ export default function AuctionLiveView() {
     // Render Current Bidding Card
     const renderCurrentBidding = () => {
         if (!currentPlayer || Object.keys(currentPlayer).length === 0) {
-            return (
+                return (
                 <div className="bg-gradient-to-br from-gray-700 to-gray-800 rounded-2xl p-8 shadow-2xl">
                     <div className="text-center">
                         <div className="text-6xl mb-4">⏳</div>
@@ -281,7 +325,7 @@ export default function AuctionLiveView() {
             ? currentPlayer.bidding[currentPlayer.bidding.length - 1]
             : null;
 
-        return (
+            return (
             <div className="bg-gradient-to-br from-blue-600 to-purple-700 rounded-2xl shadow-2xl overflow-hidden">
                 {/* Header */}
                 <div className="bg-black bg-opacity-30 px-6 py-4 flex items-center justify-between">
@@ -382,21 +426,51 @@ export default function AuctionLiveView() {
 
     return (
         <div className='flex flex-col w-full min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 text-white'>
-            {/* Modern Header */}
-            <div className="bg-black bg-opacity-50 backdrop-blur-md px-4 sm:px-6 lg:px-12 xl:px-20 py-4 shadow-2xl sticky top-0 z-50">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                    <div className="flex items-center gap-3 flex-wrap">
-                        <h1 className="text-2xl md:text-3xl font-bold">{auction?.name || 'Auction'}</h1>
-                        <span className="px-4 py-2 bg-red-600 rounded-full text-sm font-bold flex items-center gap-2 animate-pulse">
-                            <span className="w-3 h-3 bg-white rounded-full"></span>
-                            LIVE
-                        </span>
+            {/* Modern Header - Compact */}
+            <div className="bg-black bg-opacity-50 backdrop-blur-md px-3 md:px-6 lg:px-12 py-2 md:py-3 shadow-2xl sticky top-0 z-50">
+                <div className="flex flex-col gap-2">
+                    {/* Top Row: Title and Viewer Count */}
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <h1 className="text-lg md:text-2xl font-bold truncate">{auction?.name || 'Auction'}</h1>
+                            <span className="px-2 md:px-3 py-1 bg-red-600 rounded-full text-xs font-bold flex items-center gap-1 animate-pulse">
+                                <span className="w-2 h-2 bg-white rounded-full"></span>
+                                LIVE
+                            </span>
+                        </div>
+                        <span className="px-2 md:px-3 py-1 bg-white bg-opacity-20 rounded-lg backdrop-blur-sm flex items-center gap-1 text-xs md:text-sm flex-shrink-0">
+                                <span>👥</span>
+                            <span className="font-semibold">{viewerCount}</span>
+                            </span>
                     </div>
-                    <div className="flex items-center gap-4 text-sm flex-wrap ">
-                        <span className="px-3 py-1 bg-white bg-opacity-20 rounded-lg backdrop-blur-sm flex items-center gap-2">
-                            <span>👥</span>
-                            <span className="font-semibold">{viewerCount} watching</span>
-                        </span>
+                    
+                    {/* Stats Row - Compact */}
+                    <div className="grid grid-cols-5 gap-1 md:gap-2">
+                        <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-md px-2 py-1 text-center">
+                            <div className="text-sm md:text-xl font-bold">{allPlayers.length}</div>
+                            <div className="text-[10px] md:text-xs text-gray-300 hidden md:block">Total</div>
+                            <div className="text-[10px] text-gray-300 md:hidden">Total</div>
+                        </div>
+                        <div className="bg-green-500 bg-opacity-20 backdrop-blur-sm rounded-md px-2 py-1 text-center border border-green-400">
+                            <div className="text-sm md:text-xl font-bold text-green-200">{auctionsStats.soldPlayers}</div>
+                            <div className="text-[10px] md:text-xs text-green-300 hidden md:block">Sold</div>
+                            <div className="text-[10px] text-green-300 md:hidden">Sold</div>
+                        </div>
+                        <div className="bg-white bg-opacity-10 backdrop-blur-sm rounded-md px-2 py-1 text-center">
+                            <div className="text-sm md:text-xl font-bold text-gray-300">{auctionsStats.unsoldPlayers}</div>
+                            <div className="text-[10px] md:text-xs text-gray-400 hidden md:block">Unsold</div>
+                            <div className="text-[10px] text-gray-400 md:hidden">Unsold</div>
+                        </div>
+                        <div className="bg-yellow-500 bg-opacity-20 backdrop-blur-sm rounded-md px-2 py-1 text-center border border-yellow-400">
+                            <div className="text-sm md:text-xl font-bold text-yellow-200">{auctionsStats.pendingPlayers}</div>
+                            <div className="text-[10px] md:text-xs text-yellow-300 hidden md:block">Pending</div>
+                            <div className="text-[10px] text-yellow-300 md:hidden">Pend</div>
+                        </div>
+                        <div className="bg-blue-500 bg-opacity-20 backdrop-blur-sm rounded-md px-2 py-1 text-center border border-blue-400">
+                            <div className="text-sm md:text-xl font-bold text-blue-200">{teams.length}</div>
+                            <div className="text-[10px] md:text-xs text-blue-300 hidden md:block">Teams</div>
+                            <div className="text-[10px] text-blue-300 md:hidden">Teams</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -408,7 +482,7 @@ export default function AuctionLiveView() {
                 {renderCurrentBidding()}
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                     {/* Team Leaderboard */}
                     <div className="bg-gradient-to-br from-yellow-500 to-orange-600 rounded-2xl shadow-2xl overflow-hidden">
@@ -531,50 +605,6 @@ export default function AuctionLiveView() {
                         </div>
                     </div>
 
-                    {/* Auction Stats */}
-                    <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl shadow-2xl overflow-hidden">
-                        <button
-                            onClick={() => toggleStats('stats')}
-                            className="w-full bg-black bg-opacity-30 px-6 py-4 hover:bg-opacity-40 transition md:cursor-default"
-                        >
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-xl font-bold flex items-center gap-2">
-                                    <span>📊</span>
-                                    <span>Auction Stats</span>
-                                </h3>
-                                <svg
-                                    className={`w-6 h-6 transition-transform md:hidden ${expandedStats.stats ? 'rotate-180' : ''}`}
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
-                            </div>
-                        </button>
-                        <div className={`p-6 space-y-4 ${expandedStats.stats ? 'block' : 'hidden md:block'}`}>
-                            <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4">
-                                <div className="text-purple-100 text-sm mb-1">Total Players</div>
-                                <div className="text-3xl font-bold">{players.length}</div>
-                            </div>
-                            <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4">
-                                <div className="text-green-100 text-sm mb-1">Sold</div>
-                                <div className="text-3xl font-bold text-green-200">{auctionsStats.soldPlayers}</div>
-                            </div>
-                            <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4">
-                                <div className="text-gray-200 text-sm mb-1">Unsold</div>
-                                <div className="text-3xl font-bold text-gray-300">{auctionsStats.unsoldPlayers}</div>
-                            </div>
-                            <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4">
-                                <div className="text-yellow-100 text-sm mb-1">Pending</div>
-                                <div className="text-3xl font-bold text-yellow-200">{auctionsStats.pendingPlayers}</div>
-                            </div>
-                            <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4">
-                                <div className="text-blue-100 text-sm mb-1">Teams</div>
-                                <div className="text-3xl font-bold text-blue-200">{teams.length}</div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 {/* Teams & Players Section */}
@@ -613,8 +643,8 @@ export default function AuctionLiveView() {
                                                     <div>
                                                         <div className="font-bold text-lg">{teamData.team.name}</div>
                                                         <div className="text-sm opacity-90">{teamData.players.length} players • ₹{getTeamBudgetForView(teamData.totalSpent)} spent</div>
-                                                    </div>
-                                                </div>
+                                </div>
+                            </div>
                                                 <svg
                                                     className={`w-6 h-6 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                                                     fill="none"
@@ -700,6 +730,100 @@ export default function AuctionLiveView() {
                                     </div>
                                 );
                             })}
+                        </div>
+                    </div>
+                </div>
+
+                {/* All Players Search Section */}
+                <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden">
+                    <div className="bg-black bg-opacity-30 px-6 py-4">
+                        <h2 className="text-2xl font-bold flex items-center gap-2">
+                            <span>🔍</span>
+                            <span>All Players</span>
+                        </h2>
+                        <p className="text-sm text-gray-300 mt-1">Search and filter all players in the auction</p>
+                            </div>
+
+                    <div className="p-6 space-y-4">
+                        {/* Search & Filters */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {/* Search Input */}
+                            <input
+                                type="text"
+                                placeholder="Search by name or number..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="px-4 py-3 rounded-lg bg-white bg-opacity-20 border border-white border-opacity-30 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:bg-opacity-30"
+                            />
+                            
+                            {/* Status Filter */}
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                className="px-4 py-3 rounded-lg bg-white bg-opacity-20 border border-white border-opacity-30 text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+                            >
+                                <option value="all" className="bg-gray-800">All Status</option>
+                                <option value="sold" className="bg-gray-800">Sold ✅</option>
+                                <option value="unsold" className="bg-gray-800">Unsold ❌</option>
+                                <option value="idle" className="bg-gray-800">Pending ⏳</option>
+                            </select>
+                            
+                            {/* Team Filter */}
+                            <select
+                                value={teamFilter}
+                                onChange={(e) => setTeamFilter(e.target.value)}
+                                className="px-4 py-3 rounded-lg bg-white bg-opacity-20 border border-white border-opacity-30 text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+                            >
+                                <option value="all" className="bg-gray-800">All Teams</option>
+                                {teams.map(team => (
+                                    <option key={team._id} value={team._id} className="bg-gray-800">{team.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        
+                        {/* Results Count */}
+                        <div className="text-sm text-gray-300">
+                            Showing {filteredPlayers.length} of {allPlayers.length} players
+                        </div>
+                        
+                        {/* Player List */}
+                        <div className="max-h-96 overflow-y-auto space-y-2">
+                            {filteredPlayers.length > 0 ? (
+                                filteredPlayers.map(player => (
+                                    <div key={player._id} className="bg-white bg-opacity-10 rounded-lg p-3 hover:bg-opacity-20 transition text-left">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center font-bold text-sm">
+                                                    {getPlayerInitials(player.name)}
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold">{player.name}</div>
+                                                    <div className="text-sm text-gray-300">
+                                                        {player.role} • #{player.playerNumber}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                {player.auctionStatus === 'sold' ? (
+                                                    <>
+                                                        <div className="font-bold">₹{getTeamBudgetForView(player.soldPrice)}</div>
+                                                        <div className="text-xs text-green-300">{player.teamName || 'Unknown'}</div>
+                                                    </>
+                                                ) : player.auctionStatus === 'unsold' ? (
+                                                    <div className="text-sm text-gray-400">Unsold</div>
+                                                ) : (
+                                                    <div className="text-sm text-yellow-400">Pending</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="py-8 text-center text-gray-400">
+                                    <div className="text-4xl mb-2">🔍</div>
+                                    <p>No players found matching your search</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

@@ -47,7 +47,7 @@ exports.getLiveViewData = async (req, res) => {
     const { id } = req.params;
     
     // Parallel queries for better performance
-    const [auction, teams, soldPlayers] = await Promise.all([
+    const [auction, teams, allPlayers] = await Promise.all([
       // 1. Get auction (minimal fields)
       AuctionModel.findById(id)
         .select('_id name state createdAt')
@@ -58,9 +58,9 @@ exports.getLiveViewData = async (req, res) => {
         .select('_id name logoUrl budget')
         .lean(),
       
-      // 3. Get sold players only (for live view, we only care about sold players)
+      // 3. Get all players (for search functionality + live view)
       AuctionPlayerModel.find({ auction: id })
-        .select('_id name playerNumber role soldPrice soldNumber team auctionStatus')
+        .select('_id name playerNumber role soldPrice soldNumber team auctionStatus basePrice')
         .sort({ soldNumber: -1 })
         .lean()
     ]);
@@ -73,7 +73,7 @@ exports.getLiveViewData = async (req, res) => {
       data: {
         auction,
         teams,
-        soldPlayers // Frontend will process this to build leaderboard, recent sales, team-player mapping
+        players: allPlayers // All players - frontend will filter/process as needed
       }
     });
     
