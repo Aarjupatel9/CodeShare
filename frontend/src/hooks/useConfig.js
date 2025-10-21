@@ -47,9 +47,6 @@ const fetchConfig = async () => {
  * 
  * Usage:
  * const { config, loading } = useConfig();
- * if (!loading) {
- *   console.log(config.backend_url);
- * }
  */
 export const useConfig = () => {
     const [config, setConfig] = useState(configCache);

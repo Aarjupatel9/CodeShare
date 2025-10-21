@@ -604,6 +604,7 @@ export default function AuctionSetup(props) {
             <AuctionNavbar 
                 onNavigate={navigate}
                 onLogout={handleLogout}
+                auction={auction}
             />
             
             <div className='w-full px-4 sm:px-6 lg:px-12 xl:px-20 py-6 bg-gradient-to-br from-blue-50 to-indigo-50'>

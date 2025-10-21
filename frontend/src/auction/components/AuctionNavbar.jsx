@@ -3,12 +3,13 @@ import { useParams } from 'react-router-dom';
 import { UserContext } from '../../context/UserContext';
 import useClickOutside from '../../hooks/useClickOutside';
 import { userProfileIcon } from '../../assets/svgs';
+import toast from 'react-hot-toast';
 
 /**
  * AuctionNavbar - Navigation bar for auction pages
  * Shows: Logo, Quick Links, User Profile, Logout
  */
-const AuctionNavbar = ({ onNavigate, onLogout }) => {
+const AuctionNavbar = ({ onNavigate, onLogout, auction }) => {
   const { currUser } = useContext(UserContext);
   const { auctionId } = useParams();
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -54,6 +55,16 @@ const AuctionNavbar = ({ onNavigate, onLogout }) => {
 
   const navigateToLiveView = () => {
     closeQuickLinks();
+    
+    // Check if live view is enabled
+    if (!auction?.auctionLiveEnabled) {
+      toast.error('Live view is disabled! Please enable it in Auction Settings first.', {
+        duration: 4000,
+        icon: '🔒',
+      });
+      return;
+    }
+    
     onNavigate(`/t/auction/${auctionId}/live`);
   };
 
@@ -130,12 +141,23 @@ const AuctionNavbar = ({ onNavigate, onLogout }) => {
 
                   <button
                     onClick={navigateToLiveView}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition flex items-center gap-3"
+                    className={`w-full text-left px-4 py-2 text-sm transition flex items-center gap-3 ${
+                      !auction?.auctionLiveEnabled 
+                        ? 'text-gray-400 hover:bg-red-50 cursor-not-allowed' 
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`}
                   >
-                    <span className="text-lg">📺</span>
-                    <div>
-                      <div className="font-medium">Live View</div>
-                      <div className="text-xs text-gray-500">Public Spectator Page</div>
+                    <span className="text-lg">{auction?.auctionLiveEnabled ? '📺' : '🔒'}</span>
+                    <div className="flex-1">
+                      <div className="font-medium flex items-center gap-2">
+                        Live View
+                        {!auction?.auctionLiveEnabled && (
+                          <span className="text-xs px-1.5 py-0.5 bg-red-100 text-red-600 rounded">Disabled</span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {auction?.auctionLiveEnabled ? 'Public Spectator Page' : 'Enable in Settings first'}
+                      </div>
                     </div>
                   </button>
                 </div>

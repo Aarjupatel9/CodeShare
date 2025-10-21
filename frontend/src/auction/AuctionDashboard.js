@@ -187,6 +187,14 @@ export default function AuctionDashboard(props) {
     }
 
     const openLiveUpdatePage = () => {
+        // Check if live view is enabled
+        if (!auction?.auctionLiveEnabled) {
+            toast.error('Live view is disabled! Please enable it in Auction Settings first.', {
+                duration: 4000,
+                icon: '🔒',
+            });
+            return;
+        }
         navigate("/t/auction/" + auctionId + "/live");
     }
 
@@ -229,6 +237,7 @@ export default function AuctionDashboard(props) {
             <AuctionNavbar 
                 onNavigate={navigate}
                 onLogout={handleLogout}
+                auction={auction}
             />
             
             <div className='w-full px-4 sm:px-6 lg:px-12 xl:px-20 py-6 bg-gradient-to-br from-blue-50 to-indigo-50'>
@@ -249,14 +258,29 @@ export default function AuctionDashboard(props) {
                         </div>
                         <button 
                             onClick={() => {
+                                // Check if live view is enabled
+                                if (!auction?.auctionLiveEnabled) {
+                                    toast.error('Live view is disabled! Enable it in Settings to share the link.', {
+                                        duration: 4000,
+                                        icon: '🔒',
+                                    });
+                                    return;
+                                }
                                 const liveUrl = `${window.location.origin}/t/auction/${auctionId}/live`;
                                 navigator.clipboard.writeText(liveUrl);
                                 toast.success('Live link copied to clipboard!');
                             }}
-                            className="px-6 py-3 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-semibold transition flex items-center gap-2 justify-center md:justify-start"
+                            className={`px-6 py-3 rounded-lg font-semibold transition flex items-center gap-2 justify-center md:justify-start ${
+                                auction?.auctionLiveEnabled 
+                                    ? 'bg-blue-100 hover:bg-blue-200 text-blue-700' 
+                                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            }`}
                         >
-                            <span>🔗</span>
+                            <span>{auction?.auctionLiveEnabled ? '🔗' : '🔒'}</span>
                             <span>Share Live Link</span>
+                            {!auction?.auctionLiveEnabled && (
+                                <span className="text-xs px-1.5 py-0.5 bg-red-100 text-red-600 rounded ml-1">Disabled</span>
+                            )}
                         </button>
                     </div>
                 </div>
@@ -462,11 +486,22 @@ export default function AuctionDashboard(props) {
                     {/* Live View */}
                     <div 
                         onClick={() => openLiveUpdatePage()} 
-                        className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-xl p-6 text-white cursor-pointer hover:shadow-2xl transition-all transform hover:scale-105"
+                        className={`rounded-xl shadow-xl p-6 text-white transition-all transform ${
+                            auction?.auctionLiveEnabled
+                                ? 'bg-gradient-to-br from-purple-500 to-purple-600 cursor-pointer hover:shadow-2xl hover:scale-105'
+                                : 'bg-gradient-to-br from-gray-400 to-gray-500 cursor-not-allowed opacity-75'
+                        }`}
                     >
-                        <div className="text-5xl mb-3">📺</div>
-                        <h3 className="text-2xl font-bold mb-2">Live View</h3>
-                        <p className="text-purple-100 text-sm mb-4">Public spectator page</p>
+                        <div className="text-5xl mb-3">{auction?.auctionLiveEnabled ? '📺' : '🔒'}</div>
+                        <h3 className="text-2xl font-bold mb-2 flex items-center gap-2">
+                            Live View
+                            {!auction?.auctionLiveEnabled && (
+                                <span className="text-xs px-2 py-1 bg-red-100 text-red-600 rounded">Disabled</span>
+                            )}
+                        </h3>
+                        <p className={`text-sm mb-4 ${auction?.auctionLiveEnabled ? 'text-purple-100' : 'text-gray-200'}`}>
+                            {auction?.auctionLiveEnabled ? 'Public spectator page' : 'Enable in Settings first'}
+                        </p>
                         <div className="flex items-center justify-between">
                             <span className="text-sm">Share with viewers</span>
                             <span className="text-2xl">→</span>

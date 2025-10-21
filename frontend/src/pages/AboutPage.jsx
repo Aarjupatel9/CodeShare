@@ -53,9 +53,9 @@ const AboutPage = ({ user }) => {
           <div className="bg-white rounded-xl shadow-md p-8 border border-gray-100">
             <div className="flex items-center gap-3 mb-4">
               <span className="text-3xl">🎯</span>
-              <h2 className="text-3xl font-bold text-gray-900">Our Mission</h2>
+              <h2 className="text-3xl font-bold text-gray-900 text-left">Our Mission</h2>
             </div>
-            <p className="text-lg text-gray-700 leading-relaxed">
+            <p className="text-lg text-gray-700 leading-relaxed text-left">
               CodeShare is built to make document creation and sharing effortless. We believe in 
               providing powerful tools that are simple to use, accessible to everyone, and free 
               from unnecessary complexity. Whether you're sharing notes, code snippets, documentation, 
@@ -69,65 +69,65 @@ const AboutPage = ({ user }) => {
           <div className="bg-white rounded-xl shadow-md p-8 border border-gray-100">
             <div className="flex items-center gap-3 mb-6">
               <span className="text-3xl">🌟</span>
-              <h2 className="text-3xl font-bold text-gray-900">What We Offer</h2>
+              <h2 className="text-3xl font-bold text-gray-900 text-left">What We Offer</h2>
             </div>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="p-4 bg-blue-50 rounded-lg">
-                <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
+                <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2 text-left">
                   <span className="text-2xl">📝</span>
                   Document Editor
                 </h3>
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-gray-700 text-left">
                   Rich text editing with support for formatting, images, code blocks, and more. 
                   Create beautiful documents with ease.
                 </p>
               </div>
               <div className="p-4 bg-green-50 rounded-lg">
-                <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
+                <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2 text-left">
                   <span className="text-2xl">🔗</span>
                   Easy Sharing
                 </h3>
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-gray-700 text-left">
                   Every document gets a unique URL. Share it with anyone - no account required 
                   to view shared documents.
                 </p>
               </div>
               <div className="p-4 bg-purple-50 rounded-lg">
-                <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
+                <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2 text-left">
                   <span className="text-2xl">📎</span>
                   File Management
                 </h3>
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-gray-700 text-left">
                   Upload and manage files alongside your documents. Keep everything organized 
                   in one place.
                 </p>
               </div>
               <div className="p-4 bg-yellow-50 rounded-lg">
-                <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
+                <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2 text-left">
                   <span className="text-2xl">🏏</span>
                   Auction Platform
                 </h3>
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-gray-700 text-left">
                   Manage sports auctions with team creation, player bidding, and live updates. 
                   Perfect for fantasy leagues.
                 </p>
               </div>
               <div className="p-4 bg-red-50 rounded-lg">
-                <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
+                <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2 text-left">
                   <span className="text-2xl">🎮</span>
                   Interactive Games
                 </h3>
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-gray-700 text-left">
                   Play games directly in your browser. More games and features being added 
                   regularly.
                 </p>
               </div>
               <div className="p-4 bg-indigo-50 rounded-lg">
-                <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
+                <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2 text-left">
                   <span className="text-2xl">📱</span>
                   Responsive Design
                 </h3>
-                <p className="text-sm text-gray-700">
+                <p className="text-sm text-gray-700 text-left">
                   Works seamlessly on desktop, tablet, and mobile. Access your content from 
                   any device, anywhere.
                 </p>
@@ -141,9 +141,9 @@ const AboutPage = ({ user }) => {
           <div className="bg-white rounded-xl shadow-md p-8 border border-gray-100">
             <div className="flex items-center gap-3 mb-6">
               <span className="text-3xl">⚙️</span>
-              <h2 className="text-3xl font-bold text-gray-900">Technology</h2>
+              <h2 className="text-3xl font-bold text-gray-900 text-left">Technology</h2>
             </div>
-            <p className="text-gray-700 mb-4">
+            <p className="text-gray-700 mb-4 text-left">
               CodeShare is built with modern web technologies to ensure speed, reliability, and a great user experience:
             </p>
             <div className="grid md:grid-cols-3 gap-4">
@@ -186,42 +186,42 @@ const AboutPage = ({ user }) => {
           <div className="bg-white rounded-xl shadow-md p-8 border border-gray-100">
             <div className="flex items-center gap-3 mb-6">
               <span className="text-3xl">✨</span>
-              <h2 className="text-3xl font-bold text-gray-900">Key Features</h2>
+              <h2 className="text-3xl font-bold text-gray-900 text-left">Key Features</h2>
             </div>
             <div className="space-y-4">
               <div className="flex items-start gap-3">
                 <span className="text-2xl">✅</span>
                 <div>
-                  <h3 className="font-semibold text-gray-900">No Installation Required</h3>
-                  <p className="text-sm text-gray-600">Everything works in your browser - no software to download or install.</p>
+                  <h3 className="font-semibold text-gray-900 text-left">No Installation Required</h3>
+                  <p className="text-sm text-gray-600 text-left">Everything works in your browser - no software to download or install.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <span className="text-2xl">✅</span>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Auto-Save</h3>
-                  <p className="text-sm text-gray-600">Your work is automatically saved as you type - never lose your progress.</p>
+                  <h3 className="font-semibold text-gray-900 text-left">Auto-Save</h3>
+                  <p className="text-sm text-gray-600 text-left">Your work is automatically saved as you type - never lose your progress.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <span className="text-2xl">✅</span>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Public & Private Access</h3>
-                  <p className="text-sm text-gray-600">Create documents for yourself or share them publicly with unique URLs.</p>
+                  <h3 className="font-semibold text-gray-900 text-left">Public & Private Access</h3>
+                  <p className="text-sm text-gray-600 text-left">Create documents for yourself or share them publicly with unique URLs.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <span className="text-2xl">✅</span>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Mobile Optimized</h3>
-                  <p className="text-sm text-gray-600">Fully responsive design works perfectly on phones, tablets, and desktops.</p>
+                  <h3 className="font-semibold text-gray-900 text-left">Mobile Optimized</h3>
+                  <p className="text-sm text-gray-600 text-left">Fully responsive design works perfectly on phones, tablets, and desktops.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
                 <span className="text-2xl">✅</span>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Free to Use</h3>
-                  <p className="text-sm text-gray-600">Core features are completely free - no hidden costs or subscriptions.</p>
+                  <h3 className="font-semibold text-gray-900 text-left">Free to Use</h3>
+                  <p className="text-sm text-gray-600 text-left">Core features are completely free - no hidden costs or subscriptions.</p>
                 </div>
               </div>
             </div>
@@ -233,9 +233,9 @@ const AboutPage = ({ user }) => {
           <div className="bg-white rounded-xl shadow-md p-8 border border-gray-100">
             <div className="flex items-center gap-3 mb-6">
               <span className="text-3xl">🔒</span>
-              <h2 className="text-3xl font-bold text-gray-900">Privacy & Security</h2>
+              <h2 className="text-3xl font-bold text-gray-900 text-left">Privacy & Security</h2>
             </div>
-            <div className="space-y-3 text-gray-700">
+            <div className="space-y-3 text-gray-700 text-left">
               <p>
                 <strong>Your data is important to us.</strong> We take security seriously and implement 
                 industry-standard practices to protect your information.
@@ -280,23 +280,22 @@ const AboutPage = ({ user }) => {
         <div className="max-w-7xl mx-auto px-6 w-full">
           <div className="grid md:grid-cols-3 gap-8 mb-6">
             <div>
-              <h3 className="font-bold text-gray-900 mb-3">CodeShare</h3>
-              <p className="text-sm text-gray-600">
+              <h3 className="font-bold text-gray-900 mb-3 text-left">CodeShare</h3>
+              <p className="text-sm text-gray-600 text-left">
                 Modern document sharing and collaboration platform.
               </p>
             </div>
             <div>
-              <h3 className="font-bold text-gray-900 mb-3">Quick Links</h3>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li><button onClick={() => navigate("/")} className="hover:text-blue-600 transition">Home</button></li>
+              <h3 className="font-bold text-gray-900 mb-3 text-left">Quick Links</h3>
+              <ul className="space-y-2 text-sm text-gray-600 text-left">
                 <li><button onClick={() => navigate(isPrivateRoute && userId ? `/p/${userId}/help` : "/help")} className="hover:text-blue-600 transition">Help</button></li>
                 <li><button onClick={() => navigate("/games")} className="hover:text-blue-600 transition">Games</button></li>
                 <li><button onClick={() => navigate(isPrivateRoute && userId ? `/p/${userId}/t/auction` : "/games")} className="hover:text-blue-600 transition">Auctions</button></li>
               </ul>
             </div>
             <div>
-              <h3 className="font-bold text-gray-900 mb-3">Contact</h3>
-              <ul className="space-y-2 text-sm text-gray-600">
+              <h3 className="font-bold text-gray-900 mb-3 text-left">Contact</h3>
+              <ul className="space-y-2 text-sm text-gray-600 text-left">
                 <li>Email: support@codeshare.com</li>
                 <li>Made with ❤️ for the community</li>
               </ul>
