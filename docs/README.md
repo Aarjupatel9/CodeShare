@@ -1,131 +1,160 @@
 # CodeShare Documentation
 
-Complete documentation for the CodeShare project.
+**Last Updated**: October 2025  
+**Version**: 2.0
 
 ---
 
-## 📚 Documentation Structure
+## 📖 Welcome to CodeShare
+
+CodeShare is a collaborative platform featuring:
+- 📝 **Code Editor**: Real-time collaborative editing
+- 🎯 **Auction Management**: Complete IPL-style auction system
+- 📺 **Live View**: Public spectator page with real-time updates
+- 📊 **Analytics**: Viewer tracking and auction statistics
+
+---
+
+## 🗂️ Documentation Index
+
+### 🚀 [Getting Started](./01-getting-started/)
+Quick start guide, installation, and deployment instructions.
+
+### 🏗️ [Architecture](./02-architecture/)
+System design, database schema, and server architecture (2-server setup).
+
+### 🔌 [API Reference](./03-api/)
+REST API endpoints, Socket.IO events, and authentication.
+
+### ✨ [Features](./04-features/)
+Detailed guides for auction bidding, live view, analytics, and more.
+
+### ⚡ [Performance](./05-performance/)
+Optimization strategies, capacity analysis, and server sizing.
+
+### 🔄 [Migration](./06-migration/)
+API migration guides and breaking changes.
+
+### 💻 [Development](./07-development/)
+Contributing guidelines, testing, and troubleshooting.
+
+---
+
+## ⚡ Quick Start
+
+```bash
+# 1. Clone repository
+git clone <repo-url>
+
+# 2. Install dependencies
+cd backend && npm install
+cd ../frontend && npm install
+cd ../socketServer && npm install
+
+# 3. Configure environment
+cp backend/.env.example backend/.env
+cp socketServer/.env.example socketServer/.env
+# Edit .env files with your configuration
+
+# 4. Start servers
+cd backend && npm start          # Port 8080
+cd socketServer && npm start     # Port 8081
+cd frontend && npm start         # Port 3000
+
+# 5. Access application
+# http://localhost:3000
+```
+
+See [Getting Started Guide](./01-getting-started/README.md) for details.
+
+---
+
+## 🏗️ Architecture Overview
+
+### **2-Server Setup:**
 
 ```
-docs/
-├── README.md (this file)
-├── api/                      # API Documentation
-│   ├── API_RESTRUCTURE.md   # v1 API migration guide
-│   └── TEAM_LOGO_SYSTEM.md  # Team logo endpoints
-├── architecture/             # System Architecture
-│   ├── OVERVIEW.md          # Project overview
-│   ├── DATABASE_SCHEMA.md   # MongoDB models
-│   ├── SYSTEM_DESIGN.md     # Architecture diagrams
-│   └── PROJECT_STRUCTURE.md # File organization
-├── development/              # Developer Guides
-│   └── GETTING_STARTED.md   # Setup instructions
-├── testing/                  # Testing Documentation
-│   ├── TESTING_GUIDE.md     # How to test
-│   └── TESTS_SUMMARY.md     # Test results
-└── session/                  # Implementation History
-    ├── FINAL_SUMMARY.md     # Complete summary
-    ├── SESSION_SUMMARY.md   # Change history
-    └── IMPLEMENTATION_SUMMARY.md  # What was built
+┌─────────────────────────────────────────┐
+│ Frontend (Nginx - Port 80)              │
+│ - React application                     │
+│ - Static file serving                   │
+└─────────────────────────────────────────┘
+            ↓ HTTP/REST API
+┌─────────────────────────────────────────┐
+│ Backend Server (Port 8080)              │
+│ - Express.js REST API                   │
+│ - MongoDB integration                   │
+│ - Authentication & authorization        │
+└─────────────────────────────────────────┘
+            
+            ↓ HTTP (analytics)
+            
+┌─────────────────────────────────────────┐
+│ Socket Server (Port 8081)               │
+│ - Socket.IO for real-time updates       │
+│ - Viewer tracking                       │
+│ - Bidding broadcasts                    │
+└─────────────────────────────────────────┘
 ```
 
----
-
-## 🚀 Quick Links
-
-### **Getting Started**
-- [Project Overview](architecture/OVERVIEW.md)
-- [Getting Started Guide](development/GETTING_STARTED.md)
-- [Database Schema](architecture/DATABASE_SCHEMA.md)
-
-### **API Documentation**
-- [API v1 Reference](api/API_RESTRUCTURE.md)
-- [Team Logo System](api/TEAM_LOGO_SYSTEM.md)
-
-### **Architecture**
-- [System Design](architecture/SYSTEM_DESIGN.md)
-- [Project Structure](architecture/PROJECT_STRUCTURE.md)
-
-### **Testing**
-- [Testing Guide](testing/TESTING_GUIDE.md)
-- [Test Results](testing/TESTS_SUMMARY.md)
-- [Backend Test README](../backend/tests/README.md)
-
-### **Implementation History**
-- [Final Summary](session/FINAL_SUMMARY.md)
-- [Session History](session/SESSION_SUMMARY.md)
-- [What Was Built](session/IMPLEMENTATION_SUMMARY.md)
+See [System Design](./02-architecture/SYSTEM_DESIGN.md) for details.
 
 ---
 
-## 📖 For Different Audiences
+## 📊 Key Features
 
-### **New Developers**
-Start here to understand the project:
-1. Read [Project Overview](architecture/OVERVIEW.md)
-2. Follow [Getting Started Guide](development/GETTING_STARTED.md)
-3. Review [API Documentation](api/API_RESTRUCTURE.md)
-4. Explore [Project Structure](architecture/PROJECT_STRUCTURE.md)
+### 🎯 Auction Management
+- Team management with logo uploads
+- Player management with Excel import
+- Set-based bidding system
+- Real-time bidding interface
 
-### **Frontend Developers**
-- [API v1 Reference](api/API_RESTRUCTURE.md)
-- [Frontend API Client Guide](api/API_RESTRUCTURE.md#frontend-service-layer)
-- [Getting Started](development/GETTING_STARTED.md)
+### 📺 Live View
+- Public spectator page
+- Real-time viewer count
+- Leaderboard and recent sales
+- Team rosters with player search
 
-### **Backend Developers**
-- [Database Schema](architecture/DATABASE_SCHEMA.md)
-- [System Architecture](architecture/SYSTEM_DESIGN.md)
-- [Testing Guide](testing/TESTING_GUIDE.md)
-- [Project Structure](architecture/PROJECT_STRUCTURE.md)
+### 📊 Analytics
+- Optional viewer tracking (1-minute snapshots)
+- Peak, average, minimum viewers
+- Trend visualization
+- 90-day data retention
 
-### **DevOps/QA**
-- [Testing Guide](testing/TESTING_GUIDE.md)
-- [Deployment Guide](development/GETTING_STARTED.md#building-for-production)
-
-### **Reviewing Changes**
-- [Final Summary](session/FINAL_SUMMARY.md) - Complete overview of changes
-- [Session History](session/SESSION_SUMMARY.md) - Detailed change log
-- [What Was Built](session/IMPLEMENTATION_SUMMARY.md) - Technical details
+### 📝 Document Editor
+- Real-time collaboration
+- Syntax highlighting
+- File management
 
 ---
 
-## 🔍 Find What You Need
+## 🚀 Performance
 
-### **I want to...**
+### **Server Capacity (t2.micro - 1GB RAM):**
 
-| What | Where |
-|------|-------|
-| **Understand the API** | [API v1 Reference](api/API_RESTRUCTURE.md) |
-| **Upload team logos** | [Team Logo System](api/TEAM_LOGO_SYSTEM.md) |
-| **Run tests** | [Testing Guide](testing/TESTING_GUIDE.md) |
-| **Set up locally** | [Getting Started](development/GETTING_STARTED.md) |
-| **Understand architecture** | [System Design](architecture/SYSTEM_DESIGN.md) |
-| **See database models** | [Database Schema](architecture/DATABASE_SCHEMA.md) |
-| **Navigate codebase** | [Project Structure](architecture/PROJECT_STRUCTURE.md) |
-| **See what changed** | [Final Summary](session/FINAL_SUMMARY.md) |
-| **Review implementation** | [Implementation Details](session/IMPLEMENTATION_SUMMARY.md) |
+**Single Server**: 500-800 concurrent viewers  
+**2-Server Setup**: 1000-1600 concurrent viewers
+
+See [Capacity Analysis](./05-performance/CAPACITY_ANALYSIS.md) for details.
 
 ---
 
-## 📊 Project Stats
+## 🔗 Important Links
 
-| Metric | Value |
-|--------|-------|
-| Backend API Endpoints | 50+ |
-| Database Models | 6 |
-| Test Cases | 71 |
-| Documentation Pages | 10+ |
-| Lines of Code | ~50,000 |
+- [API Documentation](./03-api/)
+- [Database Schema](./02-architecture/DATABASE_SCHEMA.md)
+- [Testing Guide](./07-development/TESTING.md)
+- [Performance Optimization](./05-performance/OPTIMIZATION_SUMMARY.md)
 
 ---
 
-## 🆘 Need Help?
+## 📞 Support
 
-- Check the specific documentation pages above
-- Review code examples in the guides
-- Run tests to verify functionality
-- Contact the development team
+For issues, questions, or contributions:
+- See [Contributing Guide](./07-development/CONTRIBUTING.md)
+- Check [Troubleshooting](./07-development/TROUBLESHOOTING.md)
+- Review [Testing Guide](./07-development/TESTING.md)
 
 ---
 
-Last Updated: October 18, 2025
-
+**Happy Coding!** 🚀
