@@ -297,7 +297,8 @@ export default function AuctionDashboard(props) {
                             setCurrentTeamPlayerMap={setCurrentTeamPlayerMap} 
                             teams={teams} 
                             selectedPlayer={selectedPlayer} 
-                            setSelectedPlayer={setSelectedPlayer} 
+                            setSelectedPlayer={setSelectedPlayer}
+                            auction={auction}
                         />
                     ) : (
                         <div className="text-center py-12">

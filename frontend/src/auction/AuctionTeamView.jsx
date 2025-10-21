@@ -5,7 +5,7 @@ import { getTeamLogoUrl } from "./utils/assetUtils";
 
 export default function AuctionTeamView(props) {
 
-    const { currentTeamPlayerMap, teamPlayerMap, setCurrentTeamPlayerMap, teams, selectedPlayer, setSelectedPlayer } = props;
+    const { currentTeamPlayerMap, teamPlayerMap, setCurrentTeamPlayerMap, teams, selectedPlayer, setSelectedPlayer, auction } = props;
 
     const getBiddingView = (player) => {
         if (player && Object.keys(player).length > 0 && player.bidding.length > 0) {
@@ -67,7 +67,7 @@ export default function AuctionTeamView(props) {
                         const colors = getTeamColor(index);
                         const budgetUsed = teamData?.budget ? teamData.budget - map.remainingBudget : 0;
                         const budgetPercentage = teamData?.budget ? Math.round((budgetUsed / teamData.budget) * 100) : 0;
-                        const maxPlayers = 11; // TODO: Get from auction settings
+                        const maxPlayers = auction.maxTeamMember;
                         
                         return (
                             <div 
