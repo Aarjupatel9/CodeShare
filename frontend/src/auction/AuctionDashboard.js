@@ -231,7 +231,7 @@ export default function AuctionDashboard(props) {
                 onLogout={handleLogout}
             />
             
-            <div className='w-full px-4 sm:px-6 lg:px-12 xl:px-20 py-6'>
+            <div className='w-full px-4 sm:px-6 lg:px-12 xl:px-20 py-6 bg-gradient-to-br from-blue-50 to-indigo-50'>
                 {/* Auction Header */}
                 <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-100">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
