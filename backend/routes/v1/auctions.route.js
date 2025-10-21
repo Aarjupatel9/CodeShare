@@ -20,16 +20,25 @@ const {
     getAuctionLeaderboard
 } = require("../../controllers/v1/auctionStatsController");
 
-// Public auction routes
-router.get("/public/:id", getPublicAuction);
-router.get("/:id/recent-sold", getRecentSoldPlayers);
-router.get("/:id/leaderboard", getAuctionLeaderboard);
+const {
+    getLiveViewData,
+    checkLiveViewEnabled
+} = require("../../controllers/v1/auctionLiveViewController");
+
+
+
+// Public live view route (unified API for live view page)
+router.get("/:id/live-data", checkLiveViewEnabled, getLiveViewData);
 
 // Protected routes - require user authentication
 router.use(authenticateUser());
 
-// Auction stats
+// Auction stats (protected)
 router.get("/stats", getAuctionStats);
+
+// Live view related APIs for admin/dashboard (protected, require live view enabled)
+router.get("/:id/recent-sold", getRecentSoldPlayers);
+router.get("/:id/leaderboard", getAuctionLeaderboard);
 
 // Auction CRUD
 router.get("/", getAuctions);

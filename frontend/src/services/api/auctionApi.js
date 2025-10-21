@@ -69,6 +69,19 @@ class AuctionApi {
   }
 
   /**
+   * Get unified live view data (public)
+   * Returns auction info, teams, leaderboard, recent sales, stats, and team-player mapping in one call
+   */
+  async getLiveViewData(auctionId) {
+    try {
+      const response = await apiClient.get(`/api/v1/auctions/${auctionId}/live-data`);
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Get auction details
    */
   async getAuction(auctionId, isPublic = false) {

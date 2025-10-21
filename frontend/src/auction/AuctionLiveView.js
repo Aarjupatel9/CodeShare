@@ -15,13 +15,14 @@ export default function AuctionLiveView() {
     const [currentPlayer, setCurrentPlayer] = useState({});
     const [isLinkValid, setIsLinkValid] = useState(false);
     const [socket, setSocket] = useState(null);
-    
+
     // Live stats
     const [viewerCount, setViewerCount] = useState(0);
     const [recentSoldPlayers, setRecentSoldPlayers] = useState([]);
     const [leaderboardData, setLeaderboardData] = useState([]);
     const [teamPlayerMap, setTeamPlayerMap] = useState([]);
-    
+    const [auctionsStats, setAuctionsStats] = useState([]);
+
     // Collapsible states
     const [expandedStats, setExpandedStats] = useState({
         leaderboard: false,
@@ -35,23 +36,119 @@ export default function AuctionLiveView() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        getAuctionData();
-        fetchLiveData();
+        fetchAllLiveData();
     }, [])
-    
-    const fetchLiveData = async () => {
+
+    useEffect(() => {
+        var stats = {
+            soldPlayers: players.filter(p => p.auctionStatus === 'sold').length,
+            unsoldPlayers: players.filter(p => p.auctionStatus === 'unsold').length,
+            pendingPlayers: players.filter(p => p.auctionStatus === 'idle').length,
+        };
+        setAuctionsStats(stats)
+        console.log("stats",stats);
+    }, [players])
+
+    const fetchAllLiveData = async () => {
         try {
-            const recentRes = await auctionApi.getRecentSoldPlayers(auctionId, 10);
-            if (recentRes.success) {
-                setRecentSoldPlayers(recentRes.data);
-            }
-            
-            const leaderRes = await auctionApi.getAuctionLeaderboard(auctionId);
-            if (leaderRes.success) {
-                setLeaderboardData(leaderRes.data);
+            const res = await auctionApi.getLiveViewData(auctionId);
+
+            if (res.success) {
+                const { auction, teams, soldPlayers } = res.data;
+
+                // Set basic data
+                setAuction(auction);
+                setTeams(teams);
+                setPlayers(soldPlayers);
+
+                // Process data on client side (saves server resources)
+
+                // 1. Build leaderboard (group by team, calculate totals, sort)
+                const teamStats = {};
+                soldPlayers.forEach(player => {
+                    const teamId = player.team;
+                    if (!teamId) return;
+
+                    if (!teamStats[teamId]) {
+                        teamStats[teamId] = {
+                            playerCount: 0,
+                            budgetSpent: 0,
+                            teamName: getTeamName(player.team, teams)
+                        };
+                    }
+                    teamStats[teamId].playerCount++;
+                    teamStats[teamId].budgetSpent += parseInt(player.soldPrice || 0);
+                });
+
+                const leaderboard = Object.keys(teamStats).map(teamId => {
+                    const team = teams.find(t => t._id.toString() === teamId.toString());
+                    return {
+                        teamId: teamId,
+                        teamName: teamStats[teamId].teamName,
+                        logoUrl: team?.logoUrl,
+                        playerCount: teamStats[teamId].playerCount,
+                        budgetSpent: teamStats[teamId].budgetSpent,
+                        remainingBudget: team ? (team.budget - teamStats[teamId].budgetSpent) : 0
+                    };
+                }).sort((a, b) => b.budgetSpent - a.budgetSpent);
+
+                setLeaderboardData(leaderboard);
+
+                // 2. Recent sales (already sorted by soldNumber DESC, just take first 10)
+                const recentSales = soldPlayers.slice(0, 10).map(player => ({
+                    playerId: player._id,
+                    playerName: player.name,
+                    playerNumber: player.playerNumber,
+                    teamId: player.team,
+                    teamName: getTeamName(player.team, teams),
+                    soldPrice: player.soldPrice,
+                    soldNumber: player.soldNumber
+                }));
+
+                setRecentSoldPlayers(recentSales);
+
+                // 3. Build team-player mapping
+                const teamPlayersMap = {};
+                teams.forEach(team => {
+                    teamPlayersMap[team._id] = [];
+                });
+
+                soldPlayers.forEach(player => {
+                    const teamId = player.team;
+                    if (teamId && teamPlayersMap[teamId]) {
+                        teamPlayersMap[teamId].push({
+                            _id: player._id,
+                            name: player.name,
+                            playerNumber: player.playerNumber,
+                            role: player.role,
+                            soldPrice: player.soldPrice
+                        });
+                    }
+                });
+
+                // 4. Build teamPlayerMap for UI
+                const teamMap = teams.map(team => {
+                    const teamPlayerList = teamPlayersMap[team._id] || [];
+                    const stats = teamStats[team._id];
+
+                    return {
+                        team: team,
+                        players: teamPlayerList,
+                        totalSpent: stats?.budgetSpent || 0,
+                        remainingBudget: team.budget - (stats?.budgetSpent || 0),
+                        avgPrice: teamPlayerList.length > 0
+                            ? (stats?.budgetSpent || 0) / teamPlayerList.length
+                            : 0
+                    };
+                });
+
+                setTeamPlayerMap(teamMap);
+                setIsLinkValid(true);
             }
         } catch (error) {
             console.error('Error fetching live data:', error);
+            toast.error("Failed to load auction data");
+            setIsLinkValid(false);
         }
     };
 
@@ -78,70 +175,19 @@ export default function AuctionLiveView() {
         socket.on("playerBiddingUpdate", (player) => {
             setCurrentPlayer(player);
         });
-        
+
         socket.on("playerSoldUpdate", (message) => {
             toast.success(message);
-            fetchLiveData();
-            getAuctionData(); // Refresh team data
+            fetchAllLiveData(); // Refresh all data with single API call
         });
-        
+
         // Mock viewer count
         setViewerCount(Math.floor(Math.random() * 150) + 20);
         setSocket(socket);
     }
 
-    const getAuctionData = () => {
-        AuctionService.getPublicAuctionDetails({ auctionId: auctionId }, true).then((res) => {
-            if (res.auction) setAuction(res.auction);
-            if (res.teams) setTeams(res.teams);
-            if (res.players) {
-                const sortedPlayers = res.players.sort((p1, p2) => p1.playerNumber - p2.playerNumber);
-                setPlayers(sortedPlayers);
-            }
-            if (res.sets) setSets(res.sets);
 
-            // Build team-player map
-            if (res.teams && res.players) {
-                const map = {};
-                res.teams.forEach((t) => {
-                    map[t._id] = [];
-                });
-                res.players.forEach(player => {
-                    if (player.team && map[player.team]) {
-                        map[player.team].push(player);
-                    }
-                });
-
-                const teamData = [];
-                Object.keys(map).forEach((teamId) => {
-                    const team = res.teams.find(t => t._id === teamId);
-                    if (team) {
-                        const teamPlayers = map[teamId].sort((a, b) => a.soldNumber - b.soldNumber);
-                        const totalSpent = teamPlayers.reduce((sum, p) => sum + parseInt(p.soldPrice || 0), 0);
-                        const remainingBudget = parseInt(team.budget) - totalSpent;
-                        teamData.push({
-                            team: team,
-                            players: teamPlayers,
-                            totalSpent,
-                            remainingBudget,
-                            avgPrice: teamPlayers.length > 0 ? totalSpent / teamPlayers.length : 0
-                        });
-                    }
-                });
-
-                setTeamPlayerMap(teamData);
-            }
-
-            setIsLinkValid(true);
-        }).catch((error) => {
-            console.error(error);
-            toast.error("Failed to load auction data");
-            setIsLinkValid(false);
-        });
-    }
-
-    const getTeamName = (teamId) => {
-        console.log(teamId);
+    const getTeamName = (teamId, teams) => {
         const team = teams.find((t) => t._id === teamId);
         return team ? team.name : "Unknown";
     }
@@ -150,11 +196,6 @@ export default function AuctionLiveView() {
         number = parseInt(number);
         return (number / 100000).toFixed(2) + " L";
     }
-
-    const soldPlayers = players.filter(p => p.auctionStatus === 'sold');
-    const unsoldPlayers = players.filter(p => p.auctionStatus === 'unsold');
-    const pendingPlayers = players.filter(p => p.auctionStatus === 'pending');
-
     // Get player profile initials
     const getPlayerInitials = (name) => {
         if (!name) return "??";
@@ -236,8 +277,8 @@ export default function AuctionLiveView() {
             );
         }
 
-        const latestBid = currentPlayer.bidding && currentPlayer.bidding.length > 0 
-            ? currentPlayer.bidding[currentPlayer.bidding.length - 1] 
+        const latestBid = currentPlayer.bidding && currentPlayer.bidding.length > 0
+            ? currentPlayer.bidding[currentPlayer.bidding.length - 1]
             : null;
 
         return (
@@ -307,18 +348,17 @@ export default function AuctionLiveView() {
                             {currentPlayer.bidding && currentPlayer.bidding.length > 0 ? (
                                 <div className="space-y-2 max-h-64 overflow-y-auto">
                                     {[...currentPlayer.bidding].reverse().map((bid, index) => (
-                                        <div 
+                                        <div
                                             key={index}
-                                            className={`p-3 rounded-lg text-left ${
-                                                index === 0 
-                                                    ? 'bg-green-500 bg-opacity-40 border border-green-400' 
+                                            className={`p-3 rounded-lg text-left ${index === 0
+                                                    ? 'bg-green-500 bg-opacity-40 border border-green-400'
                                                     : 'bg-white bg-opacity-10'
-                                            }`}
+                                                }`}
                                         >
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-2">
                                                     {index === 0 && <span className="text-lg">👑</span>}
-                                                    <span className="font-semibold">{getTeamName(bid.team)}</span>
+                                                    <span className="font-semibold">{getTeamName(bid.team, teams)}</span>
                                                 </div>
                                                 <span className="font-bold text-lg">₹{getTeamBudgetForView(bid.price)}</span>
                                             </div>
@@ -363,17 +403,17 @@ export default function AuctionLiveView() {
 
             {/* Content */}
             <div className='px-2 md:px-6 lg:px-12 xl:px-20 py-6 space-y-6 bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 text-white'>
-                
+
                 {/* Current Bidding */}
                 {renderCurrentBidding()}
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    
+
                     {/* Team Leaderboard */}
                     <div className="bg-gradient-to-br from-yellow-500 to-orange-600 rounded-2xl shadow-2xl overflow-hidden">
-                        <button 
-                            onClick={() => toggleStats('leaderboard')} 
+                        <button
+                            onClick={() => toggleStats('leaderboard')}
                             className="w-full bg-black bg-opacity-30 px-6 py-4 hover:bg-opacity-40 transition md:cursor-default"
                         >
                             <div className="flex items-center justify-between">
@@ -381,10 +421,10 @@ export default function AuctionLiveView() {
                                     <span>🏆</span>
                                     <span>Team Leaderboard</span>
                                 </h3>
-                                <svg 
+                                <svg
                                     className={`w-6 h-6 transition-transform md:hidden ${expandedStats.leaderboard ? 'rotate-180' : ''}`}
-                                    fill="none" 
-                                    stroke="currentColor" 
+                                    fill="none"
+                                    stroke="currentColor"
                                     viewBox="0 0 24 24"
                                 >
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
@@ -395,29 +435,28 @@ export default function AuctionLiveView() {
                             {leaderboardData.length > 0 ? (
                                 <div className="space-y-3">
                                     {leaderboardData.map((team, index) => {
-                                        const teamObj = teams.find(t => t._id === team._id);
+                                        const teamObj = teams.find(t => t._id.toString() === team.teamId.toString());
                                         return (
-                                            <div 
-                                                key={team._id}
+                                            <div
+                                                key={team.teamId}
                                                 className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4 flex items-center gap-3 text-left"
                                             >
-                                                <div className={`text-2xl font-bold w-8 ${
-                                                    index === 0 ? 'text-yellow-300' : 
-                                                    index === 1 ? 'text-gray-300' : 
-                                                    index === 2 ? 'text-orange-300' : 
-                                                    'text-white'
-                                                }`}>
+                                                <div className={`text-2xl font-bold w-8 ${index === 0 ? 'text-yellow-300' :
+                                                        index === 1 ? 'text-gray-300' :
+                                                            index === 2 ? 'text-orange-300' :
+                                                                'text-white'
+                                                    }`}>
                                                     {index + 1}
                                                 </div>
                                                 <div className="w-12 h-12 bg-white bg-opacity-30 rounded-full flex items-center justify-center font-bold overflow-hidden">
-                                                    {teamObj?.logoUrl ? (
-                                                        <img src={getTeamLogoUrl(teamObj)} alt={team.name} className="w-full h-full object-cover" />
+                                                    {team.logoUrl ? (
+                                                        <img src={getTeamLogoUrl(teamObj)} alt={team.teamName} className="w-full h-full object-cover" />
                                                     ) : (
                                                         <span>{getTeamInitials(teamObj)}</span>
                                                     )}
                                                 </div>
                                                 <div className="flex-1">
-                                                    <div className="font-bold">{team.name}</div>
+                                                    <div className="font-bold">{team.teamName}</div>
                                                     <div className="text-sm text-yellow-100">{team.playerCount} players</div>
                                                 </div>
                                                 <div className="text-right">
@@ -441,8 +480,8 @@ export default function AuctionLiveView() {
 
                     {/* Recent Sales */}
                     <div className="bg-gradient-to-br from-green-500 to-teal-600 rounded-2xl shadow-2xl overflow-hidden">
-                        <button 
-                            onClick={() => toggleStats('recent')} 
+                        <button
+                            onClick={() => toggleStats('recent')}
                             className="w-full bg-black bg-opacity-30 px-6 py-4 hover:bg-opacity-40 transition md:cursor-default"
                         >
                             <div className="flex items-center justify-between">
@@ -450,10 +489,10 @@ export default function AuctionLiveView() {
                                     <span>✅</span>
                                     <span>Recent Sales</span>
                                 </h3>
-                                <svg 
+                                <svg
                                     className={`w-6 h-6 transition-transform md:hidden ${expandedStats.recent ? 'rotate-180' : ''}`}
-                                    fill="none" 
-                                    stroke="currentColor" 
+                                    fill="none"
+                                    stroke="currentColor"
                                     viewBox="0 0 24 24"
                                 >
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
@@ -464,18 +503,18 @@ export default function AuctionLiveView() {
                             {recentSoldPlayers.length > 0 ? (
                                 <div className="space-y-3">
                                     {recentSoldPlayers.map((player, index) => (
-                                        <div 
-                                            key={player._id || index}
+                                        <div
+                                            key={player.playerId || index}
                                             className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-3 text-left"
                                         >
                                             <div className="flex items-center justify-between mb-2">
-                                                <div className="font-bold">{player.name}</div>
+                                                <div className="font-bold">{player.playerName}</div>
                                                 <div className="text-xs bg-white bg-opacity-30 px-2 py-1 rounded">
                                                     #{player.playerNumber}
                                                 </div>
                                             </div>
                                             <div className="flex items-center justify-between text-sm">
-                                                <div className="text-green-100">{getTeamName(player.team) || 'Unknown Team'}</div>
+                                                <div className="text-green-100">{player.teamName || 'Unknown Team'}</div>
                                                 <div className="font-bold text-lg">₹{getTeamBudgetForView(player.soldPrice)}</div>
                                             </div>
                                         </div>
@@ -494,8 +533,8 @@ export default function AuctionLiveView() {
 
                     {/* Auction Stats */}
                     <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl shadow-2xl overflow-hidden">
-                        <button 
-                            onClick={() => toggleStats('stats')} 
+                        <button
+                            onClick={() => toggleStats('stats')}
                             className="w-full bg-black bg-opacity-30 px-6 py-4 hover:bg-opacity-40 transition md:cursor-default"
                         >
                             <div className="flex items-center justify-between">
@@ -503,10 +542,10 @@ export default function AuctionLiveView() {
                                     <span>📊</span>
                                     <span>Auction Stats</span>
                                 </h3>
-                                <svg 
+                                <svg
                                     className={`w-6 h-6 transition-transform md:hidden ${expandedStats.stats ? 'rotate-180' : ''}`}
-                                    fill="none" 
-                                    stroke="currentColor" 
+                                    fill="none"
+                                    stroke="currentColor"
                                     viewBox="0 0 24 24"
                                 >
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
@@ -520,15 +559,15 @@ export default function AuctionLiveView() {
                             </div>
                             <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4">
                                 <div className="text-green-100 text-sm mb-1">Sold</div>
-                                <div className="text-3xl font-bold text-green-200">{soldPlayers.length}</div>
+                                <div className="text-3xl font-bold text-green-200">{auctionsStats.soldPlayers}</div>
                             </div>
                             <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4">
                                 <div className="text-gray-200 text-sm mb-1">Unsold</div>
-                                <div className="text-3xl font-bold text-gray-300">{unsoldPlayers.length}</div>
+                                <div className="text-3xl font-bold text-gray-300">{auctionsStats.unsoldPlayers}</div>
                             </div>
                             <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4">
                                 <div className="text-yellow-100 text-sm mb-1">Pending</div>
-                                <div className="text-3xl font-bold text-yellow-200">{pendingPlayers.length}</div>
+                                <div className="text-3xl font-bold text-yellow-200">{auctionsStats.pendingPlayers}</div>
                             </div>
                             <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-4">
                                 <div className="text-blue-100 text-sm mb-1">Teams</div>
@@ -555,11 +594,11 @@ export default function AuctionLiveView() {
                                 const showAll = showAllPlayers[teamData.team._id];
                                 const teamColor = getTeamGradient(index);
                                 const displayPlayers = showAll ? teamData.players : teamData.players.slice(0, 5);
-                                
+
                                 return (
                                     <div key={teamData.team._id} className={`bg-gradient-to-br ${teamColor} rounded-xl shadow-lg overflow-hidden self-start`}>
-                                        <button 
-                                            onClick={() => toggleTeam(teamData.team._id)} 
+                                        <button
+                                            onClick={() => toggleTeam(teamData.team._id)}
                                             className="w-full text-left p-4 hover:bg-black hover:bg-opacity-20 transition"
                                         >
                                             <div className="flex items-center justify-between">
@@ -576,23 +615,23 @@ export default function AuctionLiveView() {
                                                         <div className="text-sm opacity-90">{teamData.players.length} players • ₹{getTeamBudgetForView(teamData.totalSpent)} spent</div>
                                                     </div>
                                                 </div>
-                                                <svg 
+                                                <svg
                                                     className={`w-6 h-6 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                                                    fill="none" 
-                                                    stroke="currentColor" 
+                                                    fill="none"
+                                                    stroke="currentColor"
                                                     viewBox="0 0 24 24"
                                                 >
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
                                                 </svg>
                                             </div>
                                         </button>
-                                        
+
                                         {/* Player List */}
                                         {isExpanded && (
                                             <div className="bg-black bg-opacity-20">
                                                 <div className="px-4 py-3">
                                                     <div className="text-xs opacity-90 uppercase font-semibold mb-2">Squad ({teamData.players.length})</div>
-                                                    
+
                                                     {teamData.players.length > 0 ? (
                                                         <>
                                                             <div className={`space-y-2 ${showAll ? 'max-h-96 overflow-y-auto' : ''}`}>
@@ -618,15 +657,15 @@ export default function AuctionLiveView() {
                                                             </div>
                                                             {teamData.players.length > 5 && (
                                                                 <div className="text-center py-2">
-                                                                    <button 
+                                                                    <button
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
                                                                             toggleShowAllPlayers(teamData.team._id);
                                                                         }}
                                                                         className="text-sm opacity-90 hover:opacity-100 hover:underline transition"
                                                                     >
-                                                                        {showAll 
-                                                                            ? '- Show less' 
+                                                                        {showAll
+                                                                            ? '- Show less'
                                                                             : `+ ${teamData.players.length - 5} more players`
                                                                         }
                                                                     </button>

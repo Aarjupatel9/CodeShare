@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const AuctionModel = require("../../models/auctionModel");
 const AuctionTeamModel = require("../../models/auctionTeamModel");
 const AuctionPlayerModel = require("../../models/auctionPlayerModel");
@@ -192,24 +193,7 @@ exports.getRecentSoldPlayers = async (req, res) => {
     const { id } = req.params;
     const limit = parseInt(req.query.limit) || 10;
 
-    // Get auction to verify it exists and is public
-    const auction = await AuctionModel.findById(id).select('auctionLiveEnabled');
-    
-    if (!auction) {
-      return res.status(404).json({
-        success: false,
-        message: "Auction not found",
-      });
-    }
-
-    if (!auction.auctionLiveEnabled) {
-      return res.status(403).json({
-        success: false,
-        message: "Live view is not enabled for this auction",
-      });
-    }
-
-    // Get recently sold players
+    // Get recently sold players (middleware already checked if live view is enabled)
     const recentSold = await AuctionPlayerModel.find({ 
       auction: id,
       auctionStatus: 'sold'
@@ -241,29 +225,12 @@ exports.getAuctionLeaderboard = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Get auction to verify it exists and is public
-    const auction = await AuctionModel.findById(id).select('auctionLiveEnabled budgetPerTeam');
-    
-    if (!auction) {
-      return res.status(404).json({
-        success: false,
-        message: "Auction not found",
-      });
-    }
-
-    if (!auction.auctionLiveEnabled) {
-      return res.status(403).json({
-        success: false,
-        message: "Live view is not enabled for this auction",
-      });
-    }
-
-    // Get teams with player counts and budget info
+    // Get teams with player counts and budget info (middleware already checked if live view is enabled)
     const teams = await AuctionTeamModel.find({ auction: id });
     
     // Get player counts per team
     const playerCounts = await AuctionPlayerModel.aggregate([
-      { $match: { auction: auction._id, auctionStatus: 'sold' } },
+      { $match: { auction: new mongoose.Types.ObjectId(id), auctionStatus: 'sold' } },
       { 
         $group: {
           _id: "$team",
