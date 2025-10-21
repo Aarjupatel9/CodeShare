@@ -102,6 +102,22 @@ exports.removePage = async function (req, res) {
 exports.saveData = async (req, res) => {
   try {
     const { slug, data } = req.body;
+    
+    // Validate payload at the top
+    if (!slug || slug.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: "Document name (slug) is required",
+      });
+    }
+    
+    if (typeof data !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: "Document data must be a string",
+      });
+    }
+    
     const latestVersion = await _getLatestDataVersion(slug);
     if (latestVersion?.latestDataVersion?.data == data) {
       return res.status(201).json({
@@ -159,9 +175,10 @@ exports.saveData = async (req, res) => {
       }
     }
   } catch (e) {
+    console.error("Error in saveData:", e);
     res.status(500).json({
       success: false,
-      message: "internal server error : " + e,
+      message: "internal server error : " + e.message,
     });
   }
 };

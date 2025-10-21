@@ -59,8 +59,8 @@ exports.login = async function (req, res) {
             const token = genJWTToken(payload);
             res.cookie("token", token, {
                 httpOnly: true,
-                secure: false,
-                maxAge: 3600000000000,
+                secure: process.env.NODE_ENV === 'production',
+                maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
             });
             user.password = undefined;
             res.status(200).json({
@@ -95,8 +95,8 @@ exports.getUserDetails = async function (req, res) {
         const token = genJWTToken(payload);
         res.cookie("token", token, {
             httpOnly: true,
-            secure: false,
-            maxAge: 36000000000,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         });
         user.password = undefined;
         res.status(200).json({
@@ -228,5 +228,20 @@ exports.resetpassword = async (req, res) => {
         }
     } catch (error) {
         console.error("resetpassword exception method:" + req.method + " : " + error);
+    }
+};
+
+exports.logout = async function (req, res) {
+    try {
+        res.clearCookie("token");
+        res.status(200).json({
+            message: "Logged out successfully",
+            success: true,
+        });
+    } catch (e) {
+        res.status(500).json({
+            message: "An error occurred during logout",
+            success: false,
+        });
     }
 };

@@ -2,7 +2,7 @@ const express = require("express");
 const DataModel = require("../models/dataModels");
 const router = express.Router();
 const authenticateUser = require('../middleware/Authmiddleware');
-const { checkPublicAvailability, auctionLogin, createNewAuctionTeam, updateNewAuction, updateNewAuctionSet, auctionDataImports, createNewAuction, getAuctionDetails, createNewAuctionPlayer, removeNewAuctionPlayer, updateNewAuctionPlayer, createNewAuctionSet, removeNewAuctionTeam, removeNewAuctionSet, saveTeamLogo, auctionLogout } = require("../controllers/auctionController");
+const { checkPublicAvailability, auctionLogin, createNewAuctionTeam, updateNewAuctionTeam, updateNewAuction, updateNewAuctionSet, auctionDataImports, createNewAuction, getAuctionDetails, createNewAuctionPlayer, removeNewAuctionPlayer, updateNewAuctionPlayer, createNewAuctionSet, removeNewAuctionTeam, removeNewAuctionSet, saveTeamLogo, auctionLogout } = require("../controllers/auctionController");
 const { multerUpload } = require("../services/s3BucketService");
 const authenticateAuction = require('../middleware/AuctionMiddleware');
 
@@ -18,8 +18,9 @@ router.route("/create").post(authenticateUser(), createNewAuction);
 router.route("/update").post(authenticateUser(), authenticateAuction(), updateNewAuction);
 
 router.route("/team/create").post(authenticateUser(), authenticateAuction(), createNewAuctionTeam);
+router.route("/team/update").post(authenticateUser(), authenticateAuction(), updateNewAuctionTeam);
 router.route("/team/remove").post(authenticateUser(), authenticateAuction(), removeNewAuctionTeam);
-router.route("/team/logo").post(authenticateUser(), authenticateAuction(), multerUpload.single("file"), saveTeamLogo);
+router.route("/team/logo/upload").post(authenticateUser(), authenticateAuction(), saveTeamLogo);
 
 router.route("/player/create").post(authenticateUser(), authenticateAuction(), createNewAuctionPlayer);
 router.route("/player/remove").post(authenticateUser(), authenticateAuction(), removeNewAuctionPlayer);

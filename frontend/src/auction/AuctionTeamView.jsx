@@ -1,10 +1,11 @@
 import { backArrowIcon, defaultTeamLogo } from "../assets/svgs";
 import { getTeamName, getTeamBudgetForView } from "./Utility";
 import { getPlayerWidget } from "./Widgets";
+import { getTeamLogoUrl } from "./utils/assetUtils";
 
 export default function AuctionTeamView(props) {
 
-    const { currentTeamPlayerMap, teamPlayerMap, setCurrentTeamPlayerMap, teams, selectedPlayer, setSelectedPlayer } = props;
+    const { currentTeamPlayerMap, teamPlayerMap, setCurrentTeamPlayerMap, teams, selectedPlayer, setSelectedPlayer, auction } = props;
 
     const getBiddingView = (player) => {
         if (player && Object.keys(player).length > 0 && player.bidding.length > 0) {
@@ -28,70 +29,108 @@ export default function AuctionTeamView(props) {
     }
     const getTeamLogo = (teamId) => {
         let team = teams.find((t) => { return t._id == teamId });
-        if (team && team.logo && team.logo.url && team.logo.key) {
-            try {
-                const url = new URL(team.logo.url);
-                const originalHostname = url.hostname; // e.g., codeshare.public-images.s3.ap-south-1.amazonaws.com
-                // Remove the bucket name from the hostname
-                const correctedHostname = originalHostname.replace(`${team.logo.bucket}.`, ""); // Removes "codeshare.public-images."
-                // Construct the new URL
-                return `https://${correctedHostname}/${team.logo.bucket}/${team.logo.key}`;
-
-            } catch (error) {
-                console.error("Error processing logo URL:", error);
-                return null;
-            }
-        }
+        return getTeamLogoUrl(team);
     }
 
 
-    return (
-        <div className='flex flex-col h-auto h-full rounded gap-2 overflow-auto'>
-            <div className='flex flex-row justify-center p-2 bg-slate-500 font-bold uppercase'>
-                {currentTeamPlayerMap && <div onClick={() => { displayTeamBoard() }} className='absolute left-5 cursor-pointer'>
-                    {backArrowIcon}
-                </div>}
-                {currentTeamPlayerMap ? getTeamName(currentTeamPlayerMap.team, teams) : "Teams"}
-            </div>
+    // Get team color based on index (cycle through colors)
+    const getTeamColor = (index) => {
+        const colors = [
+            { bg: 'bg-blue-600', border: 'border-blue-500', progress: 'bg-blue-600' },
+            { bg: 'bg-yellow-500', border: 'border-yellow-500', progress: 'bg-yellow-500' },
+            { bg: 'bg-red-600', border: 'border-red-500', progress: 'bg-red-600' },
+            { bg: 'bg-green-600', border: 'border-green-500', progress: 'bg-green-600' },
+            { bg: 'bg-purple-600', border: 'border-purple-500', progress: 'bg-purple-600' },
+            { bg: 'bg-indigo-600', border: 'border-indigo-500', progress: 'bg-indigo-600' },
+            { bg: 'bg-pink-600', border: 'border-pink-500', progress: 'bg-pink-600' },
+            { bg: 'bg-orange-600', border: 'border-orange-500', progress: 'bg-orange-600' },
+        ];
+        return colors[index % colors.length];
+    };
 
-            {!currentTeamPlayerMap && <div className='flex flex-row gap-2 w-full h-auto max-h-full flex-wrap mx-auto'>
-                {(teamPlayerMap && teamPlayerMap.length) > 0 ? teamPlayerMap.map((map, index) => {
-                    return (<div onClick={() => { setCurrentTeamPlayerMap(map) }} key={"team_" + index}
-                        className={`flex lg:w-[32.7%] md:w-[49%] sm:w-[100%]  gap-4 p-4 flex-row items-start bg-gray-200 cursor-pointer rounded-lg  ${currentTeamPlayerMap && currentTeamPlayerMap.team == map.team ? "bg-gray-400" : "bg-gray-200"}`}>
-                        <div className="w-24 h-24 relative flex flex-col items-center">
-                            <label className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-gray-300 cursor-pointer">
-                                {
-                                    getTeamLogo(map.team) ? (
+    // Get team initials for logo
+    const getTeamInitials = (teamName) => {
+        const words = teamName.trim().split(' ');
+        if (words.length >= 2) {
+            return (words[0][0] + words[1][0]).toUpperCase();
+        }
+        return teamName.substring(0, 2).toUpperCase();
+    };
+
+    return (
+        <div className='flex flex-col h-auto w-full rounded gap-4 overflow-auto'>
+            {!currentTeamPlayerMap && (
+                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full'>
+                    {(teamPlayerMap && teamPlayerMap.length) > 0 ? teamPlayerMap.map((map, index) => {
+                        const teamData = teams.find(t => t._id === map.team);
+                        const teamName = getTeamName(map.team, teams);
+                        const colors = getTeamColor(index);
+                        const budgetUsed = teamData?.budget ? teamData.budget - map.remainingBudget : 0;
+                        const budgetPercentage = teamData?.budget ? Math.round((budgetUsed / teamData.budget) * 100) : 0;
+                        const maxPlayers = auction.maxTeamMember;
+                        
+                        return (
+                            <div 
+                                onClick={() => { setCurrentTeamPlayerMap(map) }} 
+                                key={"team_" + index}
+                                className="border-2 border-gray-200 rounded-xl p-4 hover:border-blue-500 transition cursor-pointer"
+                            >
+                                {/* Team Header */}
+                                <div className="flex items-center gap-3 mb-3">
+                                    {getTeamLogo(map.team) ? (
                                         <img
-                                            className="w-full h-full bg-cover bg-center"
+                                            className="w-12 h-12 rounded-full object-cover flex-shrink-0"
                                             src={getTeamLogo(map.team)}
-                                            alt="logo"
+                                            alt={teamName}
                                         />
                                     ) : (
-                                        <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                                            {defaultTeamLogo}
+                                        <div className={`w-12 h-12 ${colors.bg} rounded-full flex items-center justify-center text-white font-bold text-xl flex-shrink-0`}>
+                                            {getTeamInitials(teamName)}
                                         </div>
-                                    )
-                                }
-                            </label>
+                                    )}
+                                    <div className="flex-1 min-w-0 text-left">
+                                        <h3 className="font-bold text-gray-900 text-left">{teamName}</h3>
+                                        <p className="text-xs text-gray-500 text-left">
+                                            {teamData?.owner ? `Owner: ${teamData.owner}` : ''}
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                {/* Team Stats */}
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Budget:</span>
+                                        <span className="font-semibold text-gray-900">{getTeamBudgetForView(teamData?.budget || 0)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Remaining:</span>
+                                        <span className="font-semibold text-green-600">{getTeamBudgetForView(map.remainingBudget)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Players:</span>
+                                        <span className="font-semibold text-gray-900">{map.players.length}/{maxPlayers}</span>
+                                    </div>
+                                </div>
+                                
+                                {/* Progress Bar */}
+                                <div className="mt-4 pt-3 border-t border-gray-200">
+                                    <div className="w-full bg-gray-200 rounded-full h-2">
+                                        <div 
+                                            className={`${colors.progress} h-2 rounded-full`} 
+                                            style={{ width: `${budgetPercentage}%` }}
+                                        ></div>
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-1 text-center">{budgetPercentage}% budget used</p>
+                                </div>
+                            </div>
+                        );
+                    }) : (
+                        <div className='col-span-full text-center py-8 text-gray-500 normal-case font-medium'>
+                            No teams added in the auction
                         </div>
-                        {/* <div className="w-24 h-24 rounded-full bg-gray-300 flex items-center justify-center text-xl font-bold text-dark">
-                            <span className="flex ">
-                                {getTeamLogo(getTeamName(map.team, teams))}
-                            </span>
-                        </div> */}
-                        <div className='flex flex-col gap-2 flex-grow flex-start'>
-                            <div className='text-lg font-bold text-center'>{getTeamName(map.team, teams)}</div>
-                            <div className='text-sm font-medium text-center'>Total player - {map.players.length}</div>
-                            <div className='text-sm font-medium text-center'>Remaining Budgert - {getTeamBudgetForView(map.remainingBudget)}</div>
-                        </div>
-                    </div>)
-                }) : <>
-                    <div className='normal-case font-medium'>
-                        No team added in the auction
-                    </div>
-                </>}
-            </div>}
+                    )}
+                </div>
+            )}
             {currentTeamPlayerMap && <div className='flex flex-row flex-wrap gap-2 w-full h-full overflow-auto'>
                 <div className='PlayerPannel flex flex-col gap-2 lg:w-[30%] sm:w-[100%] md:w-[30%] h-full overflow-auto'>
                     <div key={"player_" + "title"} className='flex flex-col items-start bg-slate-400 p-2 rounded'>

@@ -1,3 +1,4 @@
+import React from 'react';
 import { closeIcon, profilePicture } from "../assets/svgs";
 
 const Modal = ({ onClose, children, title }) => {
@@ -39,6 +40,14 @@ export const HelpMoedal = ({ onClose }) => {
 };
 
 export const UserProfileModal = ({ onClose, currUser, navigate }) => {
+    const [copied, setCopied] = React.useState(false);
+    
+    const copyUserId = () => {
+        navigator.clipboard.writeText(currUser._id);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
     return (
         <Modal onClose={onClose} title={"User Profile"}>
             <div className="flex p-2 w-full">
@@ -50,12 +59,30 @@ export const UserProfileModal = ({ onClose, currUser, navigate }) => {
                 {/* Profile Info */}
                 <div className="w-2/3 pl-1">
                     <h2 className="text-lg font-semibold">{currUser.username}</h2>
-                    <p className="text-gray-600">{currUser.email}</p>
-                    <p className="text-gray-600">{currUser.bio}</p>
+                    <p className="text-gray-600 text-sm">{currUser.email}</p>
+                    
+                    {/* User ID with Copy Button */}
+                    <div className="mt-3 bg-gray-50 border border-gray-200 rounded-lg p-3">
+                        <div className="flex items-center justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                                <p className="text-xs text-gray-500 font-medium mb-1">User ID (for auctions)</p>
+                                <p className="text-xs font-mono text-gray-800 truncate" title={currUser._id}>
+                                    {currUser._id}
+                                </p>
+                            </div>
+                            <button
+                                onClick={copyUserId}
+                                className="flex-shrink-0 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-lg transition"
+                            >
+                                {copied ? '✓ Copied!' : '📋 Copy'}
+                            </button>
+                        </div>
+                    </div>
 
                     {/* Links */}
                     <div className="mt-4">
-                        <button className="text-blue-500 hover:underline" onClick={() => { navigate("/auth/forgetpassword"); }}>Reset Password?
+                        <button className="text-blue-500 hover:underline text-sm" onClick={() => { navigate("/auth/forgetpassword"); }}>
+                            Reset Password?
                         </button>
                     </div>
                 </div>

@@ -2,6 +2,10 @@ const AuctionModel = require("../models/auctionModel");
 const AuctionTeamModel = require("../models/auctionTeamModel");
 const AuctionPlayerModel = require("../models/auctionPlayerModel");
 const AuctionSetModel = require("../models/auctionSetModel");
+const FileModel = require("../models/fileModel");
+const UserModel = require('../models/userModels');
+const fs = require('fs');
+const path = require('path');
 
 const {
   genJWTToken,
@@ -66,11 +70,38 @@ exports.checkPublicAvailability = () => {
 exports.auctionLogin = async function (req, res) {
   try {
     const { name, organizer, password } = req.body;
-    let auction = await AuctionModel.findOne({ name: name, organizer: organizer, password: password });
+    const user = req.user;
+
+    // For backward compatibility: accept organizer as string (username) or use authenticated user
+    let query = { name: name };
+
+    if (organizer) {
+      // If organizer is provided as username, try to find by username first
+      const organizerUser = await UserModel.findOne({ username: organizer });
+      if (organizerUser) {
+        query.organizer = organizerUser._id;
+      } else {
+        // Fallback: try as direct match (for old data)
+        query.organizer = organizer;
+      }
+    } else if (user) {
+      // Use authenticated user's ID
+      query.organizer = user._id;
+    }
+
+    let auction = await AuctionModel.findOne(query);
     if (!auction) {
       return res
         .status(400)
         .json({ message: "Auction details invalid.", success: false });
+    }
+
+    // Compare password using model method
+    const isPasswordValid = await auction.comparePassword(password);
+    if (!isPasswordValid) {
+      return res
+        .status(400)
+        .json({ message: "Invalid password.", success: false });
     }
 
     const payload = {
@@ -82,8 +113,8 @@ exports.auctionLogin = async function (req, res) {
 
     res.cookie("auction_token", token, {
       httpOnly: true,
-      secure: false,
-      maxAge: 3600000000000,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
     });
     auction.password = undefined;
 
@@ -100,7 +131,7 @@ exports.auctionLogin = async function (req, res) {
     res
       .status(500)
       .json({
-        message: "An error occurred during registration" + e.toString(),
+        message: "An error occurred during login" + e.toString(),
         success: false,
       });
   }
@@ -273,17 +304,27 @@ async function _lookUpPlayer(playerNumber, auction) {
 
 exports.createNewAuction = async function (req, res) {
   try {
-    const { name, organizer, password } = req.body;
-    let auction = await AuctionModel.findOne({ name: name });
+    const { name, password } = req.body;
+    const user = req.user;
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+
+    // Check if auction with same name exists for this organizer
+    let auction = await AuctionModel.findOne({ name: name, organizer: user._id.toString() });
     if (auction) {
       return res.status(200).json({
         success: false,
-        message: "Auction with this name already present, please try with different name",
+        message: "You already have an auction with this name. Please choose a different name.",
       });
     } else {
       let newAuction = new AuctionModel({
         name: name,
-        organizer: organizer,
+        organizer: user._id.toString(), // Store as string
         password: password,
       })
       newAuction = await newAuction.save();
@@ -344,6 +385,14 @@ exports.updateNewAuctionSet = async (req, res) => {
       });
     }
 
+    // First, set all currently running sets to idle (only ONE set can be running at a time)
+    let updatedSet2 = await AuctionSetModel.updateMany(
+      { auction: auction._id, state: "running" },
+      { state: "idle" },
+      { upsert: false }
+    );
+
+    // Then, update the selected set to the new state
     let updatedSet = await AuctionSetModel.updateOne({ _id: set._id }, set, { upsert: false });
     let sets = await AuctionSetModel.find({ auction: auction._id });
 
@@ -365,10 +414,39 @@ exports.updateNewAuctionSet = async (req, res) => {
       }
     }
 
+    // Fetch full auction data (same as getAuctionDetails)
+    let auctionData = await AuctionModel.findOne({ _id: auction._id });
+    if (!auctionData) {
+      return res.status(400).json({
+        success: false,
+        message: "Auction not found",
+      });
+    }
+
+    let teams = await AuctionTeamModel.find({ auction: auction._id });
+    let allPlayers = await AuctionPlayerModel.find({ auction: auction._id });
+    let allSets = await AuctionSetModel.find({ auction: auction._id });
+    
+    // Remove password from auction object
+    auctionData.password = undefined;
+
+    // Find last sold/unsold player (most recent by updatedAt)
+    let lastSoldPlayer = await AuctionPlayerModel.findOne({ 
+      auction: auction._id, 
+      auctionStatus: { $in: ["sold", "unsold"] } 
+    }).sort({ updatedAt: -1 }).limit(1);
+
     return res.status(200).json({
       success: true,
       message: "Set is updated to " + set.state,
-      auction: updatedSet
+      auction: updatedSet, // Backward compatible
+      auctionData: { // NEW: Full auction data
+        auction: auctionData,
+        teams: teams,
+        players: allPlayers,
+        sets: allSets,
+        lastSoldPlayer: lastSoldPlayer || null
+      }
     });
 
   } catch (e) {
@@ -416,6 +494,68 @@ exports.createNewAuctionTeam = async (req, res) => {
     });
   }
 };
+
+exports.updateNewAuctionTeam = async (req, res) => {
+  try {
+    const { team } = req.body;
+    if (!team || !team._id) {
+      return res.status(200).json({
+        success: false,
+        message: "Team ID is required",
+      });
+    }
+
+    // Check if another team with the same name exists in the same auction
+    const existingTeam = await AuctionTeamModel.findById(team._id);
+    if (!existingTeam) {
+      return res.status(404).json({
+        success: false,
+        message: "Team not found",
+      });
+    }
+
+    // If name is being changed, check for duplicates
+    if (team.name && team.name !== existingTeam.name) {
+      const duplicateTeam = await AuctionTeamModel.findOne({ 
+        name: team.name, 
+        auction: existingTeam.auction,
+        _id: { $ne: team._id } 
+      });
+      
+      if (duplicateTeam) {
+        return res.status(200).json({
+          success: false,
+          message: "Team with this name already exists in this auction",
+        });
+      }
+    }
+
+    // Update team fields
+    const updateData = {};
+    if (team.name) updateData.name = team.name;
+    if (team.owner !== undefined) updateData.owner = team.owner;
+    if (team.budget) updateData.budget = team.budget;
+
+    const updatedTeam = await AuctionTeamModel.findByIdAndUpdate(
+      team._id, 
+      updateData, 
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Team updated successfully",
+      result: updatedTeam,
+    });
+
+  } catch (e) {
+    res.status(500).json({
+      success: false,
+      message: "internal server error : " + e,
+    });
+  }
+};
+
 exports.removeNewAuctionTeam = async (req, res) => {
   try {
     const { team } = req.body;
@@ -569,6 +709,18 @@ exports.updateNewAuctionPlayer = async (req, res) => {
         message: "Player is required",
       });
     }
+
+    // Get auctionId from the first player to fetch full auction data
+    const firstPlayer = await AuctionPlayerModel.findById(players[0]._id);
+    if (!firstPlayer) {
+      return res.status(400).json({
+        success: false,
+        message: "Player not found",
+      });
+    }
+    const auctionId = firstPlayer.auction;
+
+    // Update players
     for (let i = 0; i < players.length; i++) {
       let player = players[i];
       try {
@@ -584,17 +736,44 @@ exports.updateNewAuctionPlayer = async (req, res) => {
         } else {
           res.status(500).json({
             success: false,
-            message: "internal server error : " + e,
+            message: "internal server error : " + error,
           });
         }
       }
     }
 
+    let auction = await AuctionModel.findOne({ _id: auctionId });
+    if (auction) {
+      let teams = await AuctionTeamModel.find({ auction: auctionId });
+      let players = await AuctionPlayerModel.find({ auction: auctionId });
+      let sets = await AuctionSetModel.find({ auction: auctionId });
+      auction.password = undefined;
 
-    return res.status(200).json({
-      success: true,
-      message: "Player Updated",
-    });
+      // Find last sold/unsold player (most recent by updatedAt)
+      let lastSoldPlayer = await AuctionPlayerModel.findOne({ 
+        auction: auctionId, 
+        auctionStatus: { $in: ["sold", "unsold"] } 
+      }).sort({ updatedAt: -1 }).limit(1);
+      
+      // Fetch full auction data (same as getAuctionDetails)
+      return res.status(200).json({
+        success: true,
+        message: "Player Updated",
+        result: players, // Backward compatible - return updated players
+        auctionData: { // NEW: Full auction data
+          auction: auction,
+          teams: teams,
+          players: players,
+          sets: sets,
+          lastSoldPlayer: lastSoldPlayer || null
+        }
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Auction details not found",
+      });
+    }
 
   } catch (e) {
     res.status(500).json({
@@ -660,13 +839,21 @@ exports.getAuctionDetails = async (req, res) => {
       let players = await AuctionPlayerModel.find({ auction: auctionId });
       let sets = await AuctionSetModel.find({ auction: auctionId });
       auction.password = undefined;
+      
+      // Find last sold/unsold player (most recent by updatedAt)
+      let lastSoldPlayer = await AuctionPlayerModel.findOne({ 
+        auction: auctionId, 
+        auctionStatus: { $in: ["sold", "unsold"] } 
+      }).sort({ updatedAt: -1 }).limit(1);
+      
       return res.status(200).json({
         success: true,
         message: "Action details available",
         auction: auction,
         teams: teams,
         players: players,
-        sets: sets
+        sets: sets,
+        lastSoldPlayer: lastSoldPlayer || null
       });
     } else {
       res.status(200).json({
@@ -685,44 +872,113 @@ exports.getAuctionDetails = async (req, res) => {
 
 exports.saveTeamLogo = async (req, res, next) => {
   try {
-    const team = req.body.team;
-    if (!team) {
+    const { teamId, imageData, fileName, mimeType, fileSize } = req.body;
+    
+    if (!teamId) {
       return res.status(400).json({
         success: false,
-        message: "Inavlaid request body",
+        message: "Team ID is required",
       });
     }
-    var fileObject = {
-      name: req.file.originalname,
-      url: req.file.location,
-      key: req.file.key,
-      type: req.file.mimetype,
-      contentType: req.file.contentType,
-      encoding: req.file.encoding,
-      bucket: req.file.bucket,
-      metadata: req.file.metadata,
-      etag: req.file.etag,
-      acl: req.file.acl,
-    };
 
-    try {
-      const t = await AuctionTeamModel.updateOne(
-        { _id: team },
-        { $set: { logo: fileObject } },
-        { upsert: false }
-      );
-    } catch (e) {
-      console.error(e)
-      return res.status(200).json({
+    if (!imageData || !fileName || !mimeType) {
+      return res.status(400).json({
         success: false,
-        message: `Error team logo uploading, : ${e}`,
+        message: "Image data, file name, and mime type are required",
       });
     }
+
+    // Verify team exists
+    const team = await AuctionTeamModel.findById(teamId);
+    if (!team) {
+      return res.status(404).json({
+        success: false,
+        message: "Team not found",
+      });
+    }
+
+    // Remove data URL prefix if present (data:image/png;base64,...)
+    let base64Data = imageData;
+    if (imageData.includes('base64,')) {
+      base64Data = imageData.split('base64,')[1];
+    }
+
+    // Determine file extension from mimeType
+    const ext = mimeType.split('/')[1] || 'png';
+    const newFileName = `${teamId}.${ext}`;
+    
+    // Define upload directory and file path
+    const uploadDir = path.join(__dirname, '../public/uploads/teams');
+    const filePath = path.join(uploadDir, newFileName);
+
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    // Delete old logo files for this team (different extensions)
+    const existingFiles = fs.readdirSync(uploadDir).filter(file => file.startsWith(teamId + '.'));
+    existingFiles.forEach(file => {
+      const oldFilePath = path.join(uploadDir, file);
+      try {
+        fs.unlinkSync(oldFilePath);
+      } catch (err) {
+        console.error(`Error deleting old logo file: ${err.message}`);
+      }
+    });
+
+    // Write new file to disk
+    const buffer = Buffer.from(base64Data, 'base64');
+    fs.writeFileSync(filePath, buffer);
+
+    // Generate public URL
+    const logoUrl = `/uploads/teams/${newFileName}`;
+
+    // Create or update file record in File model (as backup)
+    let fileRecord = await FileModel.findOne({ 
+      entityType: 'team', 
+      entityId: teamId,
+      fileType: 'image'
+    });
+
+    if (fileRecord) {
+      // Update existing file
+      fileRecord.name = newFileName;
+      fileRecord.originalName = fileName;
+      fileRecord.mimeType = mimeType;
+      fileRecord.size = fileSize || buffer.length;
+      fileRecord.data = base64Data;
+      fileRecord = await fileRecord.save();
+    } else {
+      // Create new file
+      fileRecord = new FileModel({
+        name: newFileName,
+        originalName: fileName,
+        mimeType: mimeType,
+        size: fileSize || buffer.length,
+        data: base64Data,
+        entityType: 'team',
+        entityId: teamId,
+        fileType: 'image',
+        uploadedBy: req.user?._id,
+      });
+      fileRecord = await fileRecord.save();
+    }
+
+    // Update team with logo URL
+    await AuctionTeamModel.updateOne(
+      { _id: teamId },
+      { $set: { logoUrl: logoUrl } },
+      { upsert: false }
+    );
 
     res.status(200).json({
       success: true,
       message: "Logo successfully uploaded",
-      result: fileObject,
+      result: {
+        logoUrl: logoUrl,
+        fileId: fileRecord._id,
+      },
     });
   } catch (err) {
     console.error(`Internal server error: ${err.message}`);

@@ -2,13 +2,20 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
+const path = require('path');
 require("dotenv").config();
 var bodyParser = require("body-parser");
 
-// routes
+// Legacy routes
 const userRoute = require('../routes/userRoute');
 const authRoute = require('../routes/authRoute');
 const auctionRoute = require('../routes/auctionRoute');
+
+// New API v1 routes
+const v1Routes = require('../routes/v1');
+
+// Public routes (no authentication)
+const publicRoutes = require('../routes/public.route');
 
 const app = express();
 
@@ -38,6 +45,9 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 app.use(express.json({ limit: '2mb' }));
 
+// Serve static files from public directory
+app.use(express.static(path.join(__dirname, '../public')));
+
 app.set('view engine', 'ejs');
 app.set('views', './views');
 // app.use(bodyParser.json({ limit: "2000kb" }));
@@ -59,6 +69,13 @@ app.get('/', (req, res) => {
 });
 
 
+// Mount public routes (no authentication required)
+app.use("/api/public", publicRoutes);
+
+// Mount v1 API routes (new RESTful API)
+app.use("/api/v1", v1Routes);
+
+// Legacy routes (for backward compatibility)
 app.use("/api/data", userRoute);
 app.use("/api/auth", authRoute);
 app.use("/api/auction", auctionRoute);
@@ -71,10 +88,34 @@ app.get('*', (req, res) => {
 
 app.use((err, req, res, next) => {
     console.error(err);
-    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
-        return res.status(400).json({ message: 'Invalid JSON payload' });
+    
+    // Handle Multer file upload errors
+    if (err.name === 'MulterError') {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ 
+                success: false,
+                message: 'File too large. Maximum upload size is 500KB' 
+            });
+        }
+        return res.status(400).json({ 
+            success: false,
+            message: `Upload error: ${err.message}` 
+        });
     }
-    return res.status(500).json({ message: 'Internal Server Error' });
+    
+    // Handle JSON syntax errors
+    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+        return res.status(400).json({ 
+            success: false,
+            message: 'Invalid JSON payload' 
+        });
+    }
+    
+    // Generic error handler
+    return res.status(500).json({ 
+        success: false,
+        message: 'Internal Server Error' 
+    });
 });
 
 module.exports = app;

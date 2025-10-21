@@ -1,10 +1,12 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
+import { useConfig } from "../hooks/useConfig";
 import userService from "../services/userService";
 import { json, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import flobiteJS from "flowbite/dist/flowbite.min.js";
 import { io } from "socket.io-client";
 import useKeys from "../hooks/keyKeys";
+import useClickOutside from "../hooks/useClickOutside";
 import {
   currentVersionIcon,
   versionIndicatorIcon,
@@ -27,17 +29,28 @@ import {
   getPresizeFileName,
   getTimeInFormate,
   isValidSlug,
+  isReservedRouteName,
+  isValidAndNotReservedSlug,
 } from "../common/functions";
-import { HelpMoedal, UserProfileModal } from "../common/Modals";
+
+// Import new components
+import EditorNavbar from "./components/editor/EditorNavbar";
+import WarningBanner from "./components/editor/WarningBanner";
+import PremiumSidebar from "./components/editor/PremiumSidebar";
+import SubscriptionModal from "./components/editor/SubscriptionModal";
+import EditorSidebar from "./components/editor/EditorSidebar";
+import MobileMenu from "./components/editor/MobileMenu";
+import FloatingHint from "./components/editor/FloatingHint";
+import FeatureModal from "./components/editor/FeatureModal";
+import RedirectUrlInput from "./components/editor/RedirectUrlInput";
 
 export default function MainPage(props) {
   const { currUser, setCurrUser } = useContext(UserContext);
 
   const editorRef = useRef(null);
   const navigate = useNavigate();
-  const { slug, username } = useParams();
-
-  const [appConfig, setAppConfig] = useState({});
+  const { slug, userId } = useParams();
+  const { config: appConfig } = useConfig();
   const [userSlug, setUserSlug] = useState(slug);
   const [socketEnabled, setSocketEnabled] = useState(true);
   const [allVersionData, setAllVersionData] = useState([]);
@@ -63,8 +76,29 @@ export default function MainPage(props) {
   ]);
 
   const [incomingEditorValue, setIncomingEditorValue] = useState("");
-  const [showHelpModal, setShowHelpModal] = useState(false);
-  const [showUserProfileModal, setShowUserProfileModal] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [showFloatingHint, setShowFloatingHint] = useState(false);
+  const [showMobileModal, setShowMobileModal] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showNavigationWarning, setShowNavigationWarning] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState(null);
+  const [lastSavedContent, setLastSavedContent] = useState("");
+
+  // Note: Auth checking and userId validation now handled by PrivateRoute component
+  
+  // Warn before leaving page with unsaved changes (for both logged-in and public users)
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   useEffect(() => {
     if (props.user) {
@@ -87,11 +121,35 @@ export default function MainPage(props) {
     }
   }, []);
 
+  // Show floating hint after 3 seconds for non-logged mobile users
+  useEffect(() => {
+    if (!currUser) {
+      const timer = setTimeout(() => {
+        setShowFloatingHint(true);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [currUser]);
+
   const checkSlug = () => {
-    if (!slug || !isValidSlug(slug)) {
+    // Don't auto-generate slug for non-logged users on root path
+    if (!slug || slug === '' || slug === '/') {
+      if (props.user) {
+        // On initial load, navigate directly without warning
+        navigate("/p/" + props.user._id + "/new");
+      } else {
+        // Just set empty slug - let user work without navigation
+        setTmpSlug('');
+        setUserSlug('');
+        return;
+      }
+    }
+    
+    if (!isValidSlug(slug)) {
       const newSlug = generateRandomString(7);
       if (props.user) {
-        navigate("/p/" + props.user.username + "/new");
+        // On invalid slug, navigate directly without warning
+        navigate("/p/" + props.user._id + "/new");
       } else {
         navigate("/" + newSlug);
       }
@@ -117,6 +175,9 @@ export default function MainPage(props) {
               res.result.data.time
             );
             setLatestVersion(res.result.data);
+            // Mark content as saved (just loaded from server)
+            setLastSavedContent(res.result.data.data);
+            setHasUnsavedChanges(false);
           }
           if (res.result.files && res.result.files.length > 0) {
             if (!currUser) {
@@ -131,7 +192,8 @@ export default function MainPage(props) {
           }
         } else {
           if (props.user) {
-            navigate("/p/" + props.user.username + "/new");
+            // Page doesn't exist, navigate to new document
+            navigate("/p/" + props.user._id + "/new");
           }
           clearEditorValue();
         }
@@ -147,18 +209,7 @@ export default function MainPage(props) {
     checkSlug();
   }, [slug]);
 
-  useEffect(() => {
-    const fetchConfig = async () => {
-      try {
-        const res = await fetch('/config.json');
-        const config = await res.json();
-        setAppConfig(config);
-      } catch (error) {
-        console.error("Error fetching config:", error);
-      }
-    };
-    fetchConfig();
-  }, []); 
+  // Config is now loaded via useConfig hook - no need for separate fetch 
 
   useEffect(() => {
     if (socketEnabled && appConfig.backend_socket_url) {
@@ -289,6 +340,9 @@ export default function MainPage(props) {
             editorRef.current.value = res.result.data.data;
           }
           latestVersion.data = res.result.data.data;
+          // Update last saved content to loaded version
+          setLastSavedContent(res.result.data.data);
+          setHasUnsavedChanges(false);
           setAllVersionData((oldData) => {
             var x = oldData.map((m) => {
               m.isLoaded = false;
@@ -309,16 +363,24 @@ export default function MainPage(props) {
       editorRef.current.value = "";
     }
     setFileList([]);
+    // Reset saved content and unsaved changes when clearing
+    setLastSavedContent("");
+    setHasUnsavedChanges(false);
   }
 
   const validateNewPageTitle = (newTitle) => {
-    let reservedPageTitle = ["new", "auth", "p", "api", "socket", "game", "games"];
-    if (reservedPageTitle.includes(newTitle.toLowerCase())) {
+    // Check if slug is reserved
+    if (isReservedRouteName(newTitle)) {
+      toast.error(`"${newTitle}" is a reserved system name and cannot be used. Please choose a different name.`, { duration: 3000 });
       return false;
     }
+    
+    // Check if slug is valid format
     if (!isValidSlug(newTitle)) {
-      return true
+      toast.error("Please use only letters, numbers, spaces, underscores, and hyphens", { duration: 3000 });
+      return false;
     }
+    
     return true;
   };
 
@@ -328,12 +390,82 @@ export default function MainPage(props) {
   }
 
   const saveData = () => {
+    // For non-logged users without a slug - ask for document name
+    if (!props.user && (!userSlug || userSlug === '' || userSlug === 'new')) {
+      let newSlug = "";
+      toast.custom((t) => (
+        <div className="z-[1000] bg-white border border-gray-200 p-6 rounded-xl w-[90%] max-w-md shadow-2xl">
+          <div className={`text-gray-800 text-xl font-bold mb-4 ${t.visible ? "animate-enter" : "animate-leave"}`}>
+            Save Your Document
+          </div>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            newSlug = newSlug.trim();
+            if (newSlug) {
+              newSlug = newSlug.replaceAll(" ", "_");
+              
+              // Check if slug is reserved
+              if (isReservedRouteName(newSlug)) {
+                toast.error(`"${newSlug}" is a reserved system name and cannot be used. Please choose a different name.`, { duration: 4000 });
+                return;
+              }
+              
+              // Check if slug is valid format
+              if (isValidSlug(newSlug)) {
+                toast.dismiss(t.id);
+                // Pass callback to navigate after save
+                saveDataMain(newSlug, () => {
+                  navigate("/" + newSlug);
+                  setUserSlug(newSlug);
+                });
+              } else {
+                toast.error("Please use only letters, numbers, underscores, and hyphens", { duration: 3000 });
+              }
+            }
+          }}
+            className="flex flex-col gap-4">
+            <div className="flex flex-col items-start w-full space-y-2">
+              <label className="text-sm font-medium text-gray-700 text-left">Document Name</label>
+              <input
+                id="newDocName"
+                type="text"
+                placeholder="e.g., my_awesome_document"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(e) => (newSlug = e.target.value)}
+                autoFocus
+              />
+              <p className="text-xs text-gray-500">This will be your document's URL</p>
+            </div>
+            <div className="flex flex-row gap-3 justify-end w-full">
+              <button
+                type="button"
+                onClick={() => {
+                  toast.dismiss(t.id);
+                }}
+                className="px-4 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
+              >
+                💾 Save
+              </button>
+            </div>
+          </form>
+        </div>
+      ), { duration: 400000 });
+      return;
+    }
+    
+    // For logged users with "new" page - ask for page name
     if (props.user) {
       if (userSlug.toLocaleLowerCase() == "new") {
         let newTitle = "";
         toast.custom((t) => (
-          <div className="z-[1000] bg-gray-100 border border-gray-200 p-6 rounded w-[350px] h-auto flex flex-col justify-center items-center space-y-4 shadow-md">
-            <div className={`text-gray-800 text-lg font-semibold normal-case ${t.visible ? "animate-enter" : "animate-leave"}`}>
+          <div className="z-[1000] bg-white border border-gray-200 p-6 rounded-xl w-[90%] max-w-md shadow-2xl">
+            <div className={`text-gray-800 text-xl font-bold mb-4 ${t.visible ? "animate-enter" : "animate-leave"}`}>
               Enter new page name
             </div>
             <form onSubmit={(e) => {
@@ -351,55 +483,67 @@ export default function MainPage(props) {
                 }
               }
             }}
-              className="flex flex-col gap-2">
+              className="flex flex-col gap-4">
               <div className="flex flex-col items-start w-full space-y-2">
+                <label className="text-sm font-medium text-gray-700 text-left">Page Name</label>
                 <input
                   id="newTitle"
                   type="text"
                   placeholder="Page name"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   onChange={(e) => (newTitle = e.target.value)}
+                  autoFocus
                 />
               </div>
-              <div className="flex flex-row gap-4 justify-center w-full">
+              <div className="flex flex-row gap-3 justify-end w-full">
                 <button
                   type="button"
                   onClick={() => {
                     toast.dismiss(t.id);
                   }}
-                  className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md"
+                  className="px-4 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
                 >
-                  Save
+                  💾 Save
                 </button>
               </div>
             </form>
           </div>
         ), { duration: 400000 });
-      } else {
-        saveDataMain(userSlug);
+        return;
       }
-    } else {
-      saveDataMain(userSlug);
     }
+    saveDataMain(userSlug);
   };
 
-  const saveDataMain = (pageTitle) => {
+  const saveDataMain = (pageTitle, onSaveComplete) => {
     if (!editorRef) {
       return;
     }
     var editorValue = editorRef.current.getContent();
+    
+    // Ensure we have a valid slug/title
+    const slugToSave = pageTitle || userSlug;
+    if (!slugToSave || slugToSave === '') {
+      toast.error("Please provide a document name");
+      return;
+    }
+    
     var body = {
-      slug: pageTitle,
+      slug: slugToSave,
       data: editorValue,
       owner: props.user,
     };
-    var dataSavePromise = userService
+    
+    // Show loading toast
+    const loadingToast = toast.loading("Saving...");
+    
+    userService
       .saveData(body)
       .then((res) => {
         if (res.newData) {
@@ -409,7 +553,15 @@ export default function MainPage(props) {
           obj.time = res.newData.time;
           setLatestVersion(obj);
         }
-        toast.success("Saved");
+        
+        // Dismiss loading and show success
+        toast.dismiss(loadingToast);
+        toast.success("Document saved successfully!");
+        
+        // Update last saved content and reset unsaved changes state
+        setLastSavedContent(editorValue);
+        setHasUnsavedChanges(false);
+        
         if (currUser && res.isInserted) {
           setCurrUser((user) => {
             user.pages.push({
@@ -423,30 +575,20 @@ export default function MainPage(props) {
           });
         }
         if (userSlug == "new") {
-          navigate("/p/" + username + "/" + pageTitle);
+          navigate("/p/" + currUser._id + "/" + pageTitle);
+        }
+        
+        // Call the callback after save completes
+        if (onSaveComplete && typeof onSaveComplete === 'function') {
+          onSaveComplete();
         }
       })
       .catch((error) => {
-        toast.error("error while saving data");
+        // Dismiss loading and show error
+        toast.dismiss(loadingToast);
+        toast.error("Error while saving data");
         console.error(error);
       });
-
-    toast.promise(
-      dataSavePromise,
-      {
-        loading: "Saving...",
-        success: (data) => "",
-        error: (err) => "",
-      },
-      {
-        success: {
-          duration: 1,
-        },
-        error: {
-          duration: 1,
-        },
-      }
-    );
   };
 
   const onSelectFile = async (event) => {
@@ -501,7 +643,21 @@ export default function MainPage(props) {
   };
 
   const redirect = () => {
-    navigate("/" + tmpSlug);
+    const slug = tmpSlug.trim();
+    
+    // Check if slug is reserved
+    if (isReservedRouteName(slug)) {
+      toast.error(`"${slug}" is a reserved system name and cannot be used. Please choose a different name.`, { duration: 4000 });
+      return;
+    }
+    
+    // Check if slug is valid format
+    if (!isValidSlug(slug)) {
+      toast.error("Please use only letters, numbers, spaces, underscores, and hyphens", { duration: 3000 });
+      return;
+    }
+    
+    navigate("/" + slug.replaceAll(" ", "_"));
   };
 
   const remvoeCurrentFile = (file) => {
@@ -587,15 +743,68 @@ export default function MainPage(props) {
   };
 
   const inputFile = useRef(null);
+  const versionHistoryRef = useRef(null);
+
+  // Close version history dropdown when clicking outside
+  const closeVersionHistory = () => {
+    setDropdownVisibility((prev) => ({
+      ...prev,
+      history: false
+    }));
+  };
+  useClickOutside(versionHistoryRef, closeVersionHistory, dropdownVisibility.history);
+
+  // Wrapped navigate function to check for unsaved changes
+  const safeNavigate = (path) => {
+    if (hasUnsavedChanges) {
+      setPendingNavigation(path);
+      setShowNavigationWarning(true);
+    } else {
+      navigate(path);
+    }
+  };
+
+  const confirmNavigation = () => {
+    if (pendingNavigation) {
+      setHasUnsavedChanges(false); // Reset state to allow navigation
+      
+      // If navigating to root (logout), clear user data
+      if (pendingNavigation === "/") {
+        setCurrUser(null);
+        localStorage.removeItem("currentUser");
+      }
+      
+      navigate(pendingNavigation);
+      setPendingNavigation(null);
+    }
+    setShowNavigationWarning(false);
+  };
+
+  const cancelNavigation = () => {
+    setPendingNavigation(null);
+    setShowNavigationWarning(false);
+  };
 
   const handleLogout = () => {
-    navigate("/");
-    setCurrUser(null);
-    localStorage.removeItem("currentUser");
+    if (hasUnsavedChanges) {
+      setPendingNavigation("/");
+      setShowNavigationWarning(true);
+    } else {
+      navigate("/");
+      setCurrUser(null);
+      localStorage.removeItem("currentUser");
+    }
   };
 
   const handleOnEditorChange = (value) => {
-    if (value != incomingEditorValue) {
+    // Only mark as unsaved if content actually changed from last saved state
+    if (value !== lastSavedContent) {
+      setHasUnsavedChanges(true);
+    } else {
+      setHasUnsavedChanges(false);
+    }
+    
+    if (value != incomingEditorValue && socket && socketEnabled && userSlug) {
       socket.emit("room_message", userSlug, value);
     }
   };
@@ -615,251 +824,22 @@ export default function MainPage(props) {
   };
 
   const handlePageNavigate = (slugName) => {
-    navigate("/p/" + username + "/" + slugName);
+    safeNavigate(`/p/${currUser._id}/${slugName}`);
   };
 
+  // JSX variables removed - now using components
 
-  const loginButtonView = (<div className="ml-auto mr-1">
-    <div
-      onClick={!currUser ? () => { navigate("/auth/login"); } : () => {
-        setDropdownVisibility(() => {
-          var val = structuredClone(dropdownVisibility);
-          val.file = false;
-          val.history = false;
-          val.profile = !val.profile;
-          return val;
-        });
-      }}
-      className={`${currUser ? "px-2 " : "py-1 bg-slate-500 hover:bg-slate-600 text-white px-4"} ml-auto text-sm font-bold rounded cursor-pointer`}
-    >
-      {currUser ? userProfileIcon : "Login"}
-    </div>
-    {currUser && dropdownVisibility.profile && (
-      <div
-        className="absolute right-0 z-10 mt-2 p-1 min-w-48 max-h-96 overflow-auto origin-top-right rounded-md bg-slate-300 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-        role="menu"
-      >
-        <ul
-          className="py-2 text-sm text-gray-700 dark:text-gray-200 rounded font-bold"
-        >
-          <li className="flex px-1 items-center rounded">
-            <div
-              className="w-full version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-slate-100 dark:hover:bg-gray-600 dark:hover:text-white flex items-center rounded"
-              onClick={() => { setShowUserProfileModal(true) }}
-            >
-              <div className="w-12 h-12 flex-shrink-0">
-                {profilePicture}
-              </div>
-              <span className="ml-2">{username}</span>
-            </div>
-          </li>
-
-          <li className="flex items-center px-1">
-            <div
-              onClick={() => { navigate("/t/auction"); }}
-              className="w-full version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-slate-200 dark:hover:bg-gray-600 dark:hover:text-white rounded"
-            >
-              Auction
-            </div>
-          </li>
-
-          <li className="flex items-center px-1">
-            <div
-              onClick={() => { setShowHelpModal(true); }}
-              className="w-full version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-slate-200 dark:hover:bg-gray-600 dark:hover:text-white rounded"
-            >
-              Help
-            </div>
-          </li>
-
-          <li
-            key="logout"
-            className="flex px-1 items-center px-1"
-          >
-            <div
-              title="Click to logout"
-              onClick={() => {
-                handleLogout();
-              }}
-              className="w-full version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-slate-200 dark:hover:bg-gray-600 dark:hover:text-white rounded"
-            >
-              Logout
-            </div>
-          </li>
-        </ul>
-
-        {showHelpModal && (
-          <HelpMoedal onClose={() => setShowHelpModal(false)} />
-        )}
-        {showUserProfileModal && (
-          <UserProfileModal
-            onClose={() => { setShowUserProfileModal(false) }}
-            currUser={currUser}
-            navigate={navigate}
-          />
-        )}
-      </div>
-    )}
-  </div>)
-
-  const mainListView = (
-    <div className="md:hidden inline-block text-left">
-      <button
-        onClick={() => {
-          setDropdownVisibility(() => {
-            var val = structuredClone(dropdownVisibility);
-            val.file = !val.file;
-            val.history = false;
-            val.profile = false;
-            return val;
-          });
-        }}
-        type="button"
-        className="inline-flex md:hidden items-center justify-center rounded-md px-2 py-2 text-xs font-semibold shadow-sm ring-1 ring-inset ring-gray-300 text-dark bg-slate-100 hover:bg-slate-200 focus:outline-none focus:ring-gray-300 font-medium rounded-lg px-2 py-1 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-gray-800"
-        aria-expanded="true"
-        aria-haspopup="true"
-      >
-        {menuIcon}
-      </button>
-
-      {dropdownVisibility.file && (
-        <div className="overflow-auto absolute left-0 z-10 mt-2 min-w-[240px] max-w-96 max-h-96 p-1 px-3 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-          <div
-            className="flex flex-col h-full text-sm text-gray-700 dark:text-gray-200 "
-          >
-            <div className="relative fixed top-0">
-              <div className="flex flex-row h-[30px] w-full text-sm justify-center gap-2">
-                {privateTabs.map((tab) => {
-                  return (
-                    <div
-                      key={tab.tabId + generateRandomString(10)}
-                      className={`${tab.selected ? "bg-slate-300" : "bg-slate-100"
-                        } h-full flex items-center justify-center w-full hover:bg-slate-400 text-black rounded`}
-                      onClick={(e) => onSelectTab(tab.tabId, e)}
-                    >
-                      {tab.tabName}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="overflow-auto flex-grow h-full">
-
-              {privateTabs[0].selected ? (
-                <>
-                  <div className="pt-2 mt-4 font-medium text-sm border-t border-gray-200 dark:border-gray-700">
-                    <div>
-                      <label
-                        onClick={(e) => handlePageNavigate("new")}
-                        className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-1 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group"
-                      >
-                        {pageListIcon}
-                        Create new page
-                      </label>
-                    </div>
-                  </div>
-                  {/* Page List functionality */}
-                  <div className="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700 overflow-auto">
-                    {currUser &&
-                      currUser.pages &&
-                      currUser.pages.map((page) => {
-                        return (
-                          <li
-                            key={page.pageId._id}
-                            className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between border-blue-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
-                          >
-                            <div
-                              className="flex items-center cursor-pointer p-2 text-gray-900 transition duration-75 rounded-lg group flex-1"
-                              onClick={(e) => handlePageNavigate(page.pageId.unique_name)}
-                            >
-                              {pageIcon}
-                              <span
-                                className="ms-3 w-full line-clamp-1"
-                                title={page.pageId.unique_name}
-                              >
-                                {page.pageId.unique_name ? getPresizeFileName(page.pageId.unique_name) : "page"}
-                              </span>
-                            </div>
-                            <div className="flex flex-row">
-                              <div onClick={() => confirmPageRemove(page.pageId)}>
-                                {removeIcon}
-                              </div>
-                            </div>
-                          </li>
-                        );
-                      })}
-                  </div>
-                </>
-              ) : (
-                currUser && <>
-                  <div className="pt-2 mt-4 font-medium text-sm border-gray-200 dark:border-gray-700">
-                    <label className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group">
-                      <input
-                        type="file"
-                        accept="*"
-                        onChange={onSelectFile}
-                      />
-                      {fileAddIcon}
-                      Select to Upload Files
-                    </label>
-                  </div>
-                  {privateFileList.length > 0 && (
-                    <div className="pt-1 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
-                      {privateFileList.map((file, _id) => {
-                        return (
-                          <li
-                            key={_id}
-                            className="Image-content flex flex-row items-center gap-1 justify-between border-blue-300"
-                          >
-                            <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group flex-1">
-                              {fileIcon(file.type)}
-                              <span className="ms-3">
-                                {file.name ? getPresizeFileName(file.name) : "file"}
-                              </span>
-                            </div>
-                            <div className="flex flex-row">
-                              <a
-                                href={file.url}
-                                target="_blank"
-                                download={file.name}
-                                rel="noreferrer"
-                              >
-                                {downloadIcon}
-                              </a>
-                              <div onClick={() => confirmFileRemove(file)}>
-                                {removeIcon}
-                              </div>
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>)
-
-  const redirectView = (!currUser && <form onSubmit={(e) => { e.preventDefault(); redirect(); }} className="flex flex-row space-x-2 py-1 text-sm justify-center items-center gap-2 ">
-    <input
-      className="font-bold  mx-2 px-1 border-b border-blue-700 outline-none max-w-[130px]"
-      onChange={(e) => { setTmpSlug(e.target.value); }}
-      value={tmpSlug}
-    />
-    <button
-      type="submit"
-      className="px-2 text-sm font-bold bg-blue-200 hover:bg-blue-300 text-white border-b-1 border-blue-700 hover:border-blue-500 rounded"
-    >
-      {redirectArrowIcon}
-    </button>
-  </form>)
+  const toggleMobileMenu = () => {
+    setDropdownVisibility((prev) => ({
+      ...prev,
+      file: !prev.file,
+      history: false,
+      profile: false
+    }));
+  };
 
   return (
-    <div className="MainPage flex flex-col h-full w-full p-1 gap-1">
-
+    <div className="MainPage flex flex-col h-full w-full overflow-hidden bg-gray-50">
       <script src={flobiteJS}></script>
       <input
         type="file"
@@ -869,233 +849,153 @@ export default function MainPage(props) {
         style={{ display: "none" }}
       />
 
-      <header className="flex flex-row justify-between px-1 gap-1 flex-wrap">
-        {currUser ? mainListView : <>
-          <div className="md:hidden">
-            {redirectView}
-          </div>
-        </>}
-        {/* login logout */}
-        <div className="md:hidden">
-          {loginButtonView}
-        </div>
-      </header>
-
-      <div className="flex flex-row h-full w-full">
-
-        {currUser &&
-          <aside
-            id="separator-sidebar"
-            className="hidden md:block lg:block SideBar z-40 h-screen h-full "
-            aria-label="Sidebar"
-          >
-            <div className="flex flex-col h-full px-2 py-1 overflow-y-auto ">
-              {/* tabs */}
-              <div className="flex flex-row h-[30px] w-full text-sm justify-center gap-2 ">
-                {privateTabs.map((tab, index) => {
-                  return (
-                    <div
-                      key={tab.tabId + generateRandomString(10)}
-                      className={`${tab.selected ? "bg-slate-300" : "bg-slate-100"
-                        } h-full flex items-center justify-center w-full hover:bg-slate-400 text-black rounded`}
-                      onClick={(e) => onSelectTab(tab.tabId, e)}
-                    >
-                      {tab.tabName}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Tabs content */}
-              {privateTabs[0].selected ? (<>
-                <div className="pt-4 mt-4 space-y-2 font-medium text-sm border-t border-gray-200 dark:border-gray-700">
-                  <div>
-                    <label
-                      onClick={(e) => handlePageNavigate("new")}
-                      className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group"
-                    >
-                      {pageListIcon}
-                      Create new page
-                    </label>
-                  </div>
-                </div>
-
-                {/* File List functionality */}
-                <div className="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
-                  {currUser.pages &&
-                    currUser.pages.map((page) => {
-                      return (
-                        <li
-                          key={page.pageId._id}
-                          className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between border-blue-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
-                        >
-                          <div
-                            className="flex items-center cursor-pointer p-2 text-gray-900 transition duration-75 rounded-lg group flex-1"
-                            onClick={(e) =>
-                              handlePageNavigate(page.pageId.unique_name)
-                            }
-                          >
-                            {pageIcon}
-                            <span
-                              className="ms-3 w-full line-clamp-1"
-                              title={page.pageId.unique_name}
-                            >
-                              {page.pageId.unique_name ? getPresizeFileName(page.pageId.unique_name) : "page"}
-                            </span>
-                          </div>
-                          <div className="flex flex-row">
-                            <div onClick={() => confirmPageRemove(page.pageId)}>
-                              {removeIcon}
-                            </div>
-                          </div>
-                        </li>
-                      );
-                    })}
-                </div>
-              </>
-              ) : (<>
-                <div className="pt-4 mt-4 space-y-2 font-medium text-sm border-t border-gray-200 dark:border-gray-700">
-                  <div>
-                    <label className="custom-file-upload gap-2 cursor-pointer flex flex-row justify-around items-center p-2 text-gray-900 transition duration-75 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white group">
-                      <input type="file" accept="*" onChange={onSelectFile} />
-                      {fileAddIcon}
-                      Select to Upload Files
-                    </label>
-                  </div>
-                </div>
-
-                {/* File List functionality */}
-                <div className="pt-4 mt-4 space-y-2 font-medium border-t border-gray-200 dark:border-gray-700">
-                  {privateFileList.map((file, index) => {
-                    return (
-                      <li
-                        key={index}
-                        className="text-xs w-full max-w-full flex flex-row items-center gap-1 justify-between border-blue-300 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
-                      >
-                        <div className="flex items-center p-2 text-gray-900 transition duration-75 rounded-lg group flex-1">
-                          {fileIcon(file.type)}
-                          <span
-                            className="ms-3 cursor-pointer line-clamp-1"
-                            title={file.name}
-                          >
-                            {file.name ? getPresizeFileName(file.name) : "file"}
-                          </span>
-                        </div>
-                        <div className="flex flex-row min-w-[50px]">
-                          <a
-                            href={file.url}
-                            target="_blank"
-                            download={file.name}
-                            rel="noreferrer"
-                          >
-                            {downloadIcon}
-                          </a>
-                          <div onClick={() => confirmFileRemove(file)}>
-                            {removeIcon}
-                          </div>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </div>
-              </>
-              )}
-            </div>
-          </aside>
+      {/* Navigation */}
+      <EditorNavbar 
+        currUser={currUser}
+        dropdownVisibility={dropdownVisibility}
+        setDropdownVisibility={setDropdownVisibility}
+        userProfileIcon={userProfileIcon}
+        profilePicture={profilePicture}
+        onNavigate={safeNavigate}
+        onLogout={handleLogout}
+        onShowSubscription={() => setShowSubscriptionModal(true)}
+        RedirectUrlComponent={
+          <RedirectUrlInput
+            value={tmpSlug}
+            onChange={(e) => setTmpSlug(e.target.value)}
+            onSubmit={redirect}
+            redirectArrowIcon={redirectArrowIcon}
+          />
         }
-        <div className="MainArea sm:size-full text-xs md:text:sm p-1 md:p-1 gap-2">
+        MobileMenuComponent={
+          <MobileMenu
+            isVisible={dropdownVisibility.file}
+            currUser={currUser}
+            privateTabs={privateTabs}
+            onToggle={toggleMobileMenu}
+            onSelectTab={onSelectTab}
+            onPageNavigate={handlePageNavigate}
+            onPageRemove={confirmPageRemove}
+            onSelectFile={onSelectFile}
+            onFileRemove={confirmFileRemove}
+            privateFileList={privateFileList}
+            // Public user URL input props
+            tmpSlug={tmpSlug}
+            onTmpSlugChange={(e) => setTmpSlug(e.target.value)}
+            onTmpSlugSubmit={redirect}
+            redirectArrowIcon={redirectArrowIcon}
+          />
+        }
+      />
 
-          {/* page title and version */}
-          <div className="flex flex-row gap-2 items-center">
-            {/* version and page name */}
-            <div className="flex flex-row gap-2 w-full">
+      <div className="flex flex-row h-full w-full overflow-hidden">
+        {/* Logged User Sidebar */}
+        {currUser && (
+          <EditorSidebar
+            currUser={currUser}
+            privateTabs={privateTabs}
+            onSelectTab={onSelectTab}
+            onPageNavigate={handlePageNavigate}
+            onPageRemove={confirmPageRemove}
+            onSelectFile={onSelectFile}
+            onFileRemove={confirmFileRemove}
+            privateFileList={privateFileList}
+          />
+        )}
 
-              <div className="flex flex-row gap-3 items-center justify-between ">
-                <div className="relative inline-block text-left cursor-pointer">
-                  <div onClick={() => {
-                    getAllversionData(true);
-                    setDropdownVisibility(() => {
-                      var val = structuredClone(dropdownVisibility);
-                      val.history = !val.history;
-                      val.file = false;
-                      val.profile = false;
-                      return val;
-                    });
-                  }}
+        {/* Premium Sidebar for Non-Logged */}
+        {!currUser && <PremiumSidebar onNavigate={safeNavigate} />}
+
+        {/* Main Editor Area */}
+        <div className="flex-1 flex flex-col bg-white overflow-hidden">
+          {/* Warning Banner */}
+          {!currUser && (
+            <WarningBanner 
+              onSave={saveData} 
+              show={hasUnsavedChanges}
+            />
+          )}
+
+          {/* Page title and version - LOGGED USERS ONLY */}
+          {currUser && (
+            <div className="flex flex-row gap-3 items-center justify-between px-4 py-3 border-b border-gray-200 flex-shrink-0">
+              <div className="flex items-center gap-3 flex-1">
+                <div className="relative inline-block" ref={versionHistoryRef}>
+                  <button
+                    onClick={() => {
+                      getAllversionData(true);
+                      setDropdownVisibility(() => {
+                        var val = structuredClone(dropdownVisibility);
+                        val.history = !val.history;
+                        val.file = false;
+                        val.profile = false;
+                        return val;
+                      });
+                    }}
                     type="button"
-                    className="gap-2 flex items-center justify-between rounded-md text-xs font-semibold shadow-sm  text-dark bg-slate-200 focus:outline-none focus:ring-gray-300 font-medium rounded-lg px-1 py-1 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-gray-800"
+                    className="gap-3 flex items-center bg-gray-100 hover:bg-gray-200 px-4 py-2 transition rounded-lg text-sm font-medium text-gray-900"
                   >
-                    <div className="px-1 py-1 capitalize">
-                      {latestVersion.timeformate ? userSlug : "New page"}
-                    </div>
-                    <div
-                      title="Click to show page versions"
-                      className="flex items-center justify-between px-1 py-1 cursor-pointer hover:bg-slate-200 "
-                    >
+                    <span className="capitalize">📄 {latestVersion.timeformate ? userSlug : "New page"}</span>
+                    <span className="text-gray-500" title="Click to show page versions">
                       {downArrowIcon}
-                    </div>
-                  </div>
+                    </span>
+                  </button>
 
-                  {dropdownVisibility.history && allVersionData.length > 0 && (
-                    <div
-                      className="absolute left-0 z-10 mt-2 min-w-[240px] max-w-[300px] max-h-96 overflow-auto p-1 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
-                      role="menu"
-                      aria-orientation="vertical"
-                      aria-labelledby="menu-button"
-                    >
-                      <ul
-                        className="py-2 text-sm text-gray-700 dark:text-gray-200 "
-                        aria-labelledby="dropdownDefaultButton"
+                    {dropdownVisibility.history && allVersionData.length > 0 && (
+                      <div
+                        className="absolute left-0 z-10 mt-2 min-w-[240px] max-w-[300px] max-h-96 overflow-auto p-1 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                        role="menu"
+                        aria-orientation="vertical"
+                        aria-labelledby="menu-button"
                       >
-                        {allVersionData.map((v, index) => {
-                          return (
-                            <li
-                              key={index}
-                              className="flex px-1 items-center justify-end min-w-[250px] max-w-[380px]"
-                            >
-                              <div
-                                className="min-w-[20px] max-w-[30px]"
-                                title="Current version"
+                        <ul
+                          className="py-2 text-sm text-gray-700 dark:text-gray-200 "
+                          aria-labelledby="dropdownDefaultButton"
+                        >
+                          {allVersionData.map((v, index) => {
+                            return (
+                              <li
+                                key={index}
+                                className="flex px-1 items-center justify-end min-w-[250px] max-w-[380px]"
                               >
-                                {v.isCurrent && currentVersionIcon(v)}
-                                {v.isLoaded && !v.isCurrent && versionIndicatorIcon}
-                              </div>
-                              <div
-                                title="Click to load this version"
-                                onClick={() => {
-                                  loadSpecificVersion(v.time, index);
-                                }}
-                                className="min-w-[230px] max-w-[350px] version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                              >
-                                Version - {v.timeformat}
-                              </div>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
-                  )}
-                </div>
+                                <div
+                                  className="min-w-[20px] max-w-[30px]"
+                                  title="Current version"
+                                >
+                                  {v.isCurrent && currentVersionIcon(v)}
+                                  {v.isLoaded && !v.isCurrent && versionIndicatorIcon}
+                                </div>
+                                <div
+                                  title="Click to load this version"
+                                  onClick={() => {
+                                    loadSpecificVersion(v.time, index);
+                                  }}
+                                  className="min-w-[230px] max-w-[350px] version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                                >
+                                  Version - {v.timeformat}
+                                </div>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
               </div>
-
-              <div
-              type="button"
+              
+              <button
+                type="button"
                 onClick={(e) => saveData()}
-                className="cursor-pointer text-dark px-2 py-1 text-sm bg-blue-200 hover:bg-blue-300 rounded"
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition shadow-sm flex items-center gap-2"
               >
-                Save
-              </div>
+                <span>💾</span>
+                <span className="hidden sm:inline">Save</span>
+              </button>
             </div>
-            <div className="sm:hidden md:block lg:block">
-              {redirectView}
-            </div>
-            <div className="sm:hidden md:block lg:block">
-              {loginButtonView}
-            </div>
-          </div>
+          )}
 
-          {/* code area */}
-          <div className="MainTextArea text-sm relative">
+          {/* Editor */}
+          <div className="tinymce-parent flex-1 overflow-hidden">
             <TmceEditor
               props={{
                 inputFile,
@@ -1108,8 +1008,65 @@ export default function MainPage(props) {
             />
           </div>
         </div>
-
       </div>
-    </div >
+
+      {/* Floating Hint */}
+      <FloatingHint
+        isVisible={!currUser && showFloatingHint}
+        onClose={() => setShowFloatingHint(false)}
+        onViewFeatures={() => {
+          setShowFloatingHint(false);
+          setShowMobileModal(true);
+        }}
+      />
+
+      {/* Feature Modal */}
+      <FeatureModal
+        isVisible={!currUser && showMobileModal}
+        onClose={() => setShowMobileModal(false)}
+        onNavigate={safeNavigate}
+      />
+
+      {/* Existing Modals */}
+      <SubscriptionModal 
+        isVisible={showSubscriptionModal} 
+        onClose={() => setShowSubscriptionModal(false)}
+        feature="Auctions"
+      />
+
+      {/* Navigation Warning Modal */}
+      {showNavigationWarning && (
+        <>
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50" onClick={cancelNavigation} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <svg className="w-12 h-12 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+                <h3 className="text-xl font-bold text-gray-900">Unsaved Changes</h3>
+              </div>
+              <p className="text-gray-600 mb-6">
+                You have unsaved changes that will be lost if you leave this page. Are you sure you want to continue?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={cancelNavigation}
+                  className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg font-medium transition"
+                >
+                  Stay on Page
+                </button>
+                <button
+                  onClick={confirmNavigation}
+                  className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition"
+                >
+                  Leave Without Saving
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
   );
 }

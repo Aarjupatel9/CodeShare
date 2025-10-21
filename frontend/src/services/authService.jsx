@@ -1,4 +1,6 @@
-const backend_url = (await (await fetch('/config.json')).json()).backend_url
+import { getBackendUrl } from '../hooks/useConfig'
+
+const getBackendURL = () => getBackendUrl();
 
 class AuthService {
 
@@ -15,7 +17,7 @@ class AuthService {
                 },
                 body: JSON.stringify(requestPayload)
             };
-            fetch(backend_url + "/api/auth/login", fetchPostOptions)
+            fetch(getBackendURL() + "/api/auth/login", fetchPostOptions)
                 .then((response) => {
                     return response.json();
                 })
@@ -35,6 +37,7 @@ class AuthService {
     }
 
     checkUserLogInStatus() {
+        console.log("getBackendURL()", getBackendURL());
         return new Promise(function (resolve, reject) {
             const currentUser = localStorage.getItem("currentUser") ? JSON.parse(localStorage.getItem("currentUser")) : null;
 
@@ -57,7 +60,7 @@ class AuthService {
                 },
                 body: JSON.stringify(requestPayload)
             };
-            fetch(backend_url + "/api/auth/checkUserLogInStatus", fetchPostOptions)
+            fetch(getBackendURL() + "/api/auth/checkUserLogInStatus", fetchPostOptions)
                 .then((response) => {
                     return response.json();
                 })
@@ -89,7 +92,7 @@ class AuthService {
                 },
                 body: JSON.stringify(requestPayload)
             };
-            fetch(backend_url + "/api/auth/register", fetchPostOptions)
+            fetch(getBackendURL() + "/api/auth/register", fetchPostOptions)
                 .then((response) => {
                     return response.json();
                 })
@@ -121,7 +124,7 @@ class AuthService {
                 body: JSON.stringify({ email }) // Send the email in the body
             };
 
-            fetch(backend_url + "/api/auth/forgetpassword", fetchPostOptions)
+            fetch(getBackendURL() + "/api/auth/forgetpassword", fetchPostOptions)
                 .then((response) => response.json())
                 .then((res) => {
                     if (res.success) {
