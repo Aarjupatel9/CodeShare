@@ -7,7 +7,8 @@ const {
     createPlayers, 
     updatePlayers,
     deletePlayers,
-    importPlayers
+    importPlayers,
+    generatePlayerTemplate
 } = require("../../controllers/v1/auctionPlayerController");
 
 // All routes require authentication
@@ -22,6 +23,9 @@ router.delete("/", deletePlayers); // Batch delete
 
 // Bulk import
 router.post("/import", importPlayers);
+
+// Template download
+router.get("/template", generatePlayerTemplate);
 
 module.exports = router;
 

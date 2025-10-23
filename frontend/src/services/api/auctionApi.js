@@ -334,6 +334,21 @@ class AuctionApi {
     }
   }
 
+  /**
+   * Download player template Excel file
+   */
+  async downloadPlayerTemplate(auctionId) {
+    try {
+      const response = await apiClient.get(
+        `/api/v1/auctions/${auctionId}/players/template`,
+        { responseType: 'blob' }
+      );
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   // ===== Set Management =====
 
   /**

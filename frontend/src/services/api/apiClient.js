@@ -81,6 +81,14 @@ class ApiClient {
         this.handleTokenExpiration();
       }
       
+      // Handle blob responses (for file downloads)
+      if (options.responseType === 'blob') {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.blob();
+      }
+      
       const data = await response.json();
       
       // Handle token expiration globally

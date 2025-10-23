@@ -162,7 +162,8 @@ exports.auctionLogout = async function (req, res) {
 exports.auctionDataImports = async function (req, res) {
   try {
     const { playerData, auction } = req.body;
-
+    console.log("player data", playerData);
+    console.log("playerData.main", playerData.main);
     if (typeof playerData.main != "object" || playerData.main.length < 1) {
       return res.status(200).json({
         success: false,
@@ -646,7 +647,7 @@ exports.removeNewAuctionSet = async (req, res) => {
 
       res.status(200).json({
         success: true,
-        message: "Set created",
+        message: "Set deleted",
         result: delete_set,
       });
     }

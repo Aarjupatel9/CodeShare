@@ -43,7 +43,8 @@
     "path": "^0.12.7",
     "sharp": "^0.34.4",
     "socket.io": "^4.8.1",
-    "util": "^0.12.5"
+    "util": "^0.12.5",
+    "xlsx": "^0.18.5"
   },
   "bin": {
     "execute": "server.js"

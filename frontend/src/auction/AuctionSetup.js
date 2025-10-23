@@ -15,6 +15,7 @@ import PlayersTab from './components/setup/PlayersTab';
 import SetsTab from './components/setup/SetsTab';
 import AuctionSettings from './components/setup/AuctionSettings';
 import ExportTeamList from './components/setup/ExportTeamList';
+import auctionApi from '../services/api/auctionApi';
 
 export default function AuctionSetup(props) {
     const [auction, setAuction] = useState({});
@@ -511,7 +512,7 @@ export default function AuctionSetup(props) {
     }
 
     const handleAuctionDataSetup = (playerData) => {
-        var importpromise = AuctionService.auctionDataImports({ playerData: playerData, auction: auction }).then((res) => {
+        var importpromise = auctionApi.importPlayers(auctionId, playerData).then((res) => {
             toast.success(res.message, { duration: 3000 });
         }).catch((error) => {
             toast.error(error)
@@ -520,9 +521,9 @@ export default function AuctionSetup(props) {
             getAuctionData();
         });
         toast.promise(importpromise, {
-            loading: "Importing Auction details",
-            success: "Details successfully added",
-            error: "Something went wrong"
+            loading: "Importing players...",
+            success: "Players imported successfully!",
+            error: "Import failed"
         })
     }
 
@@ -546,9 +547,8 @@ export default function AuctionSetup(props) {
                 })
                 if (tabsData) {
                     console.debug("tabsData", tabsData);
-                    handleAuctionDataSetup(tabsData.main);
+                    handleAuctionDataSetup(tabsData);
                     setShowUploadModal(false);
-                    toast.success('Data imported successfully!');
                 }
             };
             reader.readAsArrayBuffer(e.target.files[0]);
@@ -765,29 +765,62 @@ export default function AuctionSetup(props) {
                             Upload an Excel file (.xlsx) containing team or player data
                         </p>
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
-                            <p className="text-sm text-blue-800 font-medium mb-2">📋 Required Format:</p>
-                            <p className="text-xs text-blue-700">Sheet Name: <span className="font-semibold">main</span></p>
-                            <p className="text-xs text-blue-700 mt-2 font-medium">For Teams:</p>
-                            <p className="text-xs text-blue-700 ml-2">
-                                <span className="font-mono bg-blue-100 px-1 rounded">name, owner, budget</span>
+                            <p className="text-sm text-blue-800 font-medium mb-2">📋 Excel Format Requirements:</p>
+                            <p className="text-xs text-blue-700 mb-2">
+                                Sheet Name: <span className="font-semibold font-mono">main</span>
                             </p>
-                            <p className="text-xs text-blue-700 mt-2 font-medium">For Players:</p>
-                            <p className="text-xs text-blue-700 ml-2">
-                                <span className="font-mono bg-blue-100 px-1 rounded">playerNumber, name, role, basePrice, auctionSet</span>
+                            <p className="text-xs text-blue-700 font-medium mb-1">All Columns Required (UPPERCASE):</p>
+                            <p className="text-xs text-blue-700 ml-2 font-mono bg-blue-100 px-2 py-1 rounded">
+                                PLAYER NO., PLAYER NAME, ROLE, BASE PRICE, PREFFERED SET, CONTACT NO., 
+                                SHIFT, BOWLING ARM, BOWLING TYPE, BATTING HAND, BATTING ORDER, 
+                                BATTING STYLE, COMMENTS
                             </p>
+                            <div className="mt-3 pt-3 border-t border-blue-200">
+                                <p className="text-xs text-blue-800 font-semibold mb-1">
+                                    💡 Default Values: Use "-" for fields with no data
+                                </p>
+                                <p className="text-xs text-blue-700">
+                                    Example: CONTACT NO. = "-", SHIFT = "-", COMMENTS = "-"
+                                </p>
+                            </div>
+                            <div className="mt-3 pt-3 border-t border-blue-200">
+                                <p className="text-xs text-blue-800 font-semibold">
+                                    📥 Download template below for correct format with sample data
+                                </p>
+                            </div>
                         </div>
                     </div>
 
                     {/* Download Template Button */}
                     <div className="mb-6">
                         <button
-                            onClick={() => {
-                                toast.success('Template info: Use columns as shown above in the required format');
+                            onClick={async () => {
+                                try {
+                                    const response = await auctionApi.downloadPlayerTemplate(auctionId);
+                                    
+                                    // Create blob URL and trigger download
+                                    const blob = new Blob([response], { 
+                                        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+                                    });
+                                    const url = window.URL.createObjectURL(blob);
+                                    const link = document.createElement('a');
+                                    link.href = url;
+                                    link.download = `Player_Template_${auctionData?.name?.replace(/\s+/g, '_') || 'Auction'}.xlsx`;
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                    window.URL.revokeObjectURL(url);
+                                    
+                                    toast.success('Template downloaded successfully!');
+                                } catch (error) {
+                                    console.error('Template download error:', error);
+                                    toast.error('Failed to download template: ' + error);
+                                }
                             }}
                             className="inline-flex items-center gap-2 px-6 py-3 bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg font-semibold transition"
                         >
                             <span>📥</span>
-                            <span>Download Template Info</span>
+                            <span>Download Template</span>
                         </button>
                     </div>
 
