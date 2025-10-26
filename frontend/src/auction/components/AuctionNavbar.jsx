@@ -227,6 +227,16 @@ const AuctionNavbar = ({ onNavigate, onLogout, auction }) => {
                 <button
                   onClick={() => {
                     closeProfileDropdown();
+                    onNavigate(`/p/${currUser?._id}/t/auction/help`);
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                >
+                  🏏 Auction Help
+                </button>
+
+                <button
+                  onClick={() => {
+                    closeProfileDropdown();
                     onNavigate(`/p/${currUser?._id}/help`);
                   }}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
