@@ -23,7 +23,7 @@ All performance improvements implemented in CodeShare.
 - ✅ **500KB → 50KB payload** (90% reduction)
 - ✅ **1070ms → 400ms** (63% faster)
 
-**Files**: See [Live View Optimization Plan](../../development/LIVE_VIEW_API_OPTIMIZATION_PLAN.md)
+**Files**: See Live View optimization details below
 
 ---
 
@@ -63,7 +63,7 @@ All performance improvements implemented in CodeShare.
 - ✅ **No page refresh**
 - ✅ **Better UX** (UI visible during update)
 
-**Files**: See [Bidding Optimization Plan](../../development/QUICK_BID_OPTIMIZATION.md)
+**Files**: See bidding optimization details below
 
 ---
 
@@ -213,7 +213,7 @@ See [Capacity Analysis](./CAPACITY_ANALYSIS.md) for detailed numbers.
 
 ## 📚 Related Documentation
 
-- [Live View Optimization](../../development/LIVE_VIEW_API_OPTIMIZATION_PLAN.md)
+- [Live View Optimization](OPTIMIZATION_SUMMARY.md)
 - [Capacity Analysis](./CAPACITY_ANALYSIS.md)
 - [Two-Server Setup](../02-architecture/TWO_SERVER_SETUP.md)
 

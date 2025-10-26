@@ -436,9 +436,9 @@ docker-compose logs -f backend
 After setup:
 
 1. **Explore the UI**: http://localhost:3000
-2. **Review API docs**: [API Reference](../api/API_RESTRUCTURE.md)
+2. **Review API docs**: [API Reference](../03-api/API_RESTRUCTURE.md)
 3. **Run tests**: `cd backend && npm test`
-4. **Read architecture**: [System Design](../architecture/SYSTEM_DESIGN.md)
+4. **Read architecture**: [System Design](../02-architecture/SYSTEM_DESIGN.md)
 
 ---
 

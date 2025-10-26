@@ -163,11 +163,11 @@ lsof -ti:8080 | xargs kill
 ## 📚 Next Steps
 
 - [System Architecture](../02-architecture/SYSTEM_DESIGN.md)
-- [API Documentation](../03-api/V1_ENDPOINTS.md)
+- [API Documentation](../03-api/README.md)
 - [Feature Guides](../04-features/)
 - [Development Guide](../07-development/README.md)
 
 ---
 
-**Need help?** See [Troubleshooting](../07-development/TROUBLESHOOTING.md)
+**Need help?** See [Development README](../07-development/README.md)
 

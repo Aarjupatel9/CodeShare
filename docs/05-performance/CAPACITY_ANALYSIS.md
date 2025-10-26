@@ -262,7 +262,7 @@ keepalive_timeout 65;
 ## 📚 Related Documentation
 
 - [Two-Server Setup Details](../02-architecture/TWO_SERVER_SETUP.md)
-- [Live View Optimization](../../development/LIVE_VIEW_API_OPTIMIZATION_PLAN.md)
+- [Live View Optimization](./OPTIMIZATION_SUMMARY.md)
 - [Viewer Analytics](../04-features/VIEWER_ANALYTICS.md)
 
 ---

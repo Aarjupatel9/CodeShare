@@ -3,31 +3,42 @@ import { UserIcon } from './assets/svgs';
 
 
 export default function Player(props) {
-    const { name, isActive, color, } = props.user1;
+    const { name, isActive, color, placedPlayer } = props.user1;
     const possition = props.possition;
+    const availablePieces = 9 - props.user1.retirePlayer;
  
     return (
-        <div className={`Player flex ${possition == "right" ? "flex-row-reverse" : "flex-row"} items-center justify-center`}>
-            <div className='flex flex-col content-center justify-center'>
-                <div className={`rounded shadow-cyan-500/50 ${isActive ? "shadow-xl animate-bounce" : "shadow-sm"}`}>
-                    <div className={color}>
-                        <UserIcon color={color} />
+        <div className={`flex items-center gap-3 p-3 bg-white rounded-lg shadow-sm border-2 transition-all ${isActive ? 'border-blue-400 shadow-md' : 'border-gray-200'}`}>
+            {/* Player Avatar */}
+            <div className='flex-shrink-0'>
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${isActive ? 'scale-110 shadow-md shadow-blue-500/50' : 'scale-100'}`}>
+                    <UserIcon color={color} />
+                </div>
+            </div>
+
+            {/* Player Info - Horizontal Layout */}
+            <div className='flex items-center gap-4 flex-grow'>
+                <div className='flex-1'>
+                    <h3 className={`font-bold text-sm capitalize ${isActive ? 'text-blue-600' : 'text-gray-700'}`}>
+                        {name}
+                        {isActive && <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">Active</span>}
+                    </h3>
+                    <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs text-gray-500">Available:</span>
+                        <span className={`text-sm font-bold ${isActive ? 'text-blue-600' : 'text-gray-700'}`}>
+                            {availablePieces}
+                        </span>
                     </div>
                 </div>
-                {name}
-            </div>
-            <div className={`flex content-center justify-center mx-4 flex-row flex-wrap gap-1`}>
-                {Array.from({ length: props.user2.retirePlayer }, (_, index) => index).map((_, index) => {
-                    return (<div
-                        key={`retirePlayer2-circle-${index}`}
-                        className={` rounded-full cursor-pointer ` + props.user2.color}
-                        style={{
-                            width: "18px",
-                            height: "18px",
-                            transform: "translate(-50%, -50%)"
-                        }}
-                    ></div>)
-                })}
+
+                {/* Retired Pieces - Horizontal */}
+                <div className='text-right'>
+                    <p className="text-xs text-gray-500 mb-1">Retired</p>
+                    <div className="flex items-center gap-1">
+                        <span className="text-xs font-semibold text-gray-700">{props.user2.retirePlayer}</span>
+                        <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>
+                    </div>
+                </div>
             </div>
         </div>
     )
