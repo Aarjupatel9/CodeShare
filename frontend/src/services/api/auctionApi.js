@@ -247,14 +247,6 @@ class AuctionApi {
     }
   }
 
-  /**
-   * Get team logo URL (public, no auth required)
-   */
-  getTeamLogoUrl(teamId) {
-    // Return public URL that browsers can cache
-    return `${apiClient.baseURL || 'http://localhost:8080'}/api/public/team-logos/${teamId}`;
-  }
-
   // ===== Player Management =====
 
   /**

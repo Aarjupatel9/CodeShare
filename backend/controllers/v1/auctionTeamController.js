@@ -1,6 +1,7 @@
 const AuctionTeamModel = require("../../models/auctionTeamModel");
 const AuctionPlayerModel = require("../../models/auctionPlayerModel");
 const AuctionModel = require("../../models/auctionModel");
+const FileModel = require("../../models/fileModel");
 const imageService = require("../../services/imageService");
 
 /**
@@ -20,9 +21,9 @@ exports.getTeams = async (req, res) => {
     if (includeStats) {
       const teamsWithStats = await Promise.all(
         teams.map(async (team) => {
-          const players = await AuctionPlayerModel.find({ 
+          const players = await AuctionPlayerModel.find({
             auction: auctionId,
-            team: team._id 
+            team: team._id
           });
 
           const playerCount = players.length;
@@ -218,6 +219,7 @@ exports.deleteTeam = async (req, res) => {
 exports.uploadTeamLogo = async (req, res) => {
   try {
     const { auctionId, teamId } = req.params;
+    const user = req.user;
 
     if (!req.file) {
       return res.status(400).json({
@@ -232,6 +234,14 @@ exports.uploadTeamLogo = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: `File too large. Max upload size is 500KB (will be optimized to <50KB)`,
+      });
+    }
+
+    const teamData = await AuctionTeamModel.findById(teamId);
+    if (!teamData) {
+      return res.status(404).json({
+        success: false,
+        message: "Team not found",
       });
     }
 
@@ -253,32 +263,30 @@ exports.uploadTeamLogo = async (req, res) => {
       processedImage.mimeType
     );
 
-    // Create logo object for database
-    const logoObject = {
-      data: base64Image,
+    var fileObject = {
+      entityType: 'team',
+      entityId: teamId,
+      fileType: 'image',
+      description: 'Team logo',
+      tags: [teamData.name],
+      uploadedBy: user._id.toString(),
+      isActive: true,
+      name: req.file.originalname,
+      originalName: req.file.originalname,
       mimeType: processedImage.mimeType,
-      filename: req.file.originalname,
       size: processedImage.size,
+      data: base64Image,
       publicPath: publicFile.publicPath,
       uploadedAt: new Date(),
     };
+    const fileData = await FileModel.findOneAndUpdate({ entityType: 'team', entityId: teamId, fileType: 'image' }, fileObject, { upsert: true });
 
     // Update team in database
     const updatedTeam = await AuctionTeamModel.findOneAndUpdate(
       { _id: teamId, auction: auctionId },
-      { logo: logoObject },
+      { logoUrl: fileData.publicPath },
       { new: true }
     );
-
-    if (!updatedTeam) {
-      // Clean up cached file if team not found
-      await imageService.deleteFromPublicFolder(teamId);
-      
-      return res.status(404).json({
-        success: false,
-        message: "Team not found",
-      });
-    }
 
     res.status(200).json({
       success: true,

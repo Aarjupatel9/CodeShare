@@ -12,6 +12,10 @@ const FileSchema = new Schema(
       type: String,
       required: true,
     },
+    publicPath: {
+      type: String,
+      required: true,
+    },
     mimeType: {
       type: String,
       required: true,

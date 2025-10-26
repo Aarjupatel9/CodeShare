@@ -90,21 +90,11 @@ export default function AuctionHome() {
       });
   };
 
-  // Check authentication on mount
+  // Auth is already checked by PrivateRoute component
+  // Just initialize the auth checking state based on currUser from context
   useEffect(() => {
-    authService.checkUserLogInStatus()
-      .then((res) => {
-        setCurrUser(res.user);
-        setIsAuthChecking(false);
-      })
-      .catch((error) => {
-        console.error('Auth check failed:', error);
-        if (error === "TokenExpiredError" || error === "jwt expired") {
-          toast.error("Session expired. Please login again.");
-        }
-        navigate('/auth/login');
-      });
-  }, [navigate, setCurrUser]);
+    setIsAuthChecking(!currUser);
+  }, [currUser]);
 
   const fetchMyAuctions = useCallback(async () => {
     try {

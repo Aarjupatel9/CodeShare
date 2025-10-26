@@ -14,8 +14,8 @@ const auctionRoute = require('../routes/auctionRoute');
 // New API v1 routes
 const v1Routes = require('../routes/v1');
 
-// Public routes (no authentication)
-const publicRoutes = require('../routes/public.route');
+// Services for logo sync
+const imageService = require('../services/imageService');
 
 const app = express();
 
@@ -69,9 +69,6 @@ app.get('/', (req, res) => {
 });
 
 
-// Mount public routes (no authentication required)
-app.use("/api/public", publicRoutes);
-
 // Mount v1 API routes (new RESTful API)
 app.use("/api/v1", v1Routes);
 
@@ -82,6 +79,21 @@ app.use("/api/auction", auctionRoute);
 
 
 app.get('*', (req, res) => {
+    // Check if this is a team logo request
+    if (req.path.startsWith('/uploads/teams/') && req.path.match(/\/uploads\/teams\/[a-fA-F0-9]+\.[a-zA-Z]+$/)) {
+      const matches = req.path.match(/\/uploads\/teams\/([a-fA-F0-9]+)\.([a-zA-Z]+)$/);
+      if (matches) {
+        const teamId = matches[1];
+        
+        // Trigger background sync
+        imageService.syncTeamLogoFromDB(teamId).catch(err => {
+          console.error('Background logo sync error:', err.message);
+        });
+        
+        return res.status(404).send('Logo not found');
+      }
+    }
+    
     return res.status(404).json({ message: 'Content not found' });
 })
 
