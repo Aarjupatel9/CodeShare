@@ -116,7 +116,6 @@ export default function AuctionDashboard(props) {
 
     const getAuctionData = () => {
         AuctionService.getAuctionDetails({ auctionId: auctionId }).then((res) => {
-            console.info("auction details", res);
             if (res.auction) {
                 setAuction(res.auction);
             }
