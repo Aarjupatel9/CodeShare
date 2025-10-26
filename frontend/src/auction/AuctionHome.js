@@ -90,21 +90,11 @@ export default function AuctionHome() {
       });
   };
 
-  // Check authentication on mount
+  // Auth is already checked by PrivateRoute component
+  // Just initialize the auth checking state based on currUser from context
   useEffect(() => {
-    authService.checkUserLogInStatus()
-      .then((res) => {
-        setCurrUser(res.user);
-        setIsAuthChecking(false);
-      })
-      .catch((error) => {
-        console.error('Auth check failed:', error);
-        if (error === "TokenExpiredError" || error === "jwt expired") {
-          toast.error("Session expired. Please login again.");
-        }
-        navigate('/auth/login');
-      });
-  }, [navigate, setCurrUser]);
+    setIsAuthChecking(!currUser);
+  }, [currUser]);
 
   const fetchMyAuctions = useCallback(async () => {
     try {
@@ -114,7 +104,17 @@ export default function AuctionHome() {
       const res = await auctionApi.getAuctions(true);
       
       if (res.success) {
-        setMyAuctions(res.data || []);
+        const auctions = res.data || [];
+        setMyAuctions(auctions);
+        
+        // Calculate stats from the auctions data instead of separate API call
+        const stats = {
+          total: auctions.length,
+          active: auctions.filter(a => a.state === 'running').length,
+          completed: auctions.filter(a => a.state === 'completed').length,
+          setup: auctions.filter(a => a.state === 'setup').length
+        };
+        setAuctionStats(stats);
       }
     } catch (error) {
       console.error('Error fetching auctions:', error);
@@ -124,25 +124,12 @@ export default function AuctionHome() {
     }
   }, []);
 
-  const fetchAuctionStats = useCallback(async () => {
-    try {
-      const res = await auctionApi.getAuctionStats();
-      
-      if (res.success) {
-        setAuctionStats(res.data);
-      }
-    } catch (error) {
-      console.error('Error fetching auction stats:', error);
-    }
-  }, []);
-
   // Fetch user's auctions and stats once authenticated
   useEffect(() => {
     if (currUser && !isAuthChecking) {
       fetchMyAuctions();
-      fetchAuctionStats();
     }
-  }, [currUser, isAuthChecking, fetchMyAuctions, fetchAuctionStats]);
+  }, [currUser, isAuthChecking, fetchMyAuctions]);
 
   const resetForm = () => {
     setFormData({ 

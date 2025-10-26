@@ -1,22 +1,29 @@
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs').promises;
+const AuctionTeamModel = require("../models/auctionTeamModel");
+const FileModel = require("../models/fileModel");
+
 
 const MAX_LOGO_SIZE = 50 * 1024; // 50KB
 const MAX_DIMENSION = 200; // 200x200 pixels max
-const PUBLIC_LOGOS_DIR = path.join(__dirname, '../public/team-logos');
+const PUBLIC_LOGOS_DIR = path.join(__dirname, '../public/uploads/teams');
+
+// Track ongoing sync operations per auction to prevent duplicates
+// This MUST be outside the class so it persists across requests
+const syncInProgress = new Set();
 
 /**
  * Image Service for Team Logo Processing
  */
 class ImageService {
+
   /**
    * Initialize public folder for team logos
    */
   async init() {
     try {
       await fs.mkdir(PUBLIC_LOGOS_DIR, { recursive: true });
-      console.log('✅ Team logos directory initialized');
     } catch (error) {
       console.error('Error creating team logos directory:', error);
     }
@@ -32,7 +39,7 @@ class ImageService {
     try {
       // Get image metadata
       const metadata = await sharp(buffer).metadata();
-      
+
       // Validate image format
       const allowedFormats = ['jpeg', 'jpg', 'png', 'webp'];
       if (!allowedFormats.includes(metadata.format)) {
@@ -95,11 +102,11 @@ class ImageService {
     try {
       const filename = `${teamId}.webp`;
       const filepath = path.join(PUBLIC_LOGOS_DIR, filename);
-      
+
       await fs.writeFile(filepath, buffer);
-      
+
       return {
-        publicPath: `/team-logos/${filename}`,
+        publicPath: `/uploads/teams/${filename}`,
         filepath
       };
     } catch (error) {
@@ -109,29 +116,105 @@ class ImageService {
   }
 
   /**
-   * Get team logo from public folder
+   * Sync team logo from MongoDB to public folder (async, non-blocking)
    * @param {string} teamId - Team ID
+   * @param {string} auctionId - Auction ID to sync all team logos for
+   */
+  async syncTeamLogoFromDB(teamId, auctionId = null) {
+    try {
+      // If auctionId provided, sync all team logos for that auction
+      const teamData = await AuctionTeamModel.findById(teamId).select('auction');
+      if (!teamData || !teamData.auction) {
+        return;
+      }
+      auctionId = teamData.auction;
+      // Convert auctionId to string for consistent comparison
+      const auctionIdStr = String(auctionId);
+
+      // Check if sync is already in progress for this auction
+      if (!syncInProgress.has(auctionIdStr)) {
+
+        // Mark sync as in progress
+        syncInProgress.add(auctionIdStr);
+
+        if (auctionId) {
+          const teams = await AuctionTeamModel.find({
+            auction: auctionId
+          }).select('_id logoUrl');
+
+          const logoToSync = teams.filter(team => team.logoUrl);
+          const teamIds = logoToSync.map(team => team._id.toString());
+
+          const files = await FileModel.find({
+            entityType: 'team',
+            entityId: { $in: teamIds },
+            fileType: 'image'
+          }).select('data publicPath entityId mimeType');
+
+          for (const file of files) {
+            try {
+              // Convert base64 data to buffer
+              const buffer = this.base64ToBuffer(file.data);
+
+              // Save to public folder as .webp (for consistency)
+              await this.saveToPublicFolder(file.entityId.toString(), buffer);
+            } catch (err) {
+              console.error(`❌ [syncTeamLogoFromDB] Error syncing logo for team ${file.entityId}:`, err.message);
+            }
+          }
+          // Remove sync lock when done
+          if (auctionId) {
+            const auctionIdStr = String(auctionId);
+            syncInProgress.delete(auctionIdStr);
+          }
+        }
+      } 
+    } catch (error) {
+      console.error('Error syncing team logos from DB:', error);
+    }
+  }
+
+  /**
+   * Get team logo from public folder
+   * If not found, triggers async sync from MongoDB without blocking
+   * @param {string} teamId - Team ID
+   * @param {string} auctionId - Optional auction ID for bulk sync
    * @returns {Object|null} - File data or null
    */
-  async getFromPublicFolder(teamId) {
+  async getFromPublicFolder(teamId, auctionId = null) {
     try {
-      const filename = `${teamId}.webp`;
-      const filepath = path.join(PUBLIC_LOGOS_DIR, filename);
-      
-      // Check if file exists
-      await fs.access(filepath);
-      
+      // List files in directory and find one that starts with teamId
+      const files = await fs.readdir(PUBLIC_LOGOS_DIR);
+      const logoFile = files.find(file => file.startsWith(`${teamId}.`));
+
+      if (!logoFile) {
+        // Logo not found in cache - trigger async sync from DB
+        // Sync in background (non-blocking) - don't await it
+        this.syncTeamLogoFromDB(teamId, auctionId).catch(err => {
+          console.error('Background logo sync error:', err);
+        });
+
+        return null;
+      }
+
+      const filepath = path.join(PUBLIC_LOGOS_DIR, logoFile);
       const buffer = await fs.readFile(filepath);
       const stats = await fs.stat(filepath);
-      
+
+      // Determine MIME type from file extension
+      const ext = path.extname(logoFile).toLowerCase();
+      let mimeType = 'image/webp';
+      if (ext === '.jpeg' || ext === '.jpg') mimeType = 'image/jpeg';
+      if (ext === '.png') mimeType = 'image/png';
+
       return {
         buffer,
-        mimeType: 'image/webp',
+        mimeType,
         size: stats.size,
-        publicPath: `/team-logos/${filename}`
+        publicPath: `/uploads/teams/${logoFile}`
       };
     } catch (error) {
-      // File doesn't exist
+      console.error('Error getting from public folder:', error);
       return null;
     }
   }
@@ -142,11 +225,16 @@ class ImageService {
    */
   async deleteFromPublicFolder(teamId) {
     try {
-      const filename = `${teamId}.webp`;
-      const filepath = path.join(PUBLIC_LOGOS_DIR, filename);
-      
+      // List files and find one that starts with teamId
+      const files = await fs.readdir(PUBLIC_LOGOS_DIR);
+      const logoFile = files.find(file => file.startsWith(`${teamId}.`));
+
+      if (!logoFile) {
+        return;
+      }
+
+      const filepath = path.join(PUBLIC_LOGOS_DIR, logoFile);
       await fs.unlink(filepath);
-      console.log(`✅ Deleted cached logo for team ${teamId}`);
     } catch (error) {
       // File doesn't exist, ignore
       if (error.code !== 'ENOENT') {

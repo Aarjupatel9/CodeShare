@@ -119,20 +119,30 @@ export default function AuctionSetup(props) {
             const reader = new FileReader();
             reader.onload = async (e) => {
                 try {
-                    const base64Data = e.target.result;
                     
-                    const uploadData = {
-                        teamId: team._id,
-                        imageData: base64Data,
-                        fileName: file.name,
-                        mimeType: file.type,
-                        fileSize: file.size,
-                    };
+                    var formData = new FormData();
+                    formData.append('file', file);
 
-                    const res = await AuctionService.saveTeamLogo(uploadData);
-                    toast.success("✅ " + res.message, {
-                        id: toastId,
-                    });
+                    const res = await auctionApi.uploadTeamLogo(auctionId, team._id, formData);
+                    
+                    if(res.success) {
+                        toast.success("✅ " + res.message, {
+                            id: toastId,
+                        });
+                        setTeams((old) => {
+                            const updatedTeams = old.map(element => {
+                                if (element._id == team._id) {
+                                    return { ...element, logoUrl: res.data.publicPath };
+                                }
+                                return element;
+                            });
+                            return updatedTeams;
+                        });
+                    } else {
+                        toast.error("❌ " + res.message, {
+                            id: toastId,
+                        });
+                    }
                     getAuctionData();
                 } catch (error) {
                     console.error(error);
