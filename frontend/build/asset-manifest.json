@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.css": "/static/css/main.377ff007.css",
-    "main.js": "/static/js/main.479515e7.js",
-    "static/js/472.2488173f.chunk.js": "/static/js/472.2488173f.chunk.js",
-    "static/js/259.574c9353.chunk.js": "/static/js/259.574c9353.chunk.js",
-    "static/js/43.aa6df8b5.chunk.js": "/static/js/43.aa6df8b5.chunk.js",
+    "main.css": "/static/css/main.b0619df7.css",
+    "main.js": "/static/js/main.b4160998.js",
+    "static/js/472.6ffcda45.chunk.js": "/static/js/472.6ffcda45.chunk.js",
+    "static/js/259.912c531f.chunk.js": "/static/js/259.912c531f.chunk.js",
+    "static/js/43.e09158b3.chunk.js": "/static/js/43.e09158b3.chunk.js",
     "static/js/201.322713e1.chunk.js": "/static/js/201.322713e1.chunk.js",
     "static/js/391.9e851123.chunk.js": "/static/js/391.9e851123.chunk.js",
     "static/js/213.1638f388.chunk.js": "/static/js/213.1638f388.chunk.js",
@@ -12,11 +12,11 @@
     "static/js/453.296d9f8d.chunk.js": "/static/js/453.296d9f8d.chunk.js",
     "static/media/heart-beat-sound.mp3": "/static/media/heart-beat-sound.1afbecb9bc9de99cfd17.mp3",
     "index.html": "/index.html",
-    "main.377ff007.css.map": "/static/css/main.377ff007.css.map",
-    "main.479515e7.js.map": "/static/js/main.479515e7.js.map",
-    "472.2488173f.chunk.js.map": "/static/js/472.2488173f.chunk.js.map",
-    "259.574c9353.chunk.js.map": "/static/js/259.574c9353.chunk.js.map",
-    "43.aa6df8b5.chunk.js.map": "/static/js/43.aa6df8b5.chunk.js.map",
+    "main.b0619df7.css.map": "/static/css/main.b0619df7.css.map",
+    "main.b4160998.js.map": "/static/js/main.b4160998.js.map",
+    "472.6ffcda45.chunk.js.map": "/static/js/472.6ffcda45.chunk.js.map",
+    "259.912c531f.chunk.js.map": "/static/js/259.912c531f.chunk.js.map",
+    "43.e09158b3.chunk.js.map": "/static/js/43.e09158b3.chunk.js.map",
     "201.322713e1.chunk.js.map": "/static/js/201.322713e1.chunk.js.map",
     "391.9e851123.chunk.js.map": "/static/js/391.9e851123.chunk.js.map",
     "213.1638f388.chunk.js.map": "/static/js/213.1638f388.chunk.js.map",
@@ -24,7 +24,7 @@
     "453.296d9f8d.chunk.js.map": "/static/js/453.296d9f8d.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.377ff007.css",
-    "static/js/main.479515e7.js"
+    "static/css/main.b0619df7.css",
+    "static/js/main.b4160998.js"
   ]
 }
