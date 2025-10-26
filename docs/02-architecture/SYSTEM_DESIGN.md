@@ -683,8 +683,8 @@ Public (config.json):
 
 - [Project Overview](OVERVIEW.md) - High-level description
 - [Database Schema](DATABASE_SCHEMA.md) - Data models
-- [API Reference](../api/API_RESTRUCTURE.md) - API endpoints
-- [Getting Started](../development/GETTING_STARTED.md) - Setup guide
+- [API Reference](../03-api/API_RESTRUCTURE.md) - API endpoints
+- [Getting Started](../01-getting-started/SETUP_COMPLETE.md) - Setup guide
 
 ---
 

@@ -11,9 +11,7 @@ export const generatePDF = async (elementToPrintId, filename = "export") => {
     // Get all rows (each row contains 4 teams)
     const allRows = element.querySelectorAll('[class*="page-break-inside-avoid"]');
     const totalRows = allRows.length;
-    
-    console.log(`Total rows to capture: ${totalRows}`);
-    
+        
     const pdf = new jsPDF({
         orientation: "landscape",
         unit: "mm",
@@ -67,7 +65,6 @@ export const generatePDF = async (elementToPrintId, filename = "export") => {
                     const auctionNameElement = clonedDoc.querySelector('#header-auction-name');
                     if (auctionNameElement) {
                         const originalText = auctionNameElement.textContent;
-                        console.log('Original text:', originalText);
                         
                         // Replace ALL spaces with a visible space character that won't be collapsed
                         // Using a combination of approaches
@@ -78,7 +75,6 @@ export const generatePDF = async (elementToPrintId, filename = "export") => {
                             return char;
                         }).join('');
                         
-                        console.log('Text with visible spaces:', textWithVisibleSpaces);
                         
                         // Replace the entire content
                         auctionNameElement.innerHTML = textWithVisibleSpaces;
@@ -134,7 +130,6 @@ export const generatePDF = async (elementToPrintId, filename = "export") => {
             // Add image with proper fitting
             pdf.addImage(data, "PNG", xOffset, yOffset, finalWidth, finalHeight, undefined, 'MEDIUM');
             
-            console.log(`✅ Captured row ${rowIndex + 1} of ${totalRows}`);
             
         } finally {
             // Clean up temporary container
@@ -146,5 +141,4 @@ export const generatePDF = async (elementToPrintId, filename = "export") => {
     const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
     pdf.save(`${filename}_${timestamp}.pdf`);
     
-    console.log(`✅ PDF generated with ${totalRows} pages`);
 };

@@ -151,9 +151,8 @@ See [Capacity Analysis](./05-performance/CAPACITY_ANALYSIS.md) for details.
 ## 📞 Support
 
 For issues, questions, or contributions:
-- See [Contributing Guide](./07-development/CONTRIBUTING.md)
-- Check [Troubleshooting](./07-development/TROUBLESHOOTING.md)
 - Review [Testing Guide](./07-development/TESTING.md)
+- See [Development README](./07-development/README.md)
 
 ---
 

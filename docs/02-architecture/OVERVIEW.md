@@ -296,15 +296,15 @@ Storage:       AWS S3 (documents only)
 - ✅ Frontend API client
 - ✅ Test infrastructure
 
-See [Implementation Summary](../development/IMPLEMENTATION_SUMMARY.md) for details.
+See [Implementation Summary](../02-architecture/README.md) for details.
 
 ---
 
 ## 📖 Where to Go Next
 
-- **Setup Project**: [Getting Started](../development/GETTING_STARTED.md)
-- **Use API**: [API Reference](../api/API_RESTRUCTURE.md)
-- **Run Tests**: [Testing Guide](../testing/TESTING_GUIDE.md)
+- **Setup Project**: [Getting Started](../01-getting-started/SETUP_COMPLETE.md)
+- **Use API**: [API Reference](../03-api/API_RESTRUCTURE.md)
+- **Run Tests**: [Testing Guide](../07-development/TESTING.md)
 - **Understand Architecture**: [System Design](SYSTEM_DESIGN.md)
 
 ---

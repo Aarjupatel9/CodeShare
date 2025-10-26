@@ -210,9 +210,9 @@ npm install package-name
 
 ## 🆘 Need Help?
 
-- Check [Troubleshooting Guide](./TROUBLESHOOTING.md)
 - Review [API Documentation](../03-api/)
 - See [Architecture Docs](../02-architecture/)
+- Check [Getting Started](../01-getting-started/)
 
 ---
 

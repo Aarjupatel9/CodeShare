@@ -13,6 +13,7 @@ import ForgetPasswordComponent from "./pages/ForgetPasswordComponent";
 import PublicPages from "./pages/PublicPages";
 import HelpPage from "./pages/HelpPage";
 import AboutPage from "./pages/AboutPage";
+import AuctionHelpPage from "./pages/AuctionHelpPage";
 import UserProfilePage from "./pages/UserProfilePage";
 
 // Features
@@ -103,6 +104,7 @@ function App() {
           
           {/* Auction Management */}
           <Route path="/p/:userId/t/auction/" element={<PrivateRoute component={AuctionHome} />} />
+          <Route path="/p/:userId/t/auction/help" element={<PrivateRoute component={AuctionHelpPage} />} />
           <Route path="/p/:userId/t/auction/:auctionId" element={<PrivateRoute component={AuctionDashboard} />} />
           <Route path="/p/:userId/t/auction/:auctionId/manage" element={<PrivateRoute component={AuctionSetup} />} />
           <Route path="/p/:userId/t/auction/:auctionId/bidding" element={<PrivateRoute component={AuctionBidding} />} />

@@ -205,25 +205,46 @@ socketServer/
 
 ```
 docs/
-├── README.md                   # Documentation index
+├── README.md                      # Documentation index
 │
-├── api/                        # API Documentation
-│   ├── API_RESTRUCTURE.md      # v1 API guide
-│   └── TEAM_LOGO_SYSTEM.md     # Logo endpoints
+├── 01-getting-started/           # Getting Started
+│   ├── README.md                 # Quick start guide
+│   ├── SETUP.md                  # Detailed setup instructions
+│   └── SETUP_COMPLETE.md         # Complete setup guide
 │
-├── architecture/               # System Architecture
-│   ├── OVERVIEW.md             # Project overview
-│   ├── DATABASE_SCHEMA.md      # MongoDB models
-│   └── SYSTEM_DESIGN.md        # Architecture
+├── 02-architecture/             # System Architecture
+│   ├── README.md                 # Architecture overview
+│   ├── OVERVIEW.md               # Project overview
+│   ├── SYSTEM_DESIGN.md          # Architecture design
+│   ├── DATABASE_SCHEMA.md        # MongoDB schemas
+│   ├── PROJECT_STRUCTURE.md      # This file
+│   └── TWO_SERVER_SETUP.md       # Two-server setup guide
 │
-├── development/                # Developer Guides
-│   ├── GETTING_STARTED.md      # Setup guide
-│   ├── IMPLEMENTATION_SUMMARY.md
-│   └── SESSION_SUMMARY.md
+├── 03-api/                       # API Documentation
+│   ├── README.md                 # API overview
+│   ├── API_RESTRUCTURE.md        # V1 API structure
+│   ├── API_IMPLEMENTATION_SUMMARY.md  # Implementation summary
+│   ├── AUCTION_API_REQUIREMENTS.md   # Auction API docs
+│   └── TEAM_LOGO_SYSTEM.md       # Team logo endpoints
 │
-└── testing/                    # Testing Docs
-    ├── TESTING_GUIDE.md        # How to test
-    └── TESTS_SUMMARY.md        # Test results
+├── 04-features/                  # Feature Documentation
+│   ├── README.md                 # Features overview
+│   ├── LIVE_VIEW.md              # Live view features
+│   └── VIEWER_ANALYTICS.md       # Viewer analytics
+│
+├── 05-performance/               # Performance & Optimization
+│   ├── OPTIMIZATION_SUMMARY.md   # Optimization guide
+│   ├── CAPACITY_ANALYSIS.md      # Server capacity
+│   ├── T2_MICRO_CAPACITY_ANALYSIS.md  # T2.micro analysis
+│   └── VIEWER_TRACKING_FINAL.md  # Viewer tracking
+│
+├── 06-migration/                 # Migration Guides
+│   ├── README.md                 # Migration overview
+│   └── V1_API_MIGRATION.md      # V1 API migration
+│
+└── 07-development/               # Development Guides
+    ├── README.md                 # Development guide
+    └── TESTING.md                # Testing guide
 ```
 
 ---
@@ -452,9 +473,9 @@ package-lock.json
 
 ## 📖 Related Documentation
 
-- [Getting Started](development/GETTING_STARTED.md) - Setup guide
-- [System Design](architecture/SYSTEM_DESIGN.md) - Architecture
-- [Database Schema](architecture/DATABASE_SCHEMA.md) - Data models
+- [Getting Started](../01-getting-started/SETUP_COMPLETE.md) - Setup guide
+- [System Design](SYSTEM_DESIGN.md) - Architecture
+- [Database Schema](DATABASE_SCHEMA.md) - Data models
 
 ---
 

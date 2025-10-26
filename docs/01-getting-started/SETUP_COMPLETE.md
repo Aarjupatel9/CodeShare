@@ -52,49 +52,62 @@ npm install
 #### **Backend (.env)**
 Create `/backend/.env`:
 ```env
-# Server
+# Server Configuration
 PORT=8080
 NODE_ENV=development
 
 # Database
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/
+MONGODB_URI=mongodb://localhost:27017/codeshare
+# Or use MongoDB Atlas:
+# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/codeshare
 
-# Authentication
-TOKEN_SECRET=your-secret-key-change-in-production
-JWT_SEC=your-secret-key-change-in-production
+# JWT Authentication
+JWT_SEC=your-secret-key-change-in-production-min-32-characters
 JWT_EXP=7d
+JWT_EXP_VERIFICATION_EMAIL=1h
 
-# CORS
+# CORS & Security
 ALLOWED_ORIGIN=http://localhost:3000,http://localhost
 HOST_ORIGIN_IP=127.0.0.1
+INTERNAL_API_KEY=your-secret-key-here-12345
 
 # File Upload
 MAX_FILE_SIZE=20000000
 ALLOW_FILE_LIMIT=test
 
-# AWS S3 (for document files)
-AWS_BUCKET_NAME=your-bucket-name
+# AWS S3 (for document files and images)
+AWS_PROFILE_IMAGE_BUCKET_NAME=your-profile-image-bucket
+AWS_BUCKET_NAME=your-document-bucket
 AWS_BUCKET_REGION=us-east-1
 AWS_ACCESS_KEY=your-access-key
 AWS_SECRET_KEY=your-secret-key
 
-# Email (for password reset)
+# Email Configuration (for password reset)
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_SECURE=false
 APP_EMAIL=your-email@gmail.com
 APP_PASS=your-app-password
-RESET_PASSWORD_LINK=http://localhost:8080/api/auth/reset-password
+RESET_PASSWORD_LINK=http://localhost:3000/auth/forgetpassword
 ```
 
 #### **Socket Server (.env)**
 Create `/socketServer/.env`:
 ```env
+# Server Configuration
+PORT=8081
+
+# CORS & Security
 ALLOWED_ORIGIN=http://localhost:3000,http://localhost
+HOST_ORIGIN_IP=127.0.0.1
+INTERNAL_API_KEY=your-secret-key-here-12345
+
+# Backend API Connection
+BACKEND_API_URL=http://localhost:8080
 ```
 
-#### **Frontend (.env)**
-Create `/frontend/.env`:
+#### **Frontend (.env.local)**
+Create `/frontend/.env.local` (optional, most config is in config.json):
 ```env
 REACT_APP_API_URL=http://localhost:8080
 ```
@@ -436,9 +449,9 @@ docker-compose logs -f backend
 After setup:
 
 1. **Explore the UI**: http://localhost:3000
-2. **Review API docs**: [API Reference](../api/API_RESTRUCTURE.md)
+2. **Review API docs**: [API Reference](../03-api/API_RESTRUCTURE.md)
 3. **Run tests**: `cd backend && npm test`
-4. **Read architecture**: [System Design](../architecture/SYSTEM_DESIGN.md)
+4. **Read architecture**: [System Design](../02-architecture/SYSTEM_DESIGN.md)
 
 ---
 
