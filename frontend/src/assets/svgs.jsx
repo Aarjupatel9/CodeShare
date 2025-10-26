@@ -223,10 +223,35 @@ export const downArrowIcon = (
 );
 
 export const profilePicture = (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-    <path d="M16 31C7.729 31 1 24.271 1 16S7.729 1 16 1s15 6.729 15 15-6.729 15-15 15zm0-28C8.832 3 3 8.832 3 16s5.832 13 13 13 13-5.832 13-13S23.168 3 16 3z" />
-    <circle cx="16" cy="15.133" r="4.267" />
-    <path d="M16 30c2.401 0 4.66-.606 6.635-1.671-.425-3.229-3.18-5.82-6.635-5.82s-6.21 2.591-6.635 5.82A13.935 13.935 0 0 0 16 30z" />
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" className="drop-shadow-lg">
+    <defs>
+      <linearGradient id="profileGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style={{ stopColor: '#3B82F6', stopOpacity: 1 }} />
+        <stop offset="100%" style={{ stopColor: '#6366F1', stopOpacity: 1 }} />
+      </linearGradient>
+      <linearGradient id="profileBgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style={{ stopColor: '#EFF6FF', stopOpacity: 1 }} />
+        <stop offset="100%" style={{ stopColor: '#E0E7FF', stopOpacity: 1 }} />
+      </linearGradient>
+    </defs>
+    
+    {/* Background Circle */}
+    <circle cx="64" cy="64" r="62" fill="url(#profileBgGradient)" stroke="url(#profileGradient)" strokeWidth="4"/>
+    
+    {/* User Icon */}
+    <g fill="url(#profileGradient)">
+      {/* Head */}
+      <circle cx="64" cy="52" r="20"/>
+      
+      {/* Body */}
+      <path d="M 64 76 C 44 76 32 84 28 98 C 28 106 28 110 28 110 L 100 110 C 100 110 100 106 100 98 C 96 84 84 76 64 76 Z"/>
+    </g>
+    
+    {/* Decorative Dots */}
+    <circle cx="24" cy="24" r="3" fill="#3B82F6" opacity="0.3"/>
+    <circle cx="104" cy="24" r="3" fill="#6366F1" opacity="0.3"/>
+    <circle cx="24" cy="104" r="3" fill="#6366F1" opacity="0.3"/>
+    <circle cx="104" cy="104" r="3" fill="#3B82F6" opacity="0.3"/>
   </svg>
 );
 
@@ -311,22 +336,25 @@ export const pageListIcon = (
 );
 
 export const userProfileIcon = (
-  <svg
-    className="w-8 h-8 text-gray-800 dark:text-white"
-    aria-hidden="true"
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    fill="none"
-    viewBox="0 0 24 24"
-  >
-    <path
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="2"
-      d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0 0a8.949 8.949 0 0 0 4.951-1.488A3.987 3.987 0 0 0 13 16h-2a3.987 3.987 0 0 0-3.951 3.512A8.948 8.948 0 0 0 12 21Zm3-11a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-    />
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" className="w-8 h-8">
+    <defs>
+      <linearGradient id="navProfileGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style={{ stopColor: '#3B82F6', stopOpacity: 1 }} />
+        <stop offset="100%" style={{ stopColor: '#6366F1', stopOpacity: 1 }} />
+      </linearGradient>
+    </defs>
+    
+    {/* Background Circle */}
+    <circle cx="20" cy="20" r="19" fill="url(#navProfileGradient)"/>
+    
+    {/* User Icon */}
+    <g fill="white">
+      {/* Head */}
+      <circle cx="20" cy="16" r="6"/>
+      
+      {/* Body */}
+      <path d="M 20 24 C 13 24 10 26.5 8.5 31 C 8.5 33 8.5 35 8.5 35 L 31.5 35 C 31.5 35 31.5 33 31.5 31 C 30 26.5 27 24 20 24 Z"/>
+    </g>
   </svg>
 );
 export const closeIcon = (

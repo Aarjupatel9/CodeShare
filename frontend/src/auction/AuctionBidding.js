@@ -58,10 +58,9 @@ export default function AuctionBidding(props) {
     useEffect(() => {
         const audio = audioRef.current;
         audio.loop = true; // Enable looping
-        console.log("playing stating ")
         if (allowMusic) {
             if (player.bidding && player.bidding.length > 0) {
-                audio.play().then(() => { console.log("playing music") }).catch((error) => console.error("Audio play error:", error));
+                audio.play().then(() => {  }).catch((error) => console.error("Audio play error:", error));
             } else {
                 audio.pause();
                 audio.currentTime = 0; // Reset audio position

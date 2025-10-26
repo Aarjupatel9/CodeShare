@@ -2,6 +2,7 @@ const AuctionPlayerModel = require("../../models/auctionPlayerModel");
 const AuctionSetModel = require("../../models/auctionSetModel");
 const AuctionTeamModel = require("../../models/auctionTeamModel");
 const AuctionModel = require("../../models/auctionModel");
+const XLSX = require('xlsx');
 
 const playerDataMapping = {
   "PLAYER NO.": "playerNumber",
@@ -228,7 +229,7 @@ exports.deletePlayers = async (req, res) => {
 };
 
 /**
- * Import players from Excel data
+ * Import players from Excel data (OPTIMIZED - Bulk Operations)
  * POST /api/v1/auctions/:auctionId/players/import
  */
 exports.importPlayers = async (req, res) => {
@@ -252,24 +253,56 @@ exports.importPlayers = async (req, res) => {
       });
     }
 
-    const imported = [];
+   
+    // STEP 1: Bulk check for existing players (single query)
+    const playerNumbers = playerData.main.map(p => p["PLAYER NO."]).filter(num => num);
+    const existingPlayers = await AuctionPlayerModel.find({
+      playerNumber: { $in: playerNumbers },
+      auction: auctionId,
+    }).select('playerNumber').lean();
+
+    const existingPlayerNumbers = new Set(existingPlayers.map(p => p.playerNumber));
+
+    // STEP 2: Bulk get/create sets (single query + bulk create)
+    const setNames = [...new Set(playerData.main.map(p => p["PREFFERED SET"]).filter(name => name && name !== '-'))];
+    const existingSets = await AuctionSetModel.find({
+      name: { $in: setNames },
+      auction: auctionId,
+    }).lean();
+
+    const existingSetMap = new Map(existingSets.map(s => [s.name, s._id]));
+    const setsToCreate = setNames.filter(name => !existingSetMap.has(name));
+
+    // Bulk create missing sets
+    if (setsToCreate.length > 0) {
+      const newSets = await AuctionSetModel.insertMany(
+        setsToCreate.map(name => ({
+          name,
+          auction: auctionId,
+          state: "idle",
+        }))
+      );
+      newSets.forEach(set => existingSetMap.set(set.name, set._id));
+    }
+
+    // STEP 3: Prepare players for bulk insert
+    const playersToInsert = [];
     const skipped = [];
 
-    for (let i = 0; i < playerData.main.length; i++) {
-      const player = playerData.main[i];
-
-      if (i % 10 === 0) {
-        console.info(`Importing players... ${i}/${playerData.main.length}`);
-      }
-
+    for (const player of playerData.main) {
       try {
-        // Check if player already exists
-        const existingPlayer = await AuctionPlayerModel.findOne({
-          playerNumber: player["PLAYER NO."],
-          auction: auctionId,
-        });
+        // Validate required fields
+        if (!player["PLAYER NO."] || !player["PLAYER NAME"] || !player["ROLE"]) {
+          skipped.push({
+            playerNumber: player["PLAYER NO."] || 'N/A',
+            name: player["PLAYER NAME"] || 'N/A',
+            reason: "Missing required fields (PLAYER NO., PLAYER NAME, or ROLE)",
+          });
+          continue;
+        }
 
-        if (existingPlayer) {
+        // Skip if player already exists
+        if (existingPlayerNumbers.has(player["PLAYER NO."])) {
           skipped.push({
             playerNumber: player["PLAYER NO."],
             name: player["PLAYER NAME"],
@@ -278,30 +311,115 @@ exports.importPlayers = async (req, res) => {
           continue;
         }
 
-        // Get or create set
-        let playerSet = null;
-        if (player["PREFFERED SET"]) {
-          playerSet = await getOrCreateSet(player["PREFFERED SET"], auction);
+        // Map Excel data to player schema
+        const mappedData = {};
+        Object.keys(player).forEach((key) => {
+          if (playerDataMapping[key]) {
+            mappedData[playerDataMapping[key]] = player[key];
+          }
+        });
+
+        // Ensure required fields are properly set
+        mappedData.playerNumber = String(player["PLAYER NO."]); // Convert to string
+        mappedData.name = String(player["PLAYER NAME"]).trim();
+        mappedData.role = String(player["ROLE"]).trim();
+        mappedData.auction = auctionId;
+        
+        // Handle auction set
+        mappedData.auctionSet = player["PREFFERED SET"] && player["PREFFERED SET"] !== '-' 
+          ? existingSetMap.get(player["PREFFERED SET"]) 
+          : null;
+        
+        // Set defaults
+        mappedData.marquee = false;
+        mappedData.auctionStatus = 'idle'; // Changed from 'pending' to 'idle'
+        mappedData.basePrice = 0; // Default base price
+
+        // Convert base price (assuming it's in lakhs)
+        if (player["BASE PRICE"]) {
+          try {
+            const basePriceValue = parseFloat(player["BASE PRICE"]);
+            if (!isNaN(basePriceValue) && basePriceValue > 0) {
+              mappedData.basePrice = Math.round(basePriceValue * 100000);
+            }
+          } catch (err) {
+            console.error("Error parsing base price:", err);
+            mappedData.basePrice = 0;
+          }
         }
 
-        // Map and create player
-        const mappedPlayer = await createPlayerFromImport(player, auction, playerSet);
-        imported.push(mappedPlayer);
+        // Handle optional fields with defaults
+        mappedData.contactNumber = player["CONTACT NO."] && player["CONTACT NO."] !== '-' 
+          ? String(player["CONTACT NO."]) 
+          : "";
+        mappedData.shift = player["SHIFT"] && player["SHIFT"] !== '-' 
+          ? String(player["SHIFT"]) 
+          : "";
+        mappedData.bowlingHand = player["BOWLING ARM"] && player["BOWLING ARM"] !== '-' 
+          ? String(player["BOWLING ARM"]) 
+          : "";
+        mappedData.bowlingType = player["BOWLING TYPE"] && player["BOWLING TYPE"] !== '-' 
+          ? String(player["BOWLING TYPE"]) 
+          : "";
+        mappedData.battingHand = player["BATTING HAND"] && player["BATTING HAND"] !== '-' 
+          ? String(player["BATTING HAND"]) 
+          : "";
+        mappedData.battingPossition = player["BATTING ORDER"] && player["BATTING ORDER"] !== '-' 
+          ? String(player["BATTING ORDER"]) 
+          : "";
+        mappedData.battingType = player["BATTING STYLE"] && player["BATTING STYLE"] !== '-' 
+          ? String(player["BATTING STYLE"]) 
+          : "";
+        mappedData.commnets = player["COMMENTS"] && player["COMMENTS"] !== '-' 
+          ? String(player["COMMENTS"]) 
+          : "";
+
+        playersToInsert.push(mappedData);
       } catch (err) {
-        console.error(`Error importing player ${player["PLAYER NAME"]}:`, err);
+        console.error(`Error processing player ${player["PLAYER NAME"]}:`, err);
         skipped.push({
-          playerNumber: player["PLAYER NO."],
-          name: player["PLAYER NAME"],
+          playerNumber: player["PLAYER NO."] || 'N/A',
+          name: player["PLAYER NAME"] || 'N/A',
           reason: err.message,
         });
       }
     }
 
+    // STEP 4: Bulk insert all players (single operation)
+    let insertedPlayers = [];
+    if (playersToInsert.length > 0) {
+      try {
+        insertedPlayers = await AuctionPlayerModel.insertMany(playersToInsert, {
+          ordered: false, // Continue inserting even if some fail
+        });
+      } catch (insertError) {
+        console.error('Bulk insert error:', insertError);
+        
+        // If bulk insert fails, try individual inserts to identify specific issues
+        for (const playerData of playersToInsert) {
+          try {
+            const player = new AuctionPlayerModel(playerData);
+            const savedPlayer = await player.save();
+            insertedPlayers.push(savedPlayer);
+          } catch (individualError) {
+            console.error(`Failed to insert player ${playerData.name}:`, individualError.message);
+            skipped.push({
+              playerNumber: playerData.playerNumber,
+              name: playerData.name,
+              reason: `Insert failed: ${individualError.message}`,
+            });
+          }
+        }
+      }
+    }
+
+    console.log(`Import completed: ${insertedPlayers.length} players imported, ${skipped.length} skipped`);
+
     res.status(200).json({
       success: true,
-      message: `Import completed. ${imported.length} players imported, ${skipped.length} skipped`,
+      message: `Import completed. ${insertedPlayers.length} players imported, ${skipped.length} skipped`,
       data: {
-        imported: imported.length,
+        imported: insertedPlayers.length,
         skipped,
       },
     });
@@ -388,4 +506,115 @@ async function createPlayerFromImport(data, auction, set) {
   const newPlayer = new AuctionPlayerModel(mappedData);
   return await newPlayer.save();
 }
+
+/**
+ * Generate Excel template for player uploads
+ * GET /api/v1/auctions/:auctionId/players/template
+ */
+exports.generatePlayerTemplate = async (req, res) => {
+  try {
+    const { auctionId } = req.params;
+    
+    // Verify auction exists
+    const auction = await AuctionModel.findById(auctionId).select('_id name').lean();
+    if (!auction) {
+      return res.status(404).json({ success: false, message: 'Auction not found' });
+    }
+
+    // Create workbook with two sheets
+    const workbook = XLSX.utils.book_new();
+    
+    // Sheet 1: Sample Data (ALL FIELDS REQUIRED with default values)
+    const sampleData = [
+      // Headers (UPPERCASE with dots/spaces)
+      ['PLAYER NO.', 'PLAYER NAME', 'ROLE', 'BASE PRICE', 'PREFFERED SET', 
+       'CONTACT NO.', 'SHIFT', 'BOWLING ARM', 'BOWLING TYPE', 
+       'BATTING HAND', 'BATTING ORDER', 'BATTING STYLE', 'COMMENTS'],
+      
+      // Sample row with realistic cricket data
+      [1, 'Virat Kohli', 'Batsman', 15, 'A', 
+       '9876543210', 'Day', 'Right', 'Medium', 
+       'Right', 'Top Order', 'Aggressive', 'Captain material'],
+       
+      [2, 'Jasprit Bumrah', 'Bowler', 12, 'A',
+       '9876543211', 'Day', 'Right', 'Fast',
+       'Right', 'Lower Order', 'Defensive', 'Death overs specialist'],
+       
+      [3, 'Hardik Pandya', 'All Rounder', 10, 'B',
+       '9876543212', 'Day', 'Right', 'Medium',
+       'Right', 'Middle Order', 'Aggressive', 'Power hitter'],
+       
+      // Empty template row with default values for admin to copy/fill
+      ['', '', '', '', '', 
+       '-', '-', '-', '-', 
+       '-', '-', '-', '-']
+    ];
+    
+    const sampleSheet = XLSX.utils.aoa_to_sheet(sampleData);
+    
+    // Set column widths for better readability
+    sampleSheet['!cols'] = [
+      { wch: 12 }, // PLAYER NO.
+      { wch: 20 }, // PLAYER NAME
+      { wch: 15 }, // ROLE
+      { wch: 12 }, // BASE PRICE
+      { wch: 15 }, // PREFFERED SET
+      { wch: 15 }, // CONTACT NO.
+      { wch: 10 }, // SHIFT
+      { wch: 12 }, // BOWLING ARM
+      { wch: 15 }, // BOWLING TYPE
+      { wch: 12 }, // BATTING HAND
+      { wch: 15 }, // BATTING ORDER
+      { wch: 15 }, // BATTING STYLE
+      { wch: 25 }  // COMMENTS
+    ];
+    
+    XLSX.utils.book_append_sheet(workbook, sampleSheet, 'main');
+    
+    // Sheet 2: Instructions with Default Values
+    const instructions = [
+      ['FIELD NAME', 'DESCRIPTION', 'REQUIRED', 'DEFAULT VALUE', 'EXAMPLE', 'NOTES'],
+      ['PLAYER NO.', 'Unique number for player', 'YES', 'N/A', '1', 'Must be unique integer'],
+      ['PLAYER NAME', 'Full name of player', 'YES', 'N/A', 'Virat Kohli', 'As per official records'],
+      ['ROLE', 'Player role in team', 'YES', 'N/A', 'Batsman', 'Batsman/Bowler/All Rounder/Wicket Keeper'],
+      ['BASE PRICE', 'Starting bid price in Lakhs', 'YES', 'N/A', '15', 'Will be multiplied by 100,000'],
+      ['PREFFERED SET', 'Auction set preference', 'YES', '-', 'A', 'Use "-" if no preference'],
+      ['CONTACT NO.', 'Player contact number', 'YES', '-', '9876543210', 'Use "-" if not available'],
+      ['SHIFT', 'Preferred playing shift', 'YES', '-', 'Day', 'Day/Night or "-" if no preference'],
+      ['BOWLING ARM', 'Bowling arm', 'YES', '-', 'Right', 'Left/Right or "-" if not applicable'],
+      ['BOWLING TYPE', 'Type of bowling', 'YES', '-', 'Fast', 'Fast/Medium/Spin or "-" if not applicable'],
+      ['BATTING HAND', 'Batting hand', 'YES', '-', 'Right', 'Left/Right or "-" if not applicable'],
+      ['BATTING ORDER', 'Preferred batting position', 'YES', '-', 'Top Order', 'Top/Middle/Lower Order or "-"'],
+      ['BATTING STYLE', 'Batting approach', 'YES', '-', 'Aggressive', 'Aggressive/Defensive or "-"'],
+      ['COMMENTS', 'Additional notes', 'YES', '-', 'Captain material', 'Use "-" if no comments']
+    ];
+    
+    const instructionSheet = XLSX.utils.aoa_to_sheet(instructions);
+    
+    // Set column widths for instructions
+    instructionSheet['!cols'] = [
+      { wch: 15 }, // FIELD NAME
+      { wch: 25 }, // DESCRIPTION
+      { wch: 10 }, // REQUIRED
+      { wch: 15 }, // DEFAULT VALUE
+      { wch: 15 }, // EXAMPLE
+      { wch: 30 }  // NOTES
+    ];
+    
+    XLSX.utils.book_append_sheet(workbook, instructionSheet, 'Instructions');
+    
+    // Generate buffer
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    
+    // Set headers for download
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="Player_Template_${auction.name.replace(/\s+/g, '_')}.xlsx"`);
+    
+    res.send(buffer);
+    
+  } catch (error) {
+    console.error('Template generation error:', error);
+    res.status(500).json({ success: false, message: "Failed to generate template" });
+  }
+};
 

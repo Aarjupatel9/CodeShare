@@ -52,9 +52,9 @@ const HelpPage = ({ user }) => {
           <section className="bg-white rounded-xl shadow-md p-8 border border-gray-100">
             <div className="flex items-center gap-3 mb-4">
               <span className="text-3xl">🚀</span>
-              <h2 className="text-2xl font-bold text-gray-900">Getting Started</h2>
+              <h2 className="text-2xl font-bold text-gray-900 text-left">Getting Started</h2>
             </div>
-            <div className="space-y-3 text-gray-700">
+            <div className="space-y-3 text-gray-700 text-left">
               <p><strong>Create an Account:</strong> Sign up for free to start creating and sharing documents.</p>
               <p><strong>Create Documents:</strong> Click "New Document" to create a new page with our rich text editor.</p>
               <p><strong>Share Your Work:</strong> Every document gets a unique URL you can share with anyone.</p>
@@ -65,44 +65,44 @@ const HelpPage = ({ user }) => {
           <section className="bg-white rounded-xl shadow-md p-8 border border-gray-100">
             <div className="flex items-center gap-3 mb-4">
               <span className="text-3xl">✨</span>
-              <h2 className="text-2xl font-bold text-gray-900">Features</h2>
+              <h2 className="text-2xl font-bold text-gray-900 text-left">Features</h2>
             </div>
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-left">
                   <span>📝</span> Rich Text Editor
                 </h3>
-                <p className="text-sm text-gray-600">Format text, add images, code blocks, and more with our powerful editor.</p>
+                <p className="text-sm text-gray-600 text-left">Format text, add images, code blocks, and more with our powerful editor.</p>
               </div>
               <div className="space-y-2">
-                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-left">
                   <span>📎</span> File Attachments
                 </h3>
-                <p className="text-sm text-gray-600">Upload and attach files to your documents for easy sharing.</p>
+                <p className="text-sm text-gray-600 text-left">Upload and attach files to your documents for easy sharing.</p>
               </div>
               <div className="space-y-2">
-                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-left">
                   <span>🔗</span> Public Sharing
                 </h3>
-                <p className="text-sm text-gray-600">Share documents publicly with a simple URL - no login required.</p>
+                <p className="text-sm text-gray-600 text-left">Share documents publicly with a simple URL - no login required.</p>
               </div>
               <div className="space-y-2">
-                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-left">
                   <span>🏏</span> Auctions
                 </h3>
-                <p className="text-sm text-gray-600">Manage sports auctions with team management and bidding features.</p>
+                <p className="text-sm text-gray-600 text-left">Manage sports auctions with team management and bidding features.</p>
               </div>
               <div className="space-y-2">
-                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-left">
                   <span>🎮</span> Games
                 </h3>
-                <p className="text-sm text-gray-600">Play interactive games directly in your browser.</p>
+                <p className="text-sm text-gray-600 text-left">Play interactive games directly in your browser.</p>
               </div>
               <div className="space-y-2">
-                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-left">
                   <span>📱</span> Mobile Friendly
                 </h3>
-                <p className="text-sm text-gray-600">Access your documents from any device - fully responsive design.</p>
+                <p className="text-sm text-gray-600 text-left">Access your documents from any device - fully responsive design.</p>
               </div>
             </div>
           </section>
@@ -111,12 +111,12 @@ const HelpPage = ({ user }) => {
           <section className="bg-white rounded-xl shadow-md p-8 border border-gray-100">
             <div className="flex items-center gap-3 mb-4">
               <span className="text-3xl">📄</span>
-              <h2 className="text-2xl font-bold text-gray-900">Document Management</h2>
+              <h2 className="text-2xl font-bold text-gray-900 text-left">Document Management</h2>
             </div>
             <div className="space-y-4">
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Creating Documents</h3>
-                <ul className="list-disc list-inside space-y-1 text-gray-700 text-sm">
+                <h3 className="font-semibold text-gray-900 mb-2 text-left">Creating Documents</h3>
+                <ul className="list-disc list-inside space-y-1 text-gray-700 text-sm text-left">
                   <li>Click "New Document" from the sidebar or profile menu</li>
                   <li>Enter a unique name for your document</li>
                   <li>Start editing with the rich text editor</li>
@@ -124,8 +124,8 @@ const HelpPage = ({ user }) => {
                 </ul>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Managing Documents</h3>
-                <ul className="list-disc list-inside space-y-1 text-gray-700 text-sm">
+                <h3 className="font-semibold text-gray-900 mb-2 text-left">Managing Documents</h3>
+                <ul className="list-disc list-inside space-y-1 text-gray-700 text-sm text-left">
                   <li>View all your documents in the sidebar under "Pages"</li>
                   <li>Click on any document to open and edit it</li>
                   <li>Delete documents by clicking the remove icon</li>
@@ -139,9 +139,9 @@ const HelpPage = ({ user }) => {
           <section className="bg-white rounded-xl shadow-md p-8 border border-gray-100">
             <div className="flex items-center gap-3 mb-4">
               <span className="text-3xl">📎</span>
-              <h2 className="text-2xl font-bold text-gray-900">File Uploads</h2>
+              <h2 className="text-2xl font-bold text-gray-900 text-left">File Uploads</h2>
             </div>
-            <div className="space-y-3 text-gray-700">
+            <div className="space-y-3 text-gray-700 text-left">
               <p><strong>Upload Files:</strong> Switch to the "Files" tab in the sidebar and click "Upload File".</p>
               <p><strong>Download Files:</strong> Click the download button on any uploaded file.</p>
               <p><strong>Delete Files:</strong> Remove files you no longer need with the delete button.</p>
@@ -153,23 +153,23 @@ const HelpPage = ({ user }) => {
           <section className="bg-white rounded-xl shadow-md p-8 border border-gray-100">
             <div className="flex items-center gap-3 mb-4">
               <span className="text-3xl">⌨️</span>
-              <h2 className="text-2xl font-bold text-gray-900">Keyboard Shortcuts</h2>
+              <h2 className="text-2xl font-bold text-gray-900 text-left">Keyboard Shortcuts</h2>
             </div>
             <div className="grid md:grid-cols-2 gap-4 text-sm">
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-700">Bold text</span>
+                <span className="text-gray-700 text-left">Bold text</span>
                 <kbd className="px-2 py-1 bg-gray-100 rounded font-mono text-xs">Ctrl + B</kbd>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-700">Italic text</span>
+                <span className="text-gray-700 text-left">Italic text</span>
                 <kbd className="px-2 py-1 bg-gray-100 rounded font-mono text-xs">Ctrl + I</kbd>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-700">Underline</span>
+                <span className="text-gray-700 text-left">Underline</span>
                 <kbd className="px-2 py-1 bg-gray-100 rounded font-mono text-xs">Ctrl + U</kbd>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <span className="text-gray-700">Save (auto-save enabled)</span>
+                <span className="text-gray-700 text-left">Save (auto-save enabled)</span>
                 <kbd className="px-2 py-1 bg-gray-100 rounded font-mono text-xs">Ctrl + S</kbd>
               </div>
             </div>
@@ -179,24 +179,24 @@ const HelpPage = ({ user }) => {
           <section className="bg-white rounded-xl shadow-md p-8 border border-gray-100">
             <div className="flex items-center gap-3 mb-4">
               <span className="text-3xl">❓</span>
-              <h2 className="text-2xl font-bold text-gray-900">Frequently Asked Questions</h2>
+              <h2 className="text-2xl font-bold text-gray-900 text-left">Frequently Asked Questions</h2>
             </div>
             <div className="space-y-4">
               <div>
-                <h3 className="font-semibold text-gray-900 mb-1">Is CodeShare free to use?</h3>
-                <p className="text-sm text-gray-600">Yes! CodeShare is completely free for personal use.</p>
+                <h3 className="font-semibold text-gray-900 mb-1 text-left">Is CodeShare free to use?</h3>
+                <p className="text-sm text-gray-600 text-left">Yes! CodeShare is completely free for personal use.</p>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 mb-1">Are my documents private?</h3>
-                <p className="text-sm text-gray-600">Documents are accessible via URL. Only people with the link can view them.</p>
+                <h3 className="font-semibold text-gray-900 mb-1 text-left">Are my documents private?</h3>
+                <p className="text-sm text-gray-600 text-left">Documents are accessible via URL. Only people with the link can view them.</p>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 mb-1">Can I collaborate with others?</h3>
-                <p className="text-sm text-gray-600">Currently, you can share read-only links. Real-time collaboration is coming soon!</p>
+                <h3 className="font-semibold text-gray-900 mb-1 text-left">Can I collaborate with others?</h3>
+                <p className="text-sm text-gray-600 text-left">Currently, you can share read-only links. Real-time collaboration is coming soon!</p>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 mb-1">What file size limits exist?</h3>
-                <p className="text-sm text-gray-600">File uploads are limited to reasonable sizes to ensure fast performance for all users.</p>
+                <h3 className="font-semibold text-gray-900 mb-1 text-left">What file size limits exist?</h3>
+                <p className="text-sm text-gray-600 text-left">File uploads are limited to reasonable sizes to ensure fast performance for all users.</p>
               </div>
             </div>
           </section>

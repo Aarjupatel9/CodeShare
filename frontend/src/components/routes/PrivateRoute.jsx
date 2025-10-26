@@ -59,9 +59,6 @@ const PrivateRoute = ({ component: Component, skipAuth = false, ...rest }) => {
         setIsAuthorized(true);
         setIsChecking(false);
       } catch (error) {
-        console.error('Authentication failed:', error);
-        // User not authenticated, redirect to login
-        toast.error('Please login to access this page', { duration: 3000 });
         navigate('/auth/login', { replace: true });
         setIsAuthorized(false);
         setIsChecking(false);

@@ -97,19 +97,19 @@ const UserProfilePage = () => {
             <div className="grid md:grid-cols-2 gap-6">
               {/* Account Information */}
               <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 text-left">
                   <span>👤</span> Account Information
                 </h3>
                 <div className="space-y-3">
                   <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-xs text-gray-500 font-medium mb-1">Username</p>
-                    <p className="text-gray-900 font-semibold">{currUser.username}</p>
+                    <p className="text-xs text-gray-500 font-medium mb-1 text-left">Username</p>
+                    <p className="text-gray-900 font-semibold text-left">{currUser.username}</p>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <p className="text-xs text-gray-500 font-medium mb-1">Email</p>
-                        <p className="text-gray-900 font-semibold truncate">{currUser.email}</p>
+                        <p className="text-xs text-gray-500 font-medium mb-1 text-left">Email</p>
+                        <p className="text-gray-900 font-semibold truncate text-left">{currUser.email}</p>
                       </div>
                       <button
                         onClick={copyEmail}
@@ -121,7 +121,7 @@ const UserProfilePage = () => {
                     </div>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-xs text-gray-500 font-medium mb-1">Account Status</p>
+                    <p className="text-xs text-gray-500 font-medium mb-1 text-left">Account Status</p>
                     <div className="flex items-center gap-2">
                       {currUser.isVerified ? (
                         <>
@@ -138,8 +138,8 @@ const UserProfilePage = () => {
                   </div>
                   {currUser.createdAt && (
                     <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-xs text-gray-500 font-medium mb-1">Member Since</p>
-                      <p className="text-gray-900 font-semibold">
+                      <p className="text-xs text-gray-500 font-medium mb-1 text-left">Member Since</p>
+                      <p className="text-gray-900 font-semibold text-left">
                         {new Date(currUser.createdAt).toLocaleDateString('en-US', {
                           year: 'numeric',
                           month: 'long',
@@ -153,7 +153,7 @@ const UserProfilePage = () => {
 
               {/* User ID for Auctions */}
               <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 text-left">
                   <span>🆔</span> User ID
                 </h3>
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg p-6">
@@ -161,14 +161,14 @@ const UserProfilePage = () => {
                     <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    <p className="text-sm text-blue-800">
+                    <p className="text-sm text-blue-800 text-left">
                       Share this ID with others so they can join your auctions.
                     </p>
                   </div>
                   
                   <div className="bg-white border border-blue-300 rounded-lg p-4 mb-4">
-                    <p className="text-xs text-gray-500 font-medium mb-2">Your User ID</p>
-                    <p className="font-mono text-sm text-gray-800 break-all mb-3">
+                    <p className="text-xs text-gray-500 font-medium mb-2 text-left">Your User ID</p>
+                    <p className="font-mono text-sm text-gray-800 break-all mb-3 text-left">
                       {currUser._id}
                     </p>
                     <button
@@ -190,8 +190,8 @@ const UserProfilePage = () => {
                   </div>
 
                   <div className="text-xs text-gray-600 bg-white bg-opacity-50 rounded p-3">
-                    <p className="font-semibold mb-1">💡 How to use:</p>
-                    <ul className="list-disc list-inside space-y-1 ml-2">
+                    <p className="font-semibold mb-1 text-left">💡 How to use:</p>
+                    <ul className="list-disc list-inside space-y-1 ml-2 text-left">
                       <li>Others need your User ID to join your auctions</li>
                       <li>Copy and share it along with auction name and password</li>
                     </ul>
@@ -204,64 +204,37 @@ const UserProfilePage = () => {
 
         {/* Statistics Card */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 mb-8">
-          <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+          <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2 text-left">
             <span>📊</span> Your Statistics
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-blue-50 rounded-xl">
-              <div className="text-3xl font-bold text-blue-600 mb-1">
+            <div className="p-4 bg-blue-50 rounded-xl">
+              <div className="text-3xl font-bold text-blue-600 mb-1 text-left">
                 {currUser.pages?.length || 0}
               </div>
-              <p className="text-sm text-gray-600">Documents</p>
+              <p className="text-sm text-gray-600 text-left">Documents</p>
             </div>
-            <div className="text-center p-4 bg-green-50 rounded-xl">
-              <div className="text-3xl font-bold text-green-600 mb-1">
+            <div className="p-4 bg-green-50 rounded-xl">
+              <div className="text-3xl font-bold text-green-600 mb-1 text-left">
                 {currUser.pages?.reduce((total, page) => total + (page.pageId?.files?.length || 0), 0) || 0}
               </div>
-              <p className="text-sm text-gray-600">Files</p>
+              <p className="text-sm text-gray-600 text-left">Files</p>
             </div>
-            <div className="text-center p-4 bg-purple-50 rounded-xl">
-              <div className="text-3xl font-bold text-purple-600 mb-1">
+            <div className="p-4 bg-purple-50 rounded-xl">
+              <div className="text-3xl font-bold text-purple-600 mb-1 text-left">
                 {currUser.isVerified ? '✓' : '○'}
               </div>
-              <p className="text-sm text-gray-600">Verified</p>
+              <p className="text-sm text-gray-600 text-left">Verified</p>
             </div>
           </div>
         </div>
 
         {/* Account Actions Card */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-          <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+          <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2 text-left">
             <span>⚙️</span> Account Settings
           </h3>
           <div className="space-y-3">
-            <button
-              onClick={() => navigate('/p/' + currUser.username)}
-              className="w-full px-6 py-4 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg font-semibold transition text-left flex items-center justify-between group"
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">📄</span>
-                <div>
-                  <div className="font-semibold">My Documents</div>
-                  <div className="text-sm text-blue-600">View all your pages</div>
-                </div>
-              </div>
-              <span className="text-blue-400 group-hover:text-blue-600 transition">→</span>
-            </button>
-
-            <button
-              onClick={() => navigate('/p/t/auction')}
-              className="w-full px-6 py-4 bg-purple-50 hover:bg-purple-100 text-purple-700 rounded-lg font-semibold transition text-left flex items-center justify-between group"
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">🏏</span>
-                <div>
-                  <div className="font-semibold">My Auctions</div>
-                  <div className="text-sm text-purple-600">Manage your auctions</div>
-                </div>
-              </div>
-              <span className="text-purple-400 group-hover:text-purple-600 transition">→</span>
-            </button>
 
             <button
               onClick={() => navigate('/auth/forgetpassword')}
