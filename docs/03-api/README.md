@@ -10,7 +10,7 @@ Complete API documentation for CodeShare.
 **Base URL**: `/api/v1`
 
 **Status**: ✅ Active, recommended  
-**Documentation**: [V1 Endpoints](./V1_ENDPOINTS.md)
+**Documentation**: [API Implementation Summary](./API_IMPLEMENTATION_SUMMARY.md)
 
 ### Legacy API (Deprecated)
 **Base URLs**: `/api/auction`, `/api/auth`, `/api/data`
@@ -22,27 +22,11 @@ Complete API documentation for CodeShare.
 
 ## 📚 API Documentation
 
-### [V1 REST Endpoints](./V1_ENDPOINTS.md)
+### [API Implementation Summary](./API_IMPLEMENTATION_SUMMARY.md)
 Complete REST API reference:
-- Auctions (CRUD, stats, live view)
-- Teams (CRUD, logos)
-- Players (CRUD, import)
-- Sets (CRUD)
-- Authentication
-- Documents
-
-### [Socket.IO Events](./SOCKET_EVENTS.md)
-Real-time event documentation:
-- Auction bidding events
-- Viewer count updates
-- Document collaboration
-
-### [Authentication](./AUTHENTICATION.md)
-Auth flow and JWT handling:
-- Login/Register
-- Token management
-- Protected routes
-- Auction-specific auth
+- API structure overview
+- Endpoint organization
+- Response formats
 
 ### [Team Logo System](./TEAM_LOGO_SYSTEM.md)
 Image upload and storage:
@@ -50,6 +34,13 @@ Image upload and storage:
 - Storage (MongoDB + public folder)
 - URL generation
 - Caching strategy
+
+### [Auction API Requirements](./AUCTION_API_REQUIREMENTS.md)
+Auction-specific endpoints:
+- Auction management
+- Teams and players
+- Bidding system
+- Live view data
 
 ---
 

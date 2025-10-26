@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react'
-import Player from './Player'
 import { initialPlayerPositions, initialState, edges, pattern } from './constants/constants.jsx'
 
 const GameBoard = ({ players, setPlayers }) => {
@@ -26,7 +25,6 @@ const GameBoard = ({ players, setPlayers }) => {
       populatePosiblePlayerRemove(false)
       setSecondPlayerTurn()
     }
-    console.log('in use Effect : ', isAdvantage)
   }, [isAdvantage])
 
   const getHorizontalRow = (configuration, rowIndex) => {
@@ -218,7 +216,7 @@ const GameBoard = ({ players, setPlayers }) => {
         return old
       })
     } else {
-      console.log('Player is blocked')
+      // Player is blocked
       //have to decide how to display it to user
     }
   }
@@ -238,7 +236,6 @@ const GameBoard = ({ players, setPlayers }) => {
 
   const populatePosiblePlayerRemove = (isRevert) => {
     var activePlayer = players[0].isActive ? 1 : 2 // 1 for player1, 2 for player2
-    console.log('populatePosiblePlayerRemove : ', isRevert, activePlayer)
     if (isRevert) {
       setPlayerState((old) => {
         return old.map((o) => {
@@ -257,7 +254,6 @@ const GameBoard = ({ players, setPlayers }) => {
         const rowElements = playerState.filter((c) => c.row === row) // Get all elements in the same row for active player
         for (let i = 0; i <= rowElements.length - 3; i += 3) {
           if (rowElements[i].player === activePlayer && rowElements[i].player === rowElements[i + 1].player && rowElements[i].player === rowElements[i + 2].player) {
-            console.log('triplets found for row ', rowElements)
             triplets.push(rowElements[i], rowElements[i + 1], rowElements[i + 2])
           }
         }
@@ -268,7 +264,6 @@ const GameBoard = ({ players, setPlayers }) => {
         const colElements = playerState.filter((c) => c.col === col) // Get all elements in the same column for active player
         for (let i = 0; i <= colElements.length - 3; i += 3) {
           if (colElements[i].player === activePlayer && colElements[i].player === colElements[i + 1].player && colElements[i].player === colElements[i + 2].player) {
-            console.log('triplets found for col ', colElements)
             triplets.push(colElements[i], colElements[i + 1], colElements[i + 2])
           }
         }
@@ -285,8 +280,6 @@ const GameBoard = ({ players, setPlayers }) => {
       return child.player === activePlayer && !tripletPlayers.includes(child)
     })
 
-    console.log('Players that can be removed: ', playersToRemove, tripletPlayers)
-
     setPlayerState((old) => {
       old = structuredClone(old)
       playersToRemove.forEach((p) => {
@@ -297,8 +290,6 @@ const GameBoard = ({ players, setPlayers }) => {
   }
 
   const removeSpecificPlayer = (index) => {
-    console.log('removeSpecificPlayer : ', index)
-
     setPlayerState((old) => {
       old = structuredClone(old)
       old[index].player = 0
@@ -307,7 +298,6 @@ const GameBoard = ({ players, setPlayers }) => {
     setPlayerPositions((old) => {
       old = structuredClone(old)
       for (var counter = 0; counter < 18; counter++) {
-        console.log('removeSpecificPlayer setPlayerPositions : ', index, counter)
         if (old[counter].index === index) {
           old[counter].isRemoved = true
         }
@@ -330,10 +320,8 @@ const GameBoard = ({ players, setPlayers }) => {
   }
   const handlePlayerChange = (data, index) => {
     var playerIndexToMove = playerState.findIndex((p) => p.isSelectedForMove) // Find the active player to move
-    console.log('handlePlayerChange playerIndexToMove ', playerIndexToMove, data, index, playerPositions)
 
     if (playerIndexToMove === -1) {
-      console.log('handlePlayerChange playerIndexToMove ', playerIndexToMove, 'returning')
       return
     }
     setPlayerState((prevState) => {
@@ -351,13 +339,11 @@ const GameBoard = ({ players, setPlayers }) => {
       old = structuredClone(old)
 
       for (var counter = 0; counter < 18; counter++) {
-        console.log('handlePlayerChange setPlayerPositions : ', index, counter)
         if (old[counter].index == playerIndexToMove) {
           old[counter].top = `${(data.row * 100) / 6}%`
           old[counter].left = `${(data.col * 100) / 6}%`
         }
       }
-      console.log('setPlayerPositions : ', old)
       return old
     })
 
@@ -374,13 +360,11 @@ const GameBoard = ({ players, setPlayers }) => {
   }
 
   const handlePlayerClick = (data, index) => {
-    console.log('handlePlayerClick index : ', index, data, gamePhase, isAdvantage, isPlayerTouchedForMove)
     if (gamePhase == 'end') {
       return
     }
 
     if (isAdvantage) {
-      // console.log("handlePlayerClick index : ", index, data, gamePhase)
       if (data.isRemovable === true) {
         setLastMove(index)
         removeSpecificPlayer(index)
@@ -394,15 +378,12 @@ const GameBoard = ({ players, setPlayers }) => {
     }
 
     if (gamePhase === 'initialize') {
-      console.log('inside initialize')
-
       if (data.player > 0) return
 
       setLastMove(index)
       var nextToInsert = players[0].isActive ? 0 : 9
       setPlayerPositions((old) => {
         old = structuredClone(old)
-        console.log('setPlayerPositions nextToInsert : ', nextToInsert)
         while (old[nextToInsert].isBind) {
           nextToInsert++
         }
@@ -410,7 +391,6 @@ const GameBoard = ({ players, setPlayers }) => {
         old[nextToInsert].isBind = true
         old[nextToInsert].top = `${(data.row * 100) / 6}%`
         old[nextToInsert].left = `${(data.col * 100) / 6}%`
-        console.log('setPlayerPositions : ', old)
         return old
       })
 
@@ -428,13 +408,10 @@ const GameBoard = ({ players, setPlayers }) => {
       })
       setSecondPlayerTurn()
     } else if (gamePhase === 'start') {
-      console.log('inside start')
       if (data.isMovable) {
-        console.log('handlePlahyerClick start movable ', index, data)
         setLastMove(index)
         handlePlayerChange(data, index)
       } else if ((data.player === 1 || data.player === 2) && players[data.player - 1].isActive) {
-        console.log('handlePlahyerClick start touch ', index, data)
         populatePosibleMoves(data, index)
       }
     }
@@ -443,18 +420,12 @@ const GameBoard = ({ players, setPlayers }) => {
   useEffect(() => {
     var isAdvantage = checkPlayerAdvantage()
     setIsAdvantage(isAdvantage)
-    console.log('isAdvantage : ', isAdvantage)
   }, [playerState])
-
-  useEffect(() => {
-    // console.log("players : ", players);
-  }, [players])
 
   const checkPlayerAdvantage = () => {
     for (let row = 0; row <= 6; row++) {
       const rowElements = playerState.filter((child) => child.row === row) // Get all elements in the same row
       for (let i = 0; i <= rowElements.length - 3; i += 3) {
-        // console.log("colElements : ",i,rowElements);
         if (rowElements[i].player !== 0 && rowElements[i].player === rowElements[i + 1].player && rowElements[i].player === rowElements[i + 2].player) {
           if ([rowElements[i].index, rowElements[i + 1].index, rowElements[i + 2].index].includes(lastMove)) {
             return true
@@ -465,7 +436,6 @@ const GameBoard = ({ players, setPlayers }) => {
     for (let col = 0; col <= 6; col++) {
       const colElements = playerState.filter((child) => child.col === col) // Get all elements in the same column
       for (let i = 0; i <= colElements.length - 3; i += 3) {
-        // console.log("colElements : ",i,colElements);
         if (colElements[i].player !== 0 && colElements[i].player === colElements[i + 1].player && colElements[i].player === colElements[i + 2].player) {
           if ([colElements[i].index, colElements[i + 1].index, colElements[i + 2].index].includes(lastMove)) {
             return true
@@ -477,14 +447,12 @@ const GameBoard = ({ players, setPlayers }) => {
   }
 
   useEffect(() => {
-    console.log('playerState changed : ', playerState)
   }, [playerState])
   useEffect(() => {
-    console.log('playerPositions changed : ', playerPositions)
   }, [playerPositions])
 
   return (
-    <div className="flex flex-col mx-auto py-2 px-3 jsutify-center">
+    <div className="flex flex-col mx-auto py-2 px-3 justify-center">
       {/* Grid container with relative positioning */}
       <div className="relative sm:max-h-[270px] sm:max-w-[270px] sm:min-h-[270px] sm:min-w-[270px]  md:max-h-[600px] md:max-w-[600px] md:min-h-[500px] md:min-w-[500px] mx-auto ">
         {/* Horizontal lines */}
@@ -501,28 +469,31 @@ const GameBoard = ({ players, setPlayers }) => {
         {gamePhase == 'end' && (
           <div
             key={`win-div-container`}
-            className={`absolute rounded cursor-pointer font-bold text-xl bg-green-300 flex flex-col justify-around items-center`}
+            className={`absolute rounded-2xl cursor-pointer bg-white shadow-2xl border-2 border-green-400 flex flex-col justify-center items-center p-8`}
             style={{
-              width: '200px',
-              height: '200px',
+              width: '280px',
+              minHeight: '250px',
               top: `50%`,
               left: `50%`,
               transform: 'translate(-50%, -50%)',
+              zIndex: 1000,
             }}
           >
-            <div>{players[0].retirePlayer > players[1].retirePlayer ? 'Player 2' : 'Player 1'} Won </div>
-            <div>
-              <div className="px-2 py-1 bg-green-600 rounded" onClick={() => {}}>
-                Restart the Game
-              </div>
-            </div>
+            <div className="text-6xl mb-4">🏆</div>
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">
+              Game Over!
+            </h2>
+            <p className="text-xl font-semibold text-gray-800 mb-6">
+              {players[0].retirePlayer > players[1].retirePlayer ? 'Player 2' : 'Player 1'} Wins!
+            </p>
+            <button 
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
+              onClick={() => window.location.reload()}
+            >
+              Play Again
+            </button>
           </div>
         )}
-      </div>
-
-      <div className="flex justify-around content-around mt-10">
-        <Player user1={players[0]} user2={players[1]} possition={'left'} />
-        <Player user1={players[1]} user2={players[0]} possition={'right'} />
       </div>
     </div>
   )

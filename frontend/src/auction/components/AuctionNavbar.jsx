@@ -217,6 +217,26 @@ const AuctionNavbar = ({ onNavigate, onLogout, auction }) => {
                 <button
                   onClick={() => {
                     closeProfileDropdown();
+                    onNavigate(`/p/${currUser?._id}/new`);
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                >
+                  🏠 Home
+                </button>
+
+                <button
+                  onClick={() => {
+                    closeProfileDropdown();
+                    onNavigate('/games');
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                >
+                  🎮 Games
+                </button>
+
+                <button
+                  onClick={() => {
+                    closeProfileDropdown();
                     onNavigate(`/p/${currUser?._id}/profile`);
                   }}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
