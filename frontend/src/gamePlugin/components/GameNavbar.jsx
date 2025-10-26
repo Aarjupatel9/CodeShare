@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-const GameNavbar = () => {
+const GameNavbar = ({ setGameComponent }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -24,7 +24,7 @@ const GameNavbar = () => {
             <div className="flex items-center space-x-1">
               {isInGame && (
                 <button
-                  onClick={() => navigate(-1)}
+                  onClick={() => {setGameComponent(null); navigate(-1);}}
                   className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
                 >
                   ← Back

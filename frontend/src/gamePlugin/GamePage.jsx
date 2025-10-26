@@ -32,7 +32,7 @@ function GamePage() {
 
   return (
     <div className="min-h-full min-w-full bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-      <GameNavbar />
+      <GameNavbar setGameComponent={setGameComponent} />
       {GameComponent ? (
         <Suspense fallback={
           <div className="flex items-center justify-center min-h-screen">
