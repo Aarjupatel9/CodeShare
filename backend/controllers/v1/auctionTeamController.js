@@ -284,7 +284,7 @@ exports.uploadTeamLogo = async (req, res) => {
     // Update team in database
     const updatedTeam = await AuctionTeamModel.findOneAndUpdate(
       { _id: teamId, auction: auctionId },
-      { logoUrl: fileData.publicPath },
+      { logoUrl: publicFile.publicPath },
       { new: true }
     );
 
