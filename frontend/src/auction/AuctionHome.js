@@ -244,7 +244,7 @@ export default function AuctionHome() {
       password: password
     })
       .then((res) => {
-        toast.success(res.message, { duration: 2000 });
+        // toast.success(res.message, { duration: 2000 });
         if (res.auction && res.auction._id) {
           localStorage.setItem("currentAuction", JSON.stringify(res.auction));
           setShowPasswordModal(false);

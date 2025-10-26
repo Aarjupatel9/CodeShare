@@ -27,7 +27,6 @@ const LoginComponent = () => {
             authService.login(newLoginUser)
                 .then(res => {
                     if (res.success) {
-                        toast.success(res.message);
                         setCurrUser(res.user);
                         localStorage.setItem('currUser', JSON.stringify(res.user));
                         navigate('/p/' + res.user._id + '/new');

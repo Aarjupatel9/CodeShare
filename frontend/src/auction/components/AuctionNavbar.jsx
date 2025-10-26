@@ -78,7 +78,7 @@ const AuctionNavbar = ({ onNavigate, onLogout, auction }) => {
       {/* Left: Logo */}
       <div className="flex items-center gap-4">
         <button 
-          onClick={() => onNavigate('/')} 
+          onClick={() => onNavigate('/p/' + currUser?._id + '/t/auction')} 
           className="text-xl font-bold text-blue-600 hover:text-blue-700 transition"
         >
           CodeShare
