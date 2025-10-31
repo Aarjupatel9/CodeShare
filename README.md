@@ -56,7 +56,7 @@ cd ../frontend && npm install
 
 ### **Configuration**
 
-Create `.env` files in `backend/`, `socketServer/`, and `frontend/`. See [Getting Started Guide](docs/development/GETTING_STARTED.md) for details.
+Create `.env` files in `backend/`, `socketServer/`, and `frontend/`. See [Getting Started Guide](docs/01-getting-started/SETUP.md) for details.
 
 ### **Run Development Servers**
 
@@ -80,12 +80,13 @@ Visit: **http://localhost:3000**
 Comprehensive documentation available in [`/docs`](docs/):
 
 ### **Quick Links**
-- 📖 [Getting Started Guide](docs/development/GETTING_STARTED.md)
-- 🏗️ [System Architecture](docs/architecture/SYSTEM_DESIGN.md)
-- 🔌 [API Reference](docs/api/API_RESTRUCTURE.md)
-- 💾 [Database Schema](docs/architecture/DATABASE_SCHEMA.md)
-- 🧪 [Testing Guide](docs/testing/TESTING_GUIDE.md)
-- 📁 [Project Structure](docs/PROJECT_STRUCTURE.md)
+- 📖 [Getting Started Guide](docs/01-getting-started/SETUP.md)
+- 🏗️ [System Architecture](docs/02-architecture/SYSTEM_DESIGN.md)
+- 🔌 [API Reference](docs/03-api/API_USAGE.md)
+- 💾 [Database Schema](docs/02-architecture/DATABASE_SCHEMA.md)
+- 🧪 [Testing Guide](docs/07-development/TESTING.md)
+- 📁 [Project Structure](docs/02-architecture/PROJECT_STRUCTURE.md)
+- 📚 [Complete Documentation](docs/README.md)
 
 ---
 
@@ -143,7 +144,7 @@ Teams, Players, Sets:
 Nested under /api/v1/auctions/:auctionId/
 ```
 
-See [API Documentation](docs/api/API_RESTRUCTURE.md) for complete reference.
+See [API Usage Documentation](docs/03-api/API_USAGE.md) for complete reference.
 
 ---
 
@@ -187,7 +188,7 @@ docker-compose down
 
 ### **Manual Deployment**
 
-See [Getting Started Guide](docs/development/GETTING_STARTED.md#building-for-production) for production deployment instructions.
+See [Getting Started Guide](docs/01-getting-started/SETUP.md#building-for-production) for production deployment instructions.
 
 ---
 
@@ -247,8 +248,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 For questions or issues:
-- Check the [documentation](docs/)
-- Review [Getting Started Guide](docs/development/GETTING_STARTED.md)
+- Check the [documentation](docs/README.md)
+- Review [Getting Started Guide](docs/01-getting-started/SETUP.md)
+- Email: developer.codeshare@gmail.com
 - Open an issue on GitHub
 
 ---
