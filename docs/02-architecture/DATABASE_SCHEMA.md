@@ -354,8 +354,8 @@ mongorestore --uri="..." backup/
 ## 📖 Related Documentation
 
 - [System Design](SYSTEM_DESIGN.md) - Architecture diagrams
-- [API Reference](../03-api/API_RESTRUCTURE.md) - API endpoints
-- [Getting Started](../01-getting-started/SETUP_COMPLETE.md) - Setup guide
+- [API Reference](../03-api/API_USAGE.md) - API endpoints
+- [Getting Started](../01-getting-started/SETUP.md) - Setup guide
 
 ---
 

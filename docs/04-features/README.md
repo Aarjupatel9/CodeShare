@@ -6,13 +6,14 @@ Comprehensive guides for all CodeShare features.
 
 ## 🎯 Auction Features
 
-### [Auction Bidding](./AUCTION_BIDDING.md)
+### Auction Bidding
 Complete guide to the live bidding system:
 - Set-based auction flow
 - Real-time bidding interface
 - Admin controls
 - Player management
 - Sold/Unsold handling
+- See [API Usage Guide](../03-api/API_USAGE.md) for details
 
 ### [Live View](./LIVE_VIEW.md)
 Public spectator page features:
@@ -102,11 +103,10 @@ Track and analyze viewership:
 
 Each feature has its own detailed documentation:
 
-- [AUCTION_BIDDING.md](./AUCTION_BIDDING.md) - Complete bidding guide
 - [LIVE_VIEW.md](./LIVE_VIEW.md) - Live view features
 - [VIEWER_ANALYTICS.md](./VIEWER_ANALYTICS.md) - Analytics tracking
-- [TEAM_MANAGEMENT.md](./TEAM_MANAGEMENT.md) - Team features
-- [PLAYER_MANAGEMENT.md](./PLAYER_MANAGEMENT.md) - Player features
+
+**Note**: Auction bidding, team management, and player management features are documented in the [API Usage Guide](../03-api/API_USAGE.md) and [System Architecture](../02-architecture/README.md).
 
 ---
 

@@ -302,8 +302,8 @@ See [Implementation Summary](../02-architecture/README.md) for details.
 
 ## 📖 Where to Go Next
 
-- **Setup Project**: [Getting Started](../01-getting-started/SETUP_COMPLETE.md)
-- **Use API**: [API Reference](../03-api/API_RESTRUCTURE.md)
+- **Setup Project**: [Getting Started](../01-getting-started/SETUP.md)
+- **Use API**: [API Reference](../03-api/API_USAGE.md)
 - **Run Tests**: [Testing Guide](../07-development/TESTING.md)
 - **Understand Architecture**: [System Design](SYSTEM_DESIGN.md)
 
