@@ -106,7 +106,7 @@ Each feature has its own detailed documentation:
 - [LIVE_VIEW.md](./LIVE_VIEW.md) - Live view features
 - [VIEWER_ANALYTICS.md](./VIEWER_ANALYTICS.md) - Analytics tracking
 
-**Note**: Auction bidding, team management, and player management features are documented in the [API Usage Guide](../03-api/API_USAGE.md) and [System Architecture](../02-architecture/).
+**Note**: Auction bidding, team management, and player management features are documented in the [API Usage Guide](../03-api/API_USAGE.md) and [System Architecture](../02-architecture/README.md).
 
 ---
 

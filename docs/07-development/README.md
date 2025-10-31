@@ -209,9 +209,9 @@ npm install package-name
 
 ## 🆘 Need Help?
 
-- Review [API Documentation](../03-api/)
-- See [Architecture Docs](../02-architecture/)
-- Check [Getting Started](../01-getting-started/)
+- Review [API Documentation](../03-api/README.md)
+- See [Architecture Docs](../02-architecture/README.md)
+- Check [Getting Started](../01-getting-started/README.md)
 
 ---
 

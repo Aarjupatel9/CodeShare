@@ -18,22 +18,22 @@ CodeShare is a collaborative platform featuring:
 
 ## 🗂️ Documentation Index
 
-### 🚀 [Getting Started](./01-getting-started/)
+### 🚀 [Getting Started](./01-getting-started/README.md)
 Quick start guide, installation, and deployment instructions.
 
-### 🏗️ [Architecture](./02-architecture/)
+### 🏗️ [Architecture](./02-architecture/README.md)
 System design, database schema, and server architecture (2-server setup).
 
-### 🔌 [API Reference](./03-api/)
+### 🔌 [API Reference](./03-api/README.md)
 REST API endpoints, Socket.IO events, and authentication.
 
-### ✨ [Features](./04-features/)
+### ✨ [Features](./04-features/README.md)
 Detailed guides for auction bidding, live view, analytics, and more.
 
-### ⚡ [Performance](./05-performance/)
+### ⚡ [Performance](./05-performance/CAPACITY_ANALYSIS.md)
 Optimization strategies, capacity analysis, and server sizing.
 
-### 💻 [Development](./07-development/)
+### 💻 [Development](./07-development/README.md)
 Contributing guidelines, testing, and troubleshooting.
 
 ---
@@ -139,7 +139,7 @@ See [Capacity Analysis](./05-performance/CAPACITY_ANALYSIS.md) for details.
 
 ## 🔗 Important Links
 
-- [API Documentation](./03-api/)
+- [API Documentation](./03-api/README.md)
 - [Database Schema](./02-architecture/DATABASE_SCHEMA.md)
 - [Testing Guide](./07-development/TESTING.md)
 - [Performance Optimization](./05-performance/OPTIMIZATION_SUMMARY.md)

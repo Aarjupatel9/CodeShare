@@ -164,7 +164,7 @@ lsof -ti:8080 | xargs kill
 
 - [System Architecture](../02-architecture/SYSTEM_DESIGN.md)
 - [API Documentation](../03-api/README.md)
-- [Feature Guides](../04-features/)
+- [Feature Guides](../04-features/README.md)
 - [Development Guide](../07-development/README.md)
 
 ---

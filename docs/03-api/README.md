@@ -6,8 +6,8 @@ Complete API documentation for CodeShare.
 
 ## 📚 Related Documentation
 
-- [Getting Started](../01-getting-started/)
-- [Architecture](../02-architecture/)
+- [Getting Started](../01-getting-started/README.md)
+- [Architecture](../02-architecture/README.md)
 - [Team Logo System](../02-architecture/TEAM_LOGO_SYSTEM.md) - Caching mechanism
 
 ---
