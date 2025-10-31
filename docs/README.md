@@ -63,7 +63,7 @@ cd frontend && npm start         # Port 3000
 # http://localhost:3000
 ```
 
-See [Getting Started Guide](./01-getting-started/README.md) for details.
+See [Getting Started Guide](./01-getting-started/SETUP.md) for details.
 
 ---
 

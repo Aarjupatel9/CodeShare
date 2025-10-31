@@ -52,19 +52,23 @@ npm install
 #### **Backend (.env)**
 Create `/backend/.env`:
 ```env
-# Server
+# Server Configuration
 PORT=8080
 NODE_ENV=development
 
 # Database
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/
+# Local MongoDB:
+MONGODB_URI=mongodb://localhost:27017/code_share
+# Or MongoDB Atlas:
+# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/code_share
 
 # Authentication
-TOKEN_SECRET=your-secret-key-change-in-production
-JWT_SEC=your-secret-key-change-in-production
+TOKEN_SECRET=your-secret-key-change-in-production-min-32-characters
+JWT_SEC=your-secret-key-change-in-production-min-32-characters
 JWT_EXP=7d
+JWT_EXP_VERIFICATION_EMAIL=1h
 
-# CORS
+# CORS & Security
 ALLOWED_ORIGIN=http://localhost:3000,http://localhost
 HOST_ORIGIN_IP=127.0.0.1
 
@@ -72,34 +76,41 @@ HOST_ORIGIN_IP=127.0.0.1
 MAX_FILE_SIZE=20000000
 ALLOW_FILE_LIMIT=test
 
-# AWS S3 (for document files)
-AWS_BUCKET_NAME=your-bucket-name
+# AWS S3 (for document files and images)
+AWS_BUCKET_NAME=your-document-bucket-name
 AWS_BUCKET_REGION=us-east-1
-AWS_ACCESS_KEY=your-access-key
-AWS_SECRET_KEY=your-secret-key
+AWS_ACCESS_KEY=your-aws-access-key
+AWS_SECRET_KEY=your-aws-secret-key
 
-# Email (for password reset)
+# Email Configuration (for password reset)
 APP_EMAIL=your-email@gmail.com
-APP_PASS=your-app-password
-
-# Frontend URL (required for password reset links)
+APP_PASS=your-gmail-app-password
+# Note: See EMAIL_SETUP.md for instructions on generating Gmail App Password
+# Note: Frontend URL is automatically sent from browser, but you can set this as fallback
 FRONTEND_URL=http://localhost:3000
-
-# JWT Secret (for password reset tokens)
-TOKEN_SECRET=your-secret-key-change-in-production
 ```
 
 #### **Socket Server (.env)**
 Create `/socketServer/.env`:
 ```env
+# Server Configuration
+PORT=8081
+
+# CORS & Security
 ALLOWED_ORIGIN=http://localhost:3000,http://localhost
+HOST_ORIGIN_IP=127.0.0.1
+
+# Backend API Connection
+BACKEND_API_URL=http://localhost:8080
+INTERNAL_API_KEY=your-secret-key-here-12345
 ```
 
-#### **Frontend (.env)**
-Create `/frontend/.env`:
+#### **Frontend (.env.local)** (Optional)
+Create `/frontend/.env.local` (if needed):
 ```env
 REACT_APP_API_URL=http://localhost:8080
 ```
+**Note:** Most frontend configuration is done via `config.json` file (see below).
 
 #### **Frontend Public Config**
 Edit `/frontend/public/config.json`:
@@ -438,7 +449,7 @@ docker-compose logs -f backend
 After setup:
 
 1. **Explore the UI**: http://localhost:3000
-2. **Review API docs**: [API Reference](../03-api/API_RESTRUCTURE.md)
+2. **Review API docs**: [API Usage Guide](../03-api/API_USAGE.md)
 3. **Run tests**: `cd backend && npm test`
 4. **Read architecture**: [System Design](../02-architecture/SYSTEM_DESIGN.md)
 
@@ -453,5 +464,6 @@ After setup:
 
 ---
 
-Last Updated: October 31, 2025  
-Author: Aarju Patel
+**Last Updated**: October 31, 2025  
+**Author**: Aarju Patel  
+**Contact**: developer.codeshare@gmail.com
