@@ -114,7 +114,7 @@ exports.getUserDetails = async function (req, res) {
 
 exports.getResetPasswordLink = async (req, res) => {
     try {
-        const { email } = req.body;
+        const { email, frontendUrl: frontendUrlFromRequest } = req.body;
         const user = await DataModel.findOne({ email });
         if (!user) {
             return res.status(400).json({ error: `User doesn't exist.`, success: false });
@@ -125,10 +125,10 @@ exports.getResetPasswordLink = async (req, res) => {
             expiresIn: "5m",
         });
         
-        // Validate FRONTEND_URL is set
-        const frontendUrl = process.env.FRONTEND_URL;
+        // Get frontend URL from request body, fallback to environment variable
+        const frontendUrl = frontendUrlFromRequest || process.env.FRONTEND_URL;
         if (!frontendUrl) {
-            console.error("FRONTEND_URL environment variable is not set");
+            console.error("Frontend URL not provided in request and FRONTEND_URL environment variable is not set");
             return res.status(500).json({
                 message: "Server configuration error. Please contact support.",
                 success: false,
