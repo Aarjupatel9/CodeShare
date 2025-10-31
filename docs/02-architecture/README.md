@@ -223,8 +223,10 @@ If enabled: Save to MongoDB
 - [Database Schema](./DATABASE_SCHEMA.md)
 - [Project Structure](./PROJECT_STRUCTURE.md)
 - [Two-Server Setup](./TWO_SERVER_SETUP.md)
+- [Team Logo System](./TEAM_LOGO_SYSTEM.md) - 3-tier caching mechanism
 
 ---
 
-**Ready to dive deeper?** Explore the specific documentation sections!
+**Author**: Aarju Patel  
+**Last Updated**: October 31, 2025
 

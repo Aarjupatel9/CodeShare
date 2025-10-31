@@ -79,12 +79,14 @@ AWS_ACCESS_KEY=your-access-key
 AWS_SECRET_KEY=your-secret-key
 
 # Email (for password reset)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_SECURE=false
 APP_EMAIL=your-email@gmail.com
 APP_PASS=your-app-password
-RESET_PASSWORD_LINK=http://localhost:8080/api/auth/reset-password
+
+# Frontend URL (required for password reset links)
+FRONTEND_URL=http://localhost:3000
+
+# JWT Secret (for password reset tokens)
+TOKEN_SECRET=your-secret-key-change-in-production
 ```
 
 #### **Socket Server (.env)**
@@ -451,5 +453,5 @@ After setup:
 
 ---
 
-Last Updated: October 18, 2025
-
+Last Updated: October 31, 2025  
+Author: Aarju Patel

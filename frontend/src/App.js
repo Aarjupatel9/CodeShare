@@ -10,6 +10,7 @@ import MainPage from "./pages/MainPage";
 import LoginComponent from "./pages/LoginComponent";
 import RegisterComponent from "./pages/RegisterComponent";
 import ForgetPasswordComponent from "./pages/ForgetPasswordComponent";
+import ResetPasswordComponent from "./pages/ResetPasswordComponent";
 import PublicPages from "./pages/PublicPages";
 import HelpPage from "./pages/HelpPage";
 import AboutPage from "./pages/AboutPage";
@@ -72,6 +73,7 @@ function App() {
           <Route path="/auth/login" element={<PublicRoute component={LoginComponent} />} />
           <Route path="/auth/register" element={<PublicRoute component={RegisterComponent} />} />
           <Route path="/auth/forgetpassword" element={<PublicRoute component={ForgetPasswordComponent} />} />
+          <Route path="/auth/reset-password/:id/:token" element={<PublicRoute component={ResetPasswordComponent} />} />
           
           {/* Information Pages */}
           <Route path="/help" element={<PublicRoute component={HelpPage} />} />
