@@ -1,27 +1,38 @@
 import React, { useEffect, useState } from 'react'
 import { initialPlayerPositions, initialState, edges, pattern } from './constants/constants.jsx'
 
-const GameBoard = ({ players, setPlayers }) => {
+const GameBoard = ({ players, setPlayers, resignRequest, onResignHandled }) => {
   const [playerState, setPlayerState] = useState(initialState)
   const [playerPositions, setPlayerPositions] = useState(initialPlayerPositions)
   const [gamePhase, setGamePhase] = useState('initialize')
   const [isAdvantage, setIsAdvantage] = useState(false)
   const [lastMove, setLastMove] = useState(-1)
   const [isPlayerTouchedForMove, setIsPlayerTouchedForMove] = useState(false)
+  const [winner, setWinner] = useState(null)
+  const [infoMessage, setInfoMessage] = useState('')
+  const showMessage = (msg) => {
+    setInfoMessage(msg)
+    window.clearTimeout(showMessage._t)
+    showMessage._t = window.setTimeout(() => setInfoMessage(''), 1500)
+  }
 
   useEffect(() => {
-    if (players[0].placedPlayer === 9 && players[1].placedPlayer === 9) {
+    // Transition from placement to move phase strictly after both placed all 9
+    if (players[0].placedPlayer === 9 && players[1].placedPlayer === 9 && gamePhase !== 'end') {
       setGamePhase('start')
     }
-    if (players[0].retirePlayer === 9 || players[1].retirePlayer === 9) {
+    // End game when a player is reduced to 2 pieces (retired >= 7)
+    if ((players[0].retirePlayer >= 7 || players[1].retirePlayer >= 7) && gamePhase !== 'end') {
+      const p1Remaining = 9 - players[0].retirePlayer
+      const p2Remaining = 9 - players[1].retirePlayer
+      if (p1Remaining <= 2) setWinner('Player 2')
+      if (p2Remaining <= 2) setWinner('Player 1')
       setGamePhase('end')
     }
   }, [players])
 
   useEffect(() => {
     if (isAdvantage) {
-      if (gamePhase === 'initialize') {
-      }
       populatePosiblePlayerRemove(false)
       setSecondPlayerTurn()
     }
@@ -217,7 +228,7 @@ const GameBoard = ({ players, setPlayers }) => {
       })
     } else {
       // Player is blocked
-      //have to decide how to display it to user
+      showMessage('Selected piece is blocked')
     }
   }
   const clearPosibleMoves = () => {
@@ -235,7 +246,8 @@ const GameBoard = ({ players, setPlayers }) => {
   }
 
   const populatePosiblePlayerRemove = (isRevert) => {
-    var activePlayer = players[0].isActive ? 1 : 2 // 1 for player1, 2 for player2
+    // Opponent pieces are candidates for removal
+    var opponentPlayer = players[0].isActive ? 2 : 1 // 1 for player1, 2 for player2
     if (isRevert) {
       setPlayerState((old) => {
         return old.map((o) => {
@@ -245,44 +257,43 @@ const GameBoard = ({ players, setPlayers }) => {
       })
       return
     }
-    // Function to find if a player is part of a triplet
-    const findAllTriplets = (playerState) => {
+    // Function to find all triplet members for a given player
+    const findAllTriplets = (state, player) => {
       let triplets = []
-
       // Find row triplets
       for (let row = 0; row <= 6; row++) {
-        const rowElements = playerState.filter((c) => c.row === row) // Get all elements in the same row for active player
-        for (let i = 0; i <= rowElements.length - 3; i += 3) {
-          if (rowElements[i].player === activePlayer && rowElements[i].player === rowElements[i + 1].player && rowElements[i].player === rowElements[i + 2].player) {
-            triplets.push(rowElements[i], rowElements[i + 1], rowElements[i + 2])
+        const rowElements = state.filter((c) => c.row === row)
+        const sorted = rowElements.slice().sort((a, b) => a.col - b.col)
+        for (let i = 0; i <= sorted.length - 3; i++) {
+          const a = sorted[i], b = sorted[i + 1], c = sorted[i + 2]
+          if (a.player === player && a.player === b.player && a.player === c.player) {
+            triplets.push(a, b, c)
           }
         }
       }
-
       // Find column triplets
       for (let col = 0; col <= 6; col++) {
-        const colElements = playerState.filter((c) => c.col === col) // Get all elements in the same column for active player
-        for (let i = 0; i <= colElements.length - 3; i += 3) {
-          if (colElements[i].player === activePlayer && colElements[i].player === colElements[i + 1].player && colElements[i].player === colElements[i + 2].player) {
-            triplets.push(colElements[i], colElements[i + 1], colElements[i + 2])
+        const colElements = state.filter((c) => c.col === col)
+        const sorted = colElements.slice().sort((a, b) => a.row - b.row)
+        for (let i = 0; i <= sorted.length - 3; i++) {
+          const a = sorted[i], b = sorted[i + 1], c = sorted[i + 2]
+          if (a.player === player && a.player === b.player && a.player === c.player) {
+            triplets.push(a, b, c)
           }
         }
       }
-
       return triplets
     }
-
-    // Get all triplets for the active player
-    const tripletPlayers = findAllTriplets(playerState)
-
-    // Get players not part of any triplet
-    const playersToRemove = playerState.filter((child) => {
-      return child.player === activePlayer && !tripletPlayers.includes(child)
-    })
+    // Triplets for the opponent
+    const tripletMembers = findAllTriplets(playerState, opponentPlayer)
+    const tripletIndexes = new Set(tripletMembers.map(t => t.index))
+    const opponentPieces = playerState.filter((c) => c.player === opponentPlayer)
+    const removable = opponentPieces.filter((c) => !tripletIndexes.has(c.index))
+    const targets = removable.length > 0 ? removable : opponentPieces
 
     setPlayerState((old) => {
       old = structuredClone(old)
-      playersToRemove.forEach((p) => {
+      targets.forEach((p) => {
         old[p.index].isRemovable = true
       })
       return old
@@ -339,7 +350,7 @@ const GameBoard = ({ players, setPlayers }) => {
       old = structuredClone(old)
 
       for (var counter = 0; counter < 18; counter++) {
-        if (old[counter].index == playerIndexToMove) {
+        if (old[counter].index === playerIndexToMove) {
           old[counter].top = `${(data.row * 100) / 6}%`
           old[counter].left = `${(data.col * 100) / 6}%`
         }
@@ -348,6 +359,7 @@ const GameBoard = ({ players, setPlayers }) => {
     })
 
     clearPosibleMoves()
+    // After a move, check if opponent has any valid moves; if none, current player wins
     setSecondPlayerTurn()
   }
   const setSecondPlayerTurn = () => {
@@ -360,7 +372,7 @@ const GameBoard = ({ players, setPlayers }) => {
   }
 
   const handlePlayerClick = (data, index) => {
-    if (gamePhase == 'end') {
+    if (gamePhase === 'end') {
       return
     }
 
@@ -374,11 +386,15 @@ const GameBoard = ({ players, setPlayers }) => {
     }
 
     if (isPlayerTouchedForMove && !data.isMovable) {
+      showMessage('Choose a highlighted spot')
       return
     }
 
     if (gamePhase === 'initialize') {
-      if (data.player > 0) return
+      if (data.player > 0) {
+        showMessage('Spot occupied')
+        return
+      }
 
       setLastMove(index)
       var nextToInsert = players[0].isActive ? 0 : 9
@@ -413,6 +429,10 @@ const GameBoard = ({ players, setPlayers }) => {
         handlePlayerChange(data, index)
       } else if ((data.player === 1 || data.player === 2) && players[data.player - 1].isActive) {
         populatePosibleMoves(data, index)
+      } else if (data.player === 0) {
+        showMessage('Select your piece to move')
+      } else {
+        showMessage('Not your piece')
       }
     }
   }
@@ -446,15 +466,58 @@ const GameBoard = ({ players, setPlayers }) => {
     return false
   }
 
+  // Determine if the specified player has any legal moves (used for stalemate detection)
+  const hasAnyValidMove = (playerNumber) => {
+    // For each piece of playerNumber, see if any adjacent edge is empty
+    for (let i = 0; i < playerState.length; i++) {
+      if (playerState[i].player === playerNumber) {
+        const adj = edges[i] || []
+        if (adj.some((idx) => playerState[idx].player === 0)) {
+          return true
+        }
+      }
+    }
+    return false
+  }
+
+  // React to resignRequest from parent
   useEffect(() => {
-  }, [playerState])
+    if (!resignRequest || gamePhase === 'end') return
+    const resignedPlayer = resignRequest === 'p1' ? 'Player 1' : 'Player 2'
+    const winnerPlayer = resignRequest === 'p1' ? 'Player 2' : 'Player 1'
+    setWinner(winnerPlayer)
+    setGamePhase('end')
+    onResignHandled && onResignHandled()
+  }, [resignRequest])
+
+  // After each playerState change in move phase, check stalemate for next player
   useEffect(() => {
-  }, [playerPositions])
+    if (gamePhase !== 'start') return
+    const nextPlayer = players[0].isActive ? 1 : 2
+    if (!hasAnyValidMove(nextPlayer)) {
+      setWinner(nextPlayer === 1 ? 'Player 2' : 'Player 1')
+      setGamePhase('end')
+    }
+  }, [playerState, gamePhase, players])
+
+  // Warn before leaving active game
+  useEffect(() => {
+    const placed = (players?.[0]?.placedPlayer || 0) + (players?.[1]?.placedPlayer || 0)
+    const shouldWarn = (gamePhase === 'initialize' || gamePhase === 'start') && placed > 0
+    if (!shouldWarn) return
+    const handler = (e) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [gamePhase, players])
+
 
   return (
     <div className="flex flex-col mx-auto py-2 px-3 justify-center">
       {/* Grid container with relative positioning */}
-      <div className="relative sm:max-h-[270px] sm:max-w-[270px] sm:min-h-[270px] sm:min-w-[270px]  md:max-h-[600px] md:max-w-[600px] md:min-h-[500px] md:min-w-[500px] mx-auto ">
+      <div className="relative sm:max-h-[260px] sm:max-w-[260px] sm:min-h-[240px] sm:min-w-[240px]  md:max-h-[520px] md:max-w-[520px] md:min-h-[420px] md:min-w-[420px] mx-auto ">
         {/* Horizontal lines */}
         {pattern.map((conf, rowIndex) => getHorizontalRow(conf, rowIndex))}
 
@@ -466,7 +529,7 @@ const GameBoard = ({ players, setPlayers }) => {
 
         {getPlayersCircles()}
 
-        {gamePhase == 'end' && (
+        {gamePhase === 'end' && (
           <div
             key={`win-div-container`}
             className={`absolute rounded-2xl cursor-pointer bg-white shadow-2xl border-2 border-green-400 flex flex-col justify-center items-center p-8`}
@@ -484,7 +547,7 @@ const GameBoard = ({ players, setPlayers }) => {
               Game Over!
             </h2>
             <p className="text-xl font-semibold text-gray-800 mb-6">
-              {players[0].retirePlayer > players[1].retirePlayer ? 'Player 2' : 'Player 1'} Wins!
+              {(winner || (players[0].retirePlayer > players[1].retirePlayer ? 'Player 2' : 'Player 1'))} Wins!
             </p>
             <button 
               className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
@@ -495,6 +558,11 @@ const GameBoard = ({ players, setPlayers }) => {
           </div>
         )}
       </div>
+      {infoMessage && (
+        <div className="mt-3 text-center text-sm text-gray-700 bg-yellow-50 border border-yellow-200 rounded-md px-3 py-2">
+          {infoMessage}
+        </div>
+      )}
     </div>
   )
 }

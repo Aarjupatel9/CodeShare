@@ -1,8 +1,26 @@
 [
-    {
-      "name": "9Players",
-      "displayName": "9 VS 9",
-      "component": "Main"
+  {
+    "name": "9Players",
+    "displayName": "9 VS 9",
+    "path": "/9Players",
+    "description": "Play 9 VS 9 and have fun!",
+    "component": {
+      "Home": {
+        "path": "/",
+        "component": "Main",
+        "displayName": "🎮 Play"
+      },
+      "Rules": {
+        "path": "/rules",
+        "component": "GameRules",
+        "displayName": "📖 Rules"
+      },
+      "*": {
+        "path": "*",
+        "component": "Main",
+        "displayName": "🎮 Play"
+      }
     }
-  ]
+  }
+]
       
