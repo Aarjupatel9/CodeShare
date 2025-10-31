@@ -80,7 +80,13 @@ class AuthApi {
    */
   async generateResetPasswordLink(email) {
     try {
-      const response = await apiClient.post('/api/v1/auth/generate-reset-password-link', { email });
+      // Get frontend URL from window location
+      const frontendUrl = window.location.origin;
+      
+      const response = await apiClient.post('/api/v1/auth/generate-reset-password-link', { 
+        email,
+        frontendUrl 
+      });
       
       // Check if the response indicates an error
       if (!response.success) {
