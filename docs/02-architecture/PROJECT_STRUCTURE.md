@@ -209,8 +209,7 @@ docs/
 │
 ├── 01-getting-started/           # Getting Started
 │   ├── README.md                 # Quick start guide
-│   ├── SETUP.md                  # Detailed setup instructions
-│   └── SETUP_COMPLETE.md         # Complete setup guide
+│   └── SETUP.md                  # Detailed setup instructions
 │
 ├── 02-architecture/             # System Architecture
 │   ├── README.md                 # Architecture overview
@@ -222,10 +221,8 @@ docs/
 │
 ├── 03-api/                       # API Documentation
 │   ├── README.md                 # API overview
-│   ├── API_RESTRUCTURE.md        # V1 API structure
-│   ├── API_IMPLEMENTATION_SUMMARY.md  # Implementation summary
-│   ├── AUCTION_API_REQUIREMENTS.md   # Auction API docs
-│   └── TEAM_LOGO_SYSTEM.md       # Team logo endpoints
+│   └── API_USAGE.md              # V1 API usage guide
+│   Note: Team logo system documented in [02-architecture/TEAM_LOGO_SYSTEM.md](../02-architecture/TEAM_LOGO_SYSTEM.md)
 │
 ├── 04-features/                  # Feature Documentation
 │   ├── README.md                 # Features overview
@@ -469,7 +466,7 @@ package-lock.json
 
 ## 📖 Related Documentation
 
-- [Getting Started](../01-getting-started/SETUP_COMPLETE.md) - Setup guide
+- [Getting Started](../01-getting-started/SETUP.md) - Setup guide
 - [System Design](SYSTEM_DESIGN.md) - Architecture
 - [Database Schema](DATABASE_SCHEMA.md) - Data models
 

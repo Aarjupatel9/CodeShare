@@ -293,7 +293,7 @@ Should see: Trend list
 - [Live View Feature](./LIVE_VIEW.md)
 - [Capacity Analysis](../05-performance/CAPACITY_ANALYSIS.md)
 - [Two-Server Setup](../02-architecture/TWO_SERVER_SETUP.md)
-- [Socket Events](../03-api/SOCKET_EVENTS.md)
+- [API Usage Guide](../03-api/API_USAGE.md)
 
 ---
 
