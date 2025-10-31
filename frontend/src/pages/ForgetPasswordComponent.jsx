@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import authService from '../services/authService';
+import authApi from '../services/api/authApi';
 
 const ForgetPasswordComponent = () => {
     const [email, setEmail] = useState('');
@@ -16,14 +16,14 @@ const ForgetPasswordComponent = () => {
         }
         
         setLoading(true);
-        authService.forgetPassword(email)
+        authApi.generateResetPasswordLink(email)
             .then(res => {
-                toast.success(res.message || "Password reset link sent to your email!");
                 setEmailSent(true);
             })
             .catch((er) => {
                 console.error(er);
-                toast.error(er || "Failed to send reset link. Please try again.");
+                const errorMessage = er instanceof Error ? er.message : (er || "Failed to send reset link. Please try again.");
+                toast.error(errorMessage);
             })
             .finally(() => {
                 setLoading(false);
@@ -154,8 +154,8 @@ const ForgetPasswordComponent = () => {
                     <div className='mt-6 pt-6 border-t border-gray-100'>
                         <p className='text-xs text-gray-500 text-center'>
                             Need help? Contact support at{' '}
-                            <a href='mailto:support@codeshare.com' className='text-blue-600 hover:underline'>
-                                support@codeshare.com
+                            <a href='mailto:developer.codeshare@gmail.com' className='text-blue-600 hover:underline'>
+                                developer.codeshare@gmail.com
                             </a>
                         </p>
                     </div>

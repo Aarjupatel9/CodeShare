@@ -296,7 +296,7 @@ const AboutPage = ({ user }) => {
             <div>
               <h3 className="font-bold text-gray-900 mb-3 text-left">Contact</h3>
               <ul className="space-y-2 text-sm text-gray-600 text-left">
-                <li>Email: support@codeshare.com</li>
+                <li>Email: developer.codeshare@gmail.com</li>
                 <li>Made with ❤️ for the community</li>
               </ul>
             </div>

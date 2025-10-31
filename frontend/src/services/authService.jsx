@@ -109,35 +109,7 @@ class AuthService {
         });
     }
 
-    forgetPassword(email) {
-        return new Promise(function (resolve, reject) {
-            const fetchPostOptions = {
-                method: "POST",
-                credentials: "include",
-                headers: {
-                    "Content-Type": "application/json;charset=UTF-8",
-                    "Access-Control-Allow-Origin": "*",
-                    "Access-Control-Allow-Method": "GET,POST,PUT,DELETE,OPTIONS",
-                    "Access-Control-Allow-Headers": "Content-Type,Authorization",
-                },
-                body: JSON.stringify({ email }) // Send the email in the body
-            };
-
-            fetch(getBackendURL() + "/api/auth/forgetpassword", fetchPostOptions)
-                .then((response) => response.json())
-                .then((res) => {
-                    if (res.success) {
-                        resolve(res); // Resolve with the successful response
-                    } else {
-                        reject(res.message); // Reject with the error message
-                    }
-                })
-                .catch((e) => {
-                    console.error("error : ", e);
-                    reject(e.toString()); // Reject with the error string
-                });
-        });
-    }
+   
 
     logout() {
         return new Promise(function (resolve, reject) {
