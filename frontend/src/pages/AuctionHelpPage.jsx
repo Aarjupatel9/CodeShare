@@ -417,7 +417,7 @@ const AuctionHelpPage = () => {
                   General Help
                 </button>
                 <a
-                  href="mailto:support@codeshare.com"
+                  href="mailto:developer.codeshare@gmail.com"
                   className="px-6 py-3 bg-blue-500 hover:bg-blue-400 rounded-lg font-semibold transition shadow-md"
                 >
                   Contact Support

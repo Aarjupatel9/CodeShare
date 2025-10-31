@@ -35,7 +35,7 @@ const LoginComponent = () => {
                     }
                 })
                 .catch((err) => {
-                    toast.error(err?.message || 'Login failed');
+                    toast.error(err || err?.message || 'Login failed');
                     console.error(err);
                 })
                 .finally(() => {
