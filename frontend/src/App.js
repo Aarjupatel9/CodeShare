@@ -79,7 +79,7 @@ function App() {
           
           {/* Games */}
           <Route path="/games" element={<PublicRoute component={GamePage} />} />
-          <Route path="/game/:gameName" element={<PublicRoute component={GamePage} />} />
+          <Route path="/game/:gameName/*" element={<PublicRoute component={GamePage} />} />
           
           {/* Public Auction View */}
           <Route path="/t/auction/:auctionId/live" element={<PublicRoute component={AuctionLiveView} />} />
