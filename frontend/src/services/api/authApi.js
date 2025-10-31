@@ -76,11 +76,48 @@ class AuthApi {
   }
 
   /**
-   * Request password reset
+   * Request password reset link
    */
-  async forgotPassword(email) {
+  async generateResetPasswordLink(email) {
     try {
-      const response = await apiClient.post('/api/v1/auth/forgot-password', { email });
+      const response = await apiClient.post('/api/v1/auth/generate-reset-password-link', { email });
+      
+      // Check if the response indicates an error
+      if (!response.success) {
+        throw new Error(response.message || response.error || 'Failed to send reset link. Please try again.');
+      }
+      
+      return response;
+    } catch (error) {
+      // Extract error message properly
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : this.handleError(error);
+      throw new Error(errorMessage);
+    }
+  }
+
+  /**
+   * Validate reset token
+   */
+  async validateResetToken(id, token) {
+    try {
+      const response = await apiClient.get(`/api/v1/auth/reset-password/${id}/${token}`);
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Update password with reset token
+   */
+  async updatePassword(id, token, password, confirmPassword) {
+    try {
+      const response = await apiClient.post(`/api/v1/auth/update-password/${id}/${token}`, {
+        password,
+        confirmPassword,
+      });
       return response;
     } catch (error) {
       throw this.handleError(error);
@@ -91,10 +128,23 @@ class AuthApi {
    * Handle API errors
    */
   handleError(error) {
-    if (error.message) {
+    // If error has a message property (Error object or API response)
+    if (error?.message) {
       return error.message;
     }
-    return error.toString();
+    // If error is a string, return it
+    if (typeof error === 'string') {
+      return error;
+    }
+    // For response objects with message/error fields
+    if (error?.response?.message) {
+      return error.response.message;
+    }
+    if (error?.response?.error) {
+      return error.response.error;
+    }
+    // Fallback
+    return error?.toString() || 'An unexpected error occurred. Please try again.';
   }
 }
 
