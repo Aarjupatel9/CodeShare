@@ -45,7 +45,6 @@ CodeShare/
     ├── 03-api/
     ├── 04-features/
     ├── 05-performance/
-    ├── 06-migration/
     └── 07-development/
 ```
 

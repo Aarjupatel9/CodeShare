@@ -238,10 +238,6 @@ docs/
 │   ├── T2_MICRO_CAPACITY_ANALYSIS.md  # T2.micro analysis
 │   └── VIEWER_TRACKING_FINAL.md  # Viewer tracking
 │
-├── 06-migration/                 # Migration Guides
-│   ├── README.md                 # Migration overview
-│   └── V1_API_MIGRATION.md      # V1 API migration
-│
 └── 07-development/               # Development Guides
     ├── README.md                 # Development guide
     └── TESTING.md                # Testing guide
