@@ -1,6 +1,6 @@
 const DataModel = require("../../models/dataModels");
 const UserModel = require("../../models/userModels");
-const s3BucketService = require("../../services/s3BucketService");
+const googleDriveService = require("../../services/googleDriveService");
 const mongoose = require("mongoose");
 
 const ObjectId = mongoose.Types.ObjectId;
@@ -322,6 +322,7 @@ exports.getDocumentVersions = async (req, res) => {
 /**
  * Upload file to document
  * POST /api/v1/documents/:id/files
+ * Uses Google Drive storage (FREE API)
  */
 exports.uploadFile = async (req, res) => {
   try {
@@ -335,31 +336,61 @@ exports.uploadFile = async (req, res) => {
       });
     }
 
-    const fileObject = {
-      name: req.file.originalname,
-      url: req.file.location,
-      key: req.file.key,
-      type: req.file.mimetype,
-      others: {
-        contentType: req.file.contentType,
-        encoding: req.file.encoding,
-        bucket: req.file.bucket,
-        metadata: req.file.metadata,
-        etag: req.file.etag,
-        acl: req.file.acl,
-      },
-    };
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No file provided",
+      });
+    }
 
-    await DataModel.updateOne(
-      { _id: id, owner: user._id },
-      { $push: { files: fileObject } }
-    );
+    if (!req.file.buffer) {
+      return res.status(400).json({
+        success: false,
+        message: "File buffer is required",
+      });
+    }
 
-    res.status(200).json({
-      success: true,
-      message: "File uploaded successfully",
-      data: fileObject,
-    });
+    // Upload to Google Drive (FREE API)
+    try {
+      console.log('📤 Uploading to Google Drive (FREE API)');
+      
+      const result = await googleDriveService.uploadFile(
+        req.file.buffer,
+        req.file.originalname,
+        req.file.mimetype
+      );
+
+      const fileObject = {
+        name: req.file.originalname,
+        storageMethod: 'google_drive',
+        googleDriveFileId: result.fileId,
+        url: result.url, // View link
+        downloadUrl: result.downloadUrl, // Download link
+        type: req.file.mimetype,
+        size: result.size || req.file.size,
+        uploadedAt: new Date(),
+      };
+
+      console.log(`✅ File stored in Google Drive (FREE): ${result.fileId}`);
+
+      // Save file metadata to MongoDB
+      await DataModel.updateOne(
+        { _id: id, owner: user._id },
+        { $push: { files: fileObject } }
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "File uploaded successfully",
+        data: fileObject,
+      });
+    } catch (driveError) {
+      console.error('Google Drive upload failed:', driveError);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to upload to Google Drive: " + driveError.message,
+      });
+    }
   } catch (err) {
     console.error("Error in uploadFile:", err);
     res.status(500).json({
@@ -370,8 +401,88 @@ exports.uploadFile = async (req, res) => {
 };
 
 /**
+ * Download file from document
+ * GET /api/v1/documents/:id/files/:fileId
+ * Uses Google Drive storage (FREE API)
+ */
+exports.downloadFile = async (req, res) => {
+  try {
+    const { id, fileId } = req.params;
+    const user = req.user;
+
+    if (!id || !fileId || !user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid request",
+      });
+    }
+
+    // Get document
+    const document = await DataModel.findOne({ 
+      _id: id, 
+      owner: user._id 
+    });
+
+    if (!document) {
+      return res.status(404).json({
+        success: false,
+        message: "Document not found",
+      });
+    }
+
+    // Find file in document
+    const file = document.files.id(fileId);
+
+    if (!file) {
+      return res.status(404).json({
+        success: false,
+        message: "File not found",
+      });
+    }
+
+    // Check if file has Google Drive ID
+    if (!file.googleDriveFileId) {
+      return res.status(400).json({
+        success: false,
+        message: "File is not stored in Google Drive",
+      });
+    }
+
+    // Download from Google Drive (FREE API)
+    try {
+      console.log('📥 Downloading from Google Drive (FREE API)');
+      
+      const stream = await googleDriveService.downloadFile(file.googleDriveFileId);
+      
+      // Set response headers
+      res.setHeader('Content-Type', file.type || 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${file.name}"`);
+      res.setHeader('Cache-Control', 'private, max-age=3600');
+
+      // Stream file to client
+      stream.pipe(res);
+
+      console.log('✅ File streamed from Google Drive (FREE)');
+    } catch (driveError) {
+      console.error('Google Drive download failed:', driveError);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to download from Google Drive: " + driveError.message,
+      });
+    }
+  } catch (err) {
+    console.error("Error in downloadFile:", err);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error: " + err.message,
+    });
+  }
+};
+
+/**
  * Delete file from document
  * DELETE /api/v1/documents/:id/files/:fileId
+ * Uses Google Drive storage (FREE API)
  */
 exports.deleteFile = async (req, res) => {
   try {
@@ -403,11 +514,16 @@ exports.deleteFile = async (req, res) => {
       });
     }
 
-    // Remove from S3
-    try {
-      await s3BucketService.remove(file.key);
-    } catch (err) {
-      console.error("Error removing file from S3:", err);
+    // Delete from Google Drive (FREE API)
+    if (file.googleDriveFileId) {
+      try {
+        console.log('🗑️ Deleting from Google Drive (FREE API)');
+        await googleDriveService.deleteFile(file.googleDriveFileId);
+        console.log('✅ File deleted from Google Drive (FREE)');
+      } catch (driveError) {
+        console.error('Google Drive delete failed:', driveError);
+        // Continue with DB deletion even if Drive delete fails
+      }
     }
 
     // Remove from database

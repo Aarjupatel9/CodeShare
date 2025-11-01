@@ -31,17 +31,47 @@ const dataModelsSchema = mongoose.Schema({
                 type: String,
                 required: true,
             },
+            // Storage method: 'google_drive' (primary), 'mongodb' (for future)
+            storageMethod: {
+                type: String,
+                enum: ['google_drive', 'mongodb'],
+                default: 'google_drive',
+            },
+            // S3 fields (backward compatibility - optional to support existing files)
             url: {
                 type: String,
-                required: true,
+                required: false, // Optional for backward compatibility
             },
             key: {
                 type: String,
-                required: true,
+                required: false, // Optional for backward compatibility
             },
+            // Google Drive fields
+            googleDriveFileId: {
+                type: String,
+                required: function() { return this.storageMethod === 'google_drive'; }
+            },
+            downloadUrl: {
+                type: String,
+                required: false, // Optional, can be used for Google Drive
+            },
+            // MongoDB GridFS fields (for future)
+            gridfsId: {
+                type: mongoose.SchemaTypes.ObjectId,
+                required: function() { return this.storageMethod === 'mongodb'; }
+            },
+            // Common fields
             type: {
                 type: String,
                 required: true,
+            },
+            size: {
+                type: Number,
+                required: false, // Optional for backward compatibility
+            },
+            uploadedAt: {
+                type: Date,
+                default: Date.now,
             },
             others: {
                 type: Object,
