@@ -19,6 +19,10 @@ import { CSS } from '@dnd-kit/utilities';
 import {
   pageIcon,
   removeIcon,
+  trashIcon,
+  pinIcon,
+  pinnedIcon,
+  editIcon,
   fileIcon,
   downloadIcon
 } from '../../../assets/svgs';
@@ -335,7 +339,7 @@ const DocumentCard = ({
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-white border ${isPinned ? 'border-yellow-400' : 'border-gray-200'} rounded-lg p-3 hover:shadow-md transition cursor-pointer group ${isDragging ? 'shadow-lg' : ''}`}
+      className={`bg-white border ${isPinned ? 'border-yellow-400' : 'border-gray-200'} rounded-lg p-3 hover:shadow-md transition group ${isDragging ? 'shadow-lg' : ''}`}
     >
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2 flex-1">
@@ -350,16 +354,13 @@ const DocumentCard = ({
 
           {/* Pinned indicator */}
           {isPinned && (
-            <span className="text-sm text-yellow-600" title="Pinned">
-              📌
+            <span className="text-yellow-600" title="Pinned">
+              {pinnedIcon}
             </span>
           )}
 
           {/* Page name */}
-          <div
-            className="flex items-center gap-2 flex-1"
-            onClick={(e) => onNavigate(page.pageId.unique_name)}
-          >
+          <div className="flex items-center gap-2 flex-1">
             <span className="text-lg">{pageIcon}</span>
             <span
               className="font-semibold text-gray-900 text-sm line-clamp-1"
@@ -385,28 +386,28 @@ const DocumentCard = ({
           {/* Dropdown menu */}
           {showMenu && (
             <div className="absolute right-0 top-6 z-50 w-40 bg-white border border-gray-200 rounded-lg shadow-lg py-1">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onPinToggle(e, page);
-                  setShowMenu(false);
-                }}
-                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-              >
-                <span>{isPinned ? '📌' : '📍'}</span>
-                <span>{isPinned ? 'Unpin' : 'Pin'}</span>
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onStartRename();
-                  setShowMenu(false);
-                }}
-                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-              >
-                <span>✏️</span>
-                <span>Rename</span>
-              </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPinToggle(e, page);
+                    setShowMenu(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                >
+                  <span className="text-gray-600">{isPinned ? pinnedIcon : pinIcon}</span>
+                  <span>{isPinned ? 'Unpin' : 'Pin'}</span>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onStartRename();
+                    setShowMenu(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                >
+                  <span className="text-gray-600">{editIcon}</span>
+                  <span>Rename</span>
+                </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -415,7 +416,7 @@ const DocumentCard = ({
                 }}
                 className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
               >
-                <span>{removeIcon}</span>
+                <span className="text-red-600">{trashIcon}</span>
                 <span>Delete</span>
               </button>
             </div>
