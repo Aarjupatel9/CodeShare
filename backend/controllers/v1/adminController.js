@@ -183,7 +183,7 @@ exports.getUserDetails = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { username, email, role, isActive, isVerified } = req.body;
+    const { username, email, role, isActive, isVerified, fileUploadEnabled, fileSizeLimit } = req.body;
 
     // Prevent admin from removing their own admin role
     if (req.admin._id.toString() === id && role && role !== 'admin') {
@@ -199,6 +199,29 @@ exports.updateUser = async (req, res) => {
     if (role) updateData.role = role;
     if (typeof isActive === 'boolean') updateData.isActive = isActive;
     if (typeof isVerified === 'boolean') updateData.isVerified = isVerified;
+    
+    // File upload settings
+    if (typeof fileUploadEnabled === 'boolean') {
+      updateData.fileUploadEnabled = fileUploadEnabled;
+    }
+    if (fileSizeLimit !== undefined && fileSizeLimit !== null) {
+      // Validate file size limit (should be in bytes, min 0.1MB, max 100MB)
+      const minSize = 0.1 * 1024 * 1024; // 0.1 MB in bytes
+      const maxSize = 100 * 1024 * 1024; // 100 MB in bytes
+      const sizeLimit = parseInt(fileSizeLimit);
+      
+      if (sizeLimit < minSize || sizeLimit > maxSize) {
+        return res.status(400).json({
+          success: false,
+          message: `File size limit must be between ${(minSize / (1024 * 1024)).toFixed(1)}MB and ${(maxSize / (1024 * 1024)).toFixed(0)}MB`,
+        });
+      }
+      
+      updateData.fileSizeLimit = sizeLimit;
+    } else if (fileUploadEnabled === false) {
+      // If file upload is disabled, optionally clear fileSizeLimit
+      updateData.fileSizeLimit = undefined;
+    }
 
     const user = await UserModel.findByIdAndUpdate(
       id,
