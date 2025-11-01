@@ -4,6 +4,7 @@ const ActivityLog = require("../../models/activityLogModel");
 const AdminSettings = require("../../models/adminModels");
 const AuctionModel = require("../../models/auctionModel");
 const mongoose = require("mongoose");
+const logger = require("../../utils/loggerUtility");
 
 /**
  * ========================================
@@ -104,7 +105,12 @@ exports.getUsers = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("Error in getUsers:", error);
+    logger.logError(error, req, {
+      controller: 'adminController',
+      function: 'getUsers',
+      resourceType: 'user',
+      context: { page, limit, search, role, isActive, userId: req.user._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + error.message,
@@ -156,7 +162,13 @@ exports.getUserDetails = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("Error in getUserDetails:", error);
+    logger.logError(error, req, {
+      controller: 'adminController',
+      function: 'getUserDetails',
+      resourceType: 'user',
+      resourceId: id,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + error.message,
@@ -207,7 +219,13 @@ exports.updateUser = async (req, res) => {
       data: user,
     });
   } catch (error) {
-    console.error("Error in updateUser:", error);
+    logger.logError(error, req, {
+      controller: 'adminController',
+      function: 'updateUser',
+      resourceType: 'user',
+      resourceId: id,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + error.message,
@@ -245,7 +263,13 @@ exports.deleteUser = async (req, res) => {
       message: permanent === 'true' ? "User deleted permanently" : "User deactivated",
     });
   } catch (error) {
-    console.error("Error in deleteUser:", error);
+    logger.logError(error, req, {
+      controller: 'adminController',
+      function: 'deleteUser',
+      resourceType: 'user',
+      resourceId: id,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + error.message,
@@ -279,7 +303,13 @@ exports.resetUserPassword = async (req, res) => {
       message: "Password reset successfully",
     });
   } catch (error) {
-    console.error("Error in resetUserPassword:", error);
+    logger.logError(error, req, {
+      controller: 'adminController',
+      function: 'resetUserPassword',
+      resourceType: 'user',
+      resourceId: id,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + error.message,
@@ -319,7 +349,13 @@ exports.getUserActivity = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("Error in getUserActivity:", error);
+    logger.logError(error, req, {
+      controller: 'adminController',
+      function: 'getUserActivity',
+      resourceType: 'user',
+      resourceId: id,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + error.message,
@@ -398,7 +434,12 @@ exports.getActivityLogs = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("Error in getActivityLogs:", error);
+    logger.logError(error, req, {
+      controller: 'adminController',
+      function: 'getActivityLogs',
+      resourceType: 'activity',
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + error.message,
@@ -460,7 +501,12 @@ exports.getActivityStats = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("Error in getActivityStats:", error);
+    logger.logError(error, req, {
+      controller: 'adminController',
+      function: 'getActivityStats',
+      resourceType: 'statistics',
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + error.message,
@@ -538,7 +584,12 @@ exports.getOverviewStats = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("Error in getOverviewStats:", error);
+    logger.logError(error, req, {
+      controller: 'adminController',
+      function: 'getOverviewStats',
+      resourceType: 'statistics',
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + error.message,
@@ -610,7 +661,12 @@ exports.getAllDocuments = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("Error in getAllDocuments:", error);
+    logger.logError(error, req, {
+      controller: 'adminController',
+      function: 'getAllDocuments',
+      resourceType: 'document',
+      context: { page, limit, search, email, ownerId, userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + error.message,
@@ -644,7 +700,13 @@ exports.deleteDocument = async (req, res) => {
       message: "Document deleted successfully",
     });
   } catch (error) {
-    console.error("Error in deleteDocument:", error);
+    logger.logError(error, req, {
+      controller: 'adminController',
+      function: 'deleteDocument',
+      resourceType: 'document',
+      resourceId: id,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + error.message,
@@ -672,7 +734,12 @@ exports.getSettings = async (req, res) => {
       data: settings,
     });
   } catch (error) {
-    console.error("Error in getSettings:", error);
+    logger.logError(error, req, {
+      controller: 'adminController',
+      function: 'getSettings',
+      resourceType: 'settings',
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + error.message,
@@ -701,7 +768,12 @@ exports.updateSetting = async (req, res) => {
       data: setting,
     });
   } catch (error) {
-    console.error("Error in updateSetting:", error);
+    logger.logError(error, req, {
+      controller: 'adminController',
+      function: 'updateSetting',
+      resourceType: 'settings',
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + error.message,

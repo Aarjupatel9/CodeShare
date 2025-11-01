@@ -2,6 +2,7 @@ const DataModel = require("../../models/dataModels");
 const UserModel = require("../../models/userModels");
 const googleDriveService = require("../../services/googleDriveService");
 const mongoose = require("mongoose");
+const logger = require("../../utils/loggerUtility");
 
 const ObjectId = mongoose.Types.ObjectId;
 
@@ -61,7 +62,13 @@ exports.getDocument = async (req, res) => {
       });
     }
   } catch (e) {
-    console.error("Error in getDocument:", e);
+    logger.logError(e, req, {
+      controller: 'documentController',
+      function: 'getDocument',
+      resourceType: 'document',
+      resourceId: identifier,
+      context: { version, flag, userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -97,7 +104,12 @@ exports.getDocuments = async (req, res) => {
       data: documents,
     });
   } catch (e) {
-    console.error("Error in getDocuments:", e);
+    logger.logError(e, req, {
+      controller: 'documentController',
+      function: 'getDocuments',
+      resourceType: 'document',
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -162,7 +174,13 @@ exports.createDocument = async (req, res) => {
       data: savedDocument,
     });
   } catch (e) {
-    console.error("Error in createDocument:", e);
+    logger.logError(e, req, {
+      controller: 'documentController',
+      function: 'createDocument',
+      resourceType: 'document',
+      resourceId: slug,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -231,7 +249,13 @@ exports.updateDocument = async (req, res) => {
       data: newData,
     });
   } catch (e) {
-    console.error("Error in updateDocument:", e);
+    logger.logError(e, req, {
+      controller: 'documentController',
+      function: 'updateDocument',
+      resourceType: 'document',
+      resourceId: id,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -279,7 +303,13 @@ exports.deleteDocument = async (req, res) => {
       message: "Document deleted successfully",
     });
   } catch (e) {
-    console.error("Error in deleteDocument:", e);
+    logger.logError(e, req, {
+      controller: 'documentController',
+      function: 'deleteDocument',
+      resourceType: 'document',
+      resourceId: id,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -311,7 +341,13 @@ exports.getDocumentVersions = async (req, res) => {
       data: versions,
     });
   } catch (e) {
-    console.error("Error in getDocumentVersions:", e);
+    logger.logError(e, req, {
+      controller: 'documentController',
+      function: 'getDocumentVersions',
+      resourceType: 'document',
+      resourceId: id,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -385,14 +421,27 @@ exports.uploadFile = async (req, res) => {
         data: fileObject,
       });
     } catch (driveError) {
-      console.error('Google Drive upload failed:', driveError);
+      logger.logError(driveError, req, {
+        controller: 'documentController',
+        function: 'uploadFile',
+        resourceType: 'file',
+        resourceId: id,
+        level: 'critical',
+        context: { userId: req?.user?._id, fileName: req.file?.originalname }
+      });
       return res.status(500).json({
         success: false,
         message: "Failed to upload to Google Drive: " + driveError.message,
       });
     }
   } catch (err) {
-    console.error("Error in uploadFile:", err);
+    logger.logError(err, req, {
+      controller: 'documentController',
+      function: 'uploadFile',
+      resourceType: 'file',
+      resourceId: id,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + err.message,
@@ -462,22 +511,35 @@ exports.downloadFile = async (req, res) => {
       // Stream file to client
       stream.pipe(res);
 
-      console.log('✅ File streamed from Google Drive (FREE)');
-    } catch (driveError) {
-      console.error('Google Drive download failed:', driveError);
-      return res.status(500).json({
-        success: false,
-        message: "Failed to download from Google Drive: " + driveError.message,
-      });
-    }
-  } catch (err) {
-    console.error("Error in downloadFile:", err);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error: " + err.message,
-    });
-  }
-};
+             console.log('✅ File streamed from Google Drive (FREE)');
+           } catch (driveError) {
+             logger.logError(driveError, req, {
+               controller: 'documentController',
+               function: 'downloadFile',
+               resourceType: 'file',
+               resourceId: fileId,
+               level: 'critical',
+               context: { userId: req?.user?._id, documentId: id }
+             });
+             return res.status(500).json({
+               success: false,
+               message: "Failed to download from Google Drive: " + driveError.message,
+             });
+           }
+         } catch (err) {
+           logger.logError(err, req, {
+             controller: 'documentController',
+             function: 'downloadFile',
+             resourceType: 'file',
+             resourceId: fileId,
+             context: { userId: req?.user?._id, documentId: id }
+           });
+           res.status(500).json({
+             success: false,
+             message: "Internal server error: " + err.message,
+           });
+         }
+       };
 
 /**
  * Delete file from document
@@ -514,17 +576,24 @@ exports.deleteFile = async (req, res) => {
       });
     }
 
-    // Delete from Google Drive (FREE API)
-    if (file.googleDriveFileId) {
-      try {
-        console.log('🗑️ Deleting from Google Drive (FREE API)');
-        await googleDriveService.deleteFile(file.googleDriveFileId);
-        console.log('✅ File deleted from Google Drive (FREE)');
-      } catch (driveError) {
-        console.error('Google Drive delete failed:', driveError);
-        // Continue with DB deletion even if Drive delete fails
-      }
-    }
+           // Delete from Google Drive (FREE API)
+           if (file.googleDriveFileId) {
+             try {
+               console.log('🗑️ Deleting from Google Drive (FREE API)');
+               await googleDriveService.deleteFile(file.googleDriveFileId);
+               console.log('✅ File deleted from Google Drive (FREE)');
+             } catch (driveError) {
+               logger.logError(driveError, req, {
+                 controller: 'documentController',
+                 function: 'deleteFile',
+                 resourceType: 'file',
+                 resourceId: fileId,
+                 level: 'warning',
+                 context: { userId: req?.user?._id, documentId: id }
+               });
+               // Continue with DB deletion even if Drive delete fails
+             }
+           }
 
     // Remove from database
     await DataModel.updateOne(
@@ -534,16 +603,22 @@ exports.deleteFile = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "File deleted successfully",
-    });
-  } catch (e) {
-    console.error("Error in deleteFile:", e);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error: " + e.message,
-    });
-  }
-};
+             message: "File deleted successfully",
+           });
+         } catch (e) {
+           logger.logError(e, req, {
+             controller: 'documentController',
+             function: 'deleteFile',
+             resourceType: 'file',
+             resourceId: fileId,
+             context: { userId: req?.user?._id, documentId: id }
+           });
+           res.status(500).json({
+             success: false,
+             message: "Internal server error: " + e.message,
+           });
+         }
+       };
 
 /**
  * Validate file upload
@@ -569,7 +644,12 @@ exports.validateFile = async (req, res, next) => {
 
     next();
   } catch (err) {
-    console.error("Error in validateFile:", err);
+    logger.logError(err, req, {
+      controller: 'documentController',
+      function: 'validateFile',
+      resourceType: 'file',
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Error validating file",
@@ -627,7 +707,12 @@ async function _getLatestDataVersion(slug, userId) {
 
     return doc;
   } catch (error) {
-    console.error("Error fetching latest data version:", error);
+    logger.logError(error, null, {
+      controller: 'documentController',
+      function: '_getLatestDataVersion',
+      resourceType: 'document',
+      context: { slug, userId }
+    });
     return null;
   }
 }
@@ -654,7 +739,12 @@ async function _getRequiredDataVersion(slug, time, userId) {
 
     return result && result.length > 0 ? result[0] : null;
   } catch (error) {
-    console.error("Error fetching required data version:", error);
+    logger.logError(error, null, {
+      controller: 'documentController',
+      function: '_getRequiredDataVersion',
+      resourceType: 'document',
+      context: { slug, time, userId }
+    });
     return null;
   }
 }
@@ -694,7 +784,12 @@ async function _getAllVersion(slug, userId) {
     const result = await DataModel.aggregate(pipeline);
     return Array.isArray(result) ? result[0] : result;
   } catch (error) {
-    console.error("Error fetching all versions:", error);
+    logger.logError(error, null, {
+      controller: 'documentController',
+      function: '_getAllVersion',
+      resourceType: 'document',
+      context: { slug, userId }
+    });
     return null;
   }
 }
@@ -748,7 +843,13 @@ exports.renameDocument = async (req, res) => {
       message: "Document successfully renamed",
     });
   } catch (e) {
-    console.error("Error in renameDocument:", e);
+    logger.logError(e, req, {
+      controller: 'documentController',
+      function: 'renameDocument',
+      resourceType: 'document',
+      resourceId: id,
+      context: { newName, userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -788,7 +889,12 @@ exports.reorderDocuments = async (req, res) => {
       message: "Documents successfully reordered",
     });
   } catch (e) {
-    console.error("Error in reorderDocuments:", e);
+    logger.logError(e, req, {
+      controller: 'documentController',
+      function: 'reorderDocuments',
+      resourceType: 'document',
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -831,7 +937,13 @@ exports.togglePinDocument = async (req, res) => {
       message: isPinned ? "Document successfully pinned" : "Document successfully unpinned",
     });
   } catch (e) {
-    console.error("Error in togglePinDocument:", e);
+    logger.logError(e, req, {
+      controller: 'documentController',
+      function: 'togglePinDocument',
+      resourceType: 'document',
+      resourceId: id,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,

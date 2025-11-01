@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const AuctionModel = require('../../models/auctionModel');
 const AuctionTeamModel = require('../../models/auctionTeamModel');
 const AuctionPlayerModel = require('../../models/auctionPlayerModel');
+const logger = require("../../utils/loggerUtility");
 
 /**
  * Middleware to check if auction live view is enabled
@@ -29,7 +30,13 @@ exports.checkLiveViewEnabled = async (req, res, next) => {
     
     next();
   } catch (error) {
-    console.error("Error in checkLiveViewEnabled:", error);
+    logger.logError(error, req, {
+      controller: 'auctionLiveViewController',
+      function: 'checkLiveViewEnabled',
+      resourceType: 'auction',
+      resourceId: id,
+      context: { userId: req?.user?._id }
+    });
     return res.status(500).json({
       success: false,
       message: "Internal server error: " + error.message
@@ -78,7 +85,13 @@ exports.getLiveViewData = async (req, res) => {
     });
     
   } catch (error) {
-    console.error("Error in getLiveViewData:", error);
+    logger.logError(error, req, {
+      controller: 'auctionLiveViewController',
+      function: 'getLiveViewData',
+      resourceType: 'auction',
+      resourceId: id,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + error.message

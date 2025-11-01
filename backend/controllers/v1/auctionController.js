@@ -3,6 +3,7 @@ const AuctionTeamModel = require("../../models/auctionTeamModel");
 const AuctionPlayerModel = require("../../models/auctionPlayerModel");
 const AuctionSetModel = require("../../models/auctionSetModel");
 const { genJWTToken } = require("../../services/authService");
+const logger = require("../../utils/loggerUtility");
 
 /**
  * Get all auctions for authenticated user
@@ -78,7 +79,12 @@ exports.getAuctions = async (req, res) => {
       data: auctions,
     });
   } catch (e) {
-    console.error("Error in getAuctions:", e);
+    logger.logError(e, req, {
+      controller: 'auctionController',
+      function: 'getAuctions',
+      resourceType: 'auction',
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -118,7 +124,13 @@ exports.getAuction = async (req, res) => {
       },
     });
   } catch (e) {
-    console.error("Error in getAuction:", e);
+    logger.logError(e, req, {
+      controller: 'auctionController',
+      function: 'getAuction',
+      resourceType: 'auction',
+      resourceId: id,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -165,7 +177,13 @@ exports.getPublicAuction = async (req, res) => {
       },
     });
   } catch (e) {
-    console.error("Error in getPublicAuction:", e);
+    logger.logError(e, req, {
+      controller: 'auctionController',
+      function: 'getPublicAuction',
+      resourceType: 'auction',
+      resourceId: slug,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -224,7 +242,12 @@ exports.createAuction = async (req, res) => {
       data: savedAuction,
     });
   } catch (e) {
-    console.error("Error in createAuction:", e);
+    logger.logError(e, req, {
+      controller: 'auctionController',
+      function: 'createAuction',
+      resourceType: 'auction',
+      context: { userId: req?.user?._id, auctionName: req.body?.name }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -280,7 +303,13 @@ exports.updateAuction = async (req, res) => {
       data: updatedAuction,
     });
   } catch (e) {
-    console.error("Error in updateAuction:", e);
+    logger.logError(e, req, {
+      controller: 'auctionController',
+      function: 'updateAuction',
+      resourceType: 'auction',
+      resourceId: id,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -317,7 +346,13 @@ exports.deleteAuction = async (req, res) => {
       message: "Auction and all related data deleted successfully",
     });
   } catch (e) {
-    console.error("Error in deleteAuction:", e);
+    logger.logError(e, req, {
+      controller: 'auctionController',
+      function: 'deleteAuction',
+      resourceType: 'auction',
+      resourceId: id,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -381,7 +416,12 @@ exports.loginAuction = async (req, res) => {
       data: auction,
     });
   } catch (e) {
-    console.error("Error in loginAuction:", e);
+    logger.logError(e, req, {
+      controller: 'auctionController',
+      function: 'loginAuction',
+      resourceType: 'auction',
+      context: { userId: req?.user?._id, auctionName: req.body?.name }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -402,7 +442,12 @@ exports.logoutAuction = async (req, res) => {
       message: "Logged out from auction successfully",
     });
   } catch (e) {
-    console.error("Error in logoutAuction:", e);
+    logger.logError(e, req, {
+      controller: 'auctionController',
+      function: 'logoutAuction',
+      resourceType: 'auction',
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,

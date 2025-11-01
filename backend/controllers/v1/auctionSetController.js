@@ -1,6 +1,7 @@
 const AuctionSetModel = require("../../models/auctionSetModel");
 const AuctionPlayerModel = require("../../models/auctionPlayerModel");
 const AuctionModel = require("../../models/auctionModel");
+const logger = require("../../utils/loggerUtility");
 
 /**
  * Get all sets for an auction
@@ -54,7 +55,13 @@ exports.getSets = async (req, res) => {
       data: sets,
     });
   } catch (e) {
-    console.error("Error in getSets:", e);
+    logger.logError(e, req, {
+      controller: 'auctionSetController',
+      function: 'getSets',
+      resourceType: 'auction',
+      resourceId: auctionId,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -115,7 +122,13 @@ exports.createSet = async (req, res) => {
       data: savedSet,
     });
   } catch (e) {
-    console.error("Error in createSet:", e);
+    logger.logError(e, req, {
+      controller: 'auctionSetController',
+      function: 'createSet',
+      resourceType: 'auction',
+      resourceId: auctionId,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -160,7 +173,13 @@ exports.updateSet = async (req, res) => {
       data: updatedSet,
     });
   } catch (e) {
-    console.error("Error in updateSet:", e);
+    logger.logError(e, req, {
+      controller: 'auctionSetController',
+      function: 'updateSet',
+      resourceType: 'auction',
+      resourceId: setId,
+      context: { userId: req?.user?._id, auctionId }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -203,7 +222,13 @@ exports.deleteSet = async (req, res) => {
       message: "Set deleted successfully",
     });
   } catch (e) {
-    console.error("Error in deleteSet:", e);
+    logger.logError(e, req, {
+      controller: 'auctionSetController',
+      function: 'deleteSet',
+      resourceType: 'auction',
+      resourceId: setId,
+      context: { userId: req?.user?._id, auctionId }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,

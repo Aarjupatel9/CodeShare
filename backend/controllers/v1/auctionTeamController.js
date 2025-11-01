@@ -3,6 +3,7 @@ const AuctionPlayerModel = require("../../models/auctionPlayerModel");
 const AuctionModel = require("../../models/auctionModel");
 const FileModel = require("../../models/fileModel");
 const imageService = require("../../services/imageService");
+const logger = require("../../utils/loggerUtility");
 
 /**
  * Get all teams for an auction
@@ -58,7 +59,13 @@ exports.getTeams = async (req, res) => {
       data: teams,
     });
   } catch (e) {
-    console.error("Error in getTeams:", e);
+    logger.logError(e, req, {
+      controller: 'auctionTeamController',
+      function: 'getTeams',
+      resourceType: 'auction',
+      resourceId: auctionId,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -121,7 +128,13 @@ exports.createTeam = async (req, res) => {
       data: savedTeam,
     });
   } catch (e) {
-    console.error("Error in createTeam:", e);
+    logger.logError(e, req, {
+      controller: 'auctionTeamController',
+      function: 'createTeam',
+      resourceType: 'auction',
+      resourceId: auctionId,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -161,7 +174,13 @@ exports.updateTeam = async (req, res) => {
       data: updatedTeam,
     });
   } catch (e) {
-    console.error("Error in updateTeam:", e);
+    logger.logError(e, req, {
+      controller: 'auctionTeamController',
+      function: 'updateTeam',
+      resourceType: 'auction',
+      resourceId: teamId,
+      context: { userId: req?.user?._id, auctionId }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -204,7 +223,13 @@ exports.deleteTeam = async (req, res) => {
       message: "Team deleted successfully",
     });
   } catch (e) {
-    console.error("Error in deleteTeam:", e);
+    logger.logError(e, req, {
+      controller: 'auctionTeamController',
+      function: 'deleteTeam',
+      resourceType: 'auction',
+      resourceId: teamId,
+      context: { userId: req?.user?._id, auctionId }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -299,7 +324,13 @@ exports.uploadTeamLogo = async (req, res) => {
       },
     });
   } catch (e) {
-    console.error("Error in uploadTeamLogo:", e);
+    logger.logError(e, req, {
+      controller: 'auctionTeamController',
+      function: 'uploadTeamLogo',
+      resourceType: 'auction',
+      resourceId: teamId,
+      context: { userId: req?.user?._id, auctionId }
+    });
     res.status(500).json({
       success: false,
       message: e.message || "Internal server error",

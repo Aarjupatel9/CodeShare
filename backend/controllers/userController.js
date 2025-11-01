@@ -1,9 +1,8 @@
 const DataModel = require("../models/dataModels");
 const UserModel = require("../models/userModels");
-
-
 const s3BucketService = require("../services/s3BucketService");
 const mongoose = require("mongoose");
+const logger = require("../utils/loggerUtility");
 
 
 var max_file_size = process.env.MAX_FILE_SIZE;
@@ -53,6 +52,12 @@ exports.getData = async function (req, res) {
       });
     }
   } catch (e) {
+    logger.logError(e, req, {
+      controller: 'userController',
+      function: 'getData',
+      resourceType: 'document',
+      context: { slug: req.body?.slug, userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "internal server error : " + e,
@@ -90,7 +95,12 @@ exports.removePage = async function (req, res) {
       });
     }
   } catch (e) {
-    console.error("error: ", e);
+    logger.logError(e, req, {
+      controller: 'userController',
+      function: 'removePage',
+      resourceType: 'document',
+      context: { pageId: req.body?.pageId, userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "internal server error : " + e,
@@ -175,7 +185,12 @@ exports.saveData = async (req, res) => {
       }
     }
   } catch (e) {
-    console.error("Error in saveData:", e);
+    logger.logError(e, req, {
+      controller: 'userController',
+      function: 'saveData',
+      resourceType: 'document',
+      context: { slug: req.body?.slug, userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "internal server error : " + e.message,
@@ -205,7 +220,12 @@ exports.validateFile = async (req, res, next) => {
       next();
     }
   } catch (err) {
-    console.error(`Error while validating file: ${err.message}`);
+    logger.logError(err, req, {
+      controller: 'userController',
+      function: 'validateFile',
+      resourceType: 'file',
+      context: { slug: req.headers?.slug, userId: req?.user?._id }
+    });
     return res.status(500).json({
       success: false,
       message: `Error uploading file`,
@@ -246,6 +266,12 @@ exports.saveFileNew = async (req, res, next) => {
         { upsert: true }
       );
     } catch (e) {
+      logger.logError(e, req, {
+        controller: 'userController',
+        function: 'saveFileNew',
+        resourceType: 'file',
+        context: { slug: req.body?.slug, userId: req?.user?._id }
+      });
       return res.status(200).json({
         success: false,
         message: `Error uploading file: ${e}`,
@@ -258,7 +284,12 @@ exports.saveFileNew = async (req, res, next) => {
       result: fileObject,
     });
   } catch (err) {
-    console.error(`Internal server error: ${err.message}`);
+    logger.logError(err, req, {
+      controller: 'userController',
+      function: 'saveFileNew',
+      resourceType: 'file',
+      context: { slug: req.body?.slug, userId: req?.user?._id }
+    });
     return res.status(500).json({
       success: false,
       message: `Internal server error: ${err}`,
@@ -290,7 +321,12 @@ exports.removeFile = async (req, res) => {
     try {
       response = await s3BucketService.remove(fileKey);
     } catch (err) {
-      console.error(`Error removing file : ${err.message}`);
+      logger.logError(err, req, {
+        controller: 'userController',
+        function: 'removeFile',
+        resourceType: 'file',
+        context: { fileKey, slug: req.body?.slug, userId: req?.user?._id }
+      });
       return res.status(200).json({
         success: false,
         message: `Error removing file in bucket2 : ${fileKey}`,
@@ -304,6 +340,12 @@ exports.removeFile = async (req, res) => {
         { $pull: { files: { _id: fileObject._id } } }
       );
     } catch (e) {
+      logger.logError(e, req, {
+        controller: 'userController',
+        function: 'removeFile',
+        resourceType: 'file',
+        context: { slug: req.body?.slug, userId: req?.user?._id }
+      });
       return res.status(200).json({
         success: true,
         message: `Error uploading file1: ${e}`,
@@ -316,6 +358,12 @@ exports.removeFile = async (req, res) => {
       file: fileObject,
     });
   } catch (e) {
+    logger.logError(e, req, {
+      controller: 'userController',
+      function: 'removeFile',
+      resourceType: 'file',
+      context: { slug: req.body?.slug, userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "internal server error : " + e,
@@ -370,7 +418,12 @@ async function _getLatestDataVersion(slug, userId) {
 
     return result;
   } catch (error) {
-    console.error("Error fetching the latest data version:", error);
+    logger.logError(error, null, {
+      controller: 'userController',
+      function: '_getLatestDataVersion',
+      resourceType: 'document',
+      context: { slug, userId }
+    });
     return null;
   }
 }
@@ -401,7 +454,12 @@ async function _getRequiredDataVersion(slug, time, userId) {
 
     return result && result.length > 0 ? result[0] : null;
   } catch (error) {
-    console.error("Error fetching the latest data version:", error);
+    logger.logError(error, null, {
+      controller: 'userController',
+      function: '_getRequiredDataVersion',
+      resourceType: 'document',
+      context: { slug, time, userId }
+    });
     return null;
   }
 }
