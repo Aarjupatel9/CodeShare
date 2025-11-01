@@ -180,7 +180,7 @@ const MobileMenu = ({
                             <div className="flex items-center gap-2 mb-2">
                               <span className="text-base">{fileIcon(file.type)}</span>
                               <span
-                                className="font-semibold text-gray-900 text-sm flex-1 line-clamp-1"
+                                className="font-semibold text-gray-900 text-sm flex-1 line-clamp-1 text-left"
                                 title={file.name}
                               >
                                 {file.name ? getPresizeFileName(file.name) : "file"}
