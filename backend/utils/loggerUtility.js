@@ -215,12 +215,12 @@ async function logError(error, req = null, context = {}) {
             try {
                 // Ensure details object doesn't exceed 500 bytes
                 const detailsString = JSON.stringify(activityLogData.details);
-                if (detailsString.length > 500) {
-                    // Truncate details if too large
-                    activityLogData.details = JSON.parse(
-                        detailsString.substring(0, 490) + '..."truncated"'
-                    );
-                }
+                // if (detailsString.length > 500) {
+                //     // Truncate details if too large
+                //     activityLogData.details = JSON.parse(
+                //         detailsString.substring(0, 490) + '..."truncated"'
+                //     );
+                // }
                 
                 // Add to batched logger queue
                 batchedLogger.addLog(activityLogData);
