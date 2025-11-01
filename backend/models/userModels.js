@@ -38,6 +38,15 @@ const userSchema = new mongoose.Schema(
             type: Number,
             default: 0,
         },
+        // File upload settings per user
+        fileUploadEnabled: {
+            type: Boolean,
+            default: false, // Default false for backward compatibility (undefined = false)
+        },
+        fileSizeLimit: {
+            type: Number,
+            default: 1 * 1024 * 1024, // Default 1MB in bytes
+        },
         pages: [
             {
                 pageId: {
