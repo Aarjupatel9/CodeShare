@@ -468,22 +468,6 @@ export default function MainPage(props) {
     setHasUnsavedChanges(false);
   }
 
-  const validateNewPageTitle = (newTitle) => {
-    // Check if slug is reserved
-    if (isReservedRouteName(newTitle)) {
-      toast.error(`"${newTitle}" is a reserved system name and cannot be used. Please choose a different name.`, { duration: 3000 });
-      return false;
-    }
-    
-    // Check if slug is valid format
-    if (!isValidAndNotReservedSlug(newTitle)) {
-      toast.error("Please use only letters, numbers, spaces, underscores, and hyphens", { duration: 3000 });
-      return false;
-    }
-    
-    return true;
-  };
-
   const isDuplicatePageName = (newName) => {
     var existingPage = currUser.pages.find((p) => { return p.pageId.unique_name == newName });
     return existingPage ? true : false;

@@ -12,9 +12,10 @@ export function generateRandomString(length) {
 }
 
 export function isValidSlug(slug) {
-    // Regular expression to match valid characters for a slug
-    const slugRegex = /^[a-zA-Z0-9 _-]+$/;
-    return slugRegex.test(slug) && slug.length > 1;
+    if (!slug || typeof slug !== 'string') return false;
+    // Regular expression to match valid characters for a slug (allows spaces and dots for decimals)
+    const slugRegex = /^[a-zA-Z0-9 ._-]+$/;
+    return slugRegex.test(slug) && slug.trim().length > 0;
 }
 
 /**
