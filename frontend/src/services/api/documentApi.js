@@ -98,44 +98,8 @@ class DocumentApi {
     }
   }
 
-  /**
-   * Upload file to document
-   */
-  async uploadFile(documentId, formData) {
-    try {
-      const slug = formData.get('slug');
-      const fileSize = formData.get('fileSize');
-      
-      const response = await apiClient.uploadFile(
-        `/api/v1/documents/${documentId}/files`,
-        formData,
-        {
-          headers: {
-            slug: slug,
-            filesize: fileSize,
-          },
-        }
-      );
-      
-      return response;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
-
-  /**
-   * Delete file from document
-   */
-  async deleteFile(documentId, fileId) {
-    try {
-      const response = await apiClient.delete(
-        `/api/v1/documents/${documentId}/files/${fileId}`
-      );
-      return response;
-    } catch (error) {
-      throw this.handleError(error);
-    }
-  }
+  // NOTE: File upload/delete methods have been moved to fileApi.js
+  // Files are now independent from documents - use fileApi.uploadFile() and fileApi.deleteFile()
 
   /**
    * Rename document
