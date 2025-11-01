@@ -92,7 +92,7 @@ const dataModelsSchema = mongoose.Schema({
             user: {
                 type: mongoose.SchemaTypes.ObjectId,
                 required: true,
-                ref: 'userModels',
+                ref: 'userModals',
             },
             right: {
                 type: String, // read, write, delete, owner
@@ -102,7 +102,7 @@ const dataModelsSchema = mongoose.Schema({
     ],
     owner: {
         type: mongoose.SchemaTypes.ObjectId,
-        ref: 'userModels',
+        ref: 'userModals',
         required: false,
     },
     isDeleted: {
