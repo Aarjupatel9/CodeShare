@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useConfig } from "../hooks/useConfig";
 import userService from "../services/userService";
 import documentApi from "../services/api/documentApi";
@@ -60,6 +60,7 @@ export default function MainPage(props) {
   const [fileList, setFileList] = useState([]);
   const [privateFileList, setPrivateFileList] = useState([]);
   const [tmpSlug, setTmpSlug] = useState("");
+  const loadingFilesRef = useRef(false); // Prevent duplicate API calls
   const [dropdownVisibility, setDropdownVisibility] = useState({
     file: false,
     history: false,
@@ -108,22 +109,8 @@ export default function MainPage(props) {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
-  useEffect(() => {
-    if (props.user) {
-      setPrivateTabs([
-        { tabId: 1, tabName: "Pages", selected: true },
-        { tabId: 2, tabName: "Files", selected: false },
-      ]);
-
-      // Load files independently (files are user-level, not document-level)
-      loadUserFiles();
-    }
-  }, [props.user]);
-
-  // Load user files independently from documents
+  // Load user files independently from documents (memoized to prevent duplicate calls)
   const loadUserFiles = async () => {
-    if (!currUser) return;
-    
     try {
       const response = await fileApi.getFiles();
       if (response.success && response.data) {
@@ -137,9 +124,9 @@ export default function MainPage(props) {
     } catch (error) {
       console.error('Error loading files:', error);
       // Fallback: try to load from localStorage if API fails
-      if (props.user && props.user.pages) {
+      if (currUser && currUser.pages) {
         let results = [];
-        Object.values(props.user.pages).forEach((page) => {
+        Object.values(currUser.pages).forEach((page) => {
           const { _id, unique_name, files = [] } = page.pageId;
           files.forEach((file) => {
             results.push({
@@ -150,8 +137,22 @@ export default function MainPage(props) {
         });
         setPrivateFileList(results);
       }
+    } finally {
+      loadingFilesRef.current = false;
     }
   };
+
+  useEffect(() => {
+    if (currUser) {
+      setPrivateTabs([
+        { tabId: 1, tabName: "Pages", selected: true },
+        { tabId: 2, tabName: "Files", selected: false },
+      ]);
+      console.log('Loading user files for user:', currUser);
+      // Load files independently (files are user-level, not document-level)
+      loadUserFiles();
+    }
+  }, [props.user]);
 
   // Show floating hint after 3 seconds for non-logged mobile users
   useEffect(() => {
@@ -166,9 +167,9 @@ export default function MainPage(props) {
   const checkSlug = () => {
     // Don't auto-generate slug for non-logged users on root path
     if (!slug || slug === '' || slug === '/') {
-      if (props.user) {
+      if (currUser) {
         // On initial load, navigate directly without warning
-        navigate("/p/" + props.user._id + "/new");
+        navigate("/p/" + currUser._id + "/new");
       } else {
         // Just set empty slug - let user work without navigation
         setTmpSlug('');
@@ -179,9 +180,9 @@ export default function MainPage(props) {
     
     if (!isValidAndNotReservedSlug(slug)) {
       const newSlug = generateRandomString(7);
-      if (props.user) {
+      if (currUser) {
         // On invalid slug, navigate directly without warning
-        navigate("/p/" + props.user._id + "/new");
+        navigate("/p/" + currUser._id + "/new");
       } else {
         navigate("/" + newSlug);
       }
@@ -197,7 +198,7 @@ export default function MainPage(props) {
       if (slug == "new") {
         return;
       }
-      userService.getData(slug, null, "latest", props.user).then((res) => {
+      userService.getData(slug, null, "latest", currUser).then((res) => {
         if (res.success) {
           if (res.result.data) {
             if (editorRef && editorRef.current) {
@@ -223,9 +224,9 @@ export default function MainPage(props) {
             setFileList([]);
           }
         } else {
-          if (props.user) {
+          if (currUser) {
             // Page doesn't exist, navigate to new document
-            navigate("/p/" + props.user._id + "/new");
+            navigate("/p/" + currUser._id + "/new");
           }
           clearEditorValue();
         }
@@ -436,7 +437,7 @@ export default function MainPage(props) {
       return;
     }
     userService
-      .getData(userSlug, null, "allVersion", props.user)
+      .getData(userSlug, null, "allVersion", currUser)
       .then((res) => {
         let processedData = res.result?.data?.map((r) => {
           r.timeformat = getTimeInFormate(r.time);
@@ -458,7 +459,7 @@ export default function MainPage(props) {
 
   const loadSpecificVersion = (time, index) => {
     userService
-      .getData(userSlug, time, "specific", props.user)
+      .getData(userSlug, time, "specific", currUser)
       .then((res) => {
         if (res.success) {
           if (editorRef && editorRef.current) {
@@ -500,14 +501,14 @@ export default function MainPage(props) {
 
   const saveData = () => {
     // For non-logged users without a slug - ask for document name
-    if (!props.user && (!userSlug || userSlug === '' || userSlug === 'new')) {
+    if (!currUser && (!userSlug || userSlug === '' || userSlug === 'new')) {
       setSaveModalType('public');
       setShowSaveModal(true);
       return;
     }
     
     // For logged users with "new" page - ask for page name
-    if (props.user) {
+    if (currUser) {
       if (userSlug.toLocaleLowerCase() == "new") {
         setSaveModalType('new');
         setShowSaveModal(true);
@@ -565,7 +566,7 @@ export default function MainPage(props) {
     var body = {
       slug: slugToSave,
       data: editorValue,
-      owner: props.user,
+      owner: currUser,
     };
     
     // Show loading toast
