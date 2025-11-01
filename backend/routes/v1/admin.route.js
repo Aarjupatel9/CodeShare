@@ -13,6 +13,7 @@ const {
     // Activity
     getActivityLogs,
     getActivityStats,
+    getActivityFilterOptions,
     
     // Statistics
     getOverviewStats,
@@ -26,6 +27,9 @@ const {
     updateSetting,
 } = require("../../controllers/v1/adminController");
 const activityLogger = require('../../middleware/activityLogger');
+
+// Public endpoint for filter options (no auth required for caching)
+router.get("/activity/filters", getActivityFilterOptions);
 
 // All admin routes require admin authentication
 router.use(adminMiddleware());

@@ -369,6 +369,109 @@ exports.getUserActivity = async (req, res) => {
  * ========================================
  */
 
+// Cache for filter options (refreshes every 2 hours)
+let filterOptionsCache = null;
+let filterOptionsCacheTime = null;
+const FILTER_CACHE_TTL = 2 * 60 * 60 * 1000; // 2 hours
+
+/**
+ * Get filter options for activity logs (public, cached)
+ * GET /api/v1/admin/activity/filters
+ */
+exports.getActivityFilterOptions = async (req, res) => {
+  try {
+    const now = Date.now();
+    
+    // Check if we have valid cache
+    const hasValidCache = filterOptionsCache && filterOptionsCacheTime && (now - filterOptionsCacheTime) < FILTER_CACHE_TTL;
+    
+    if (hasValidCache) {
+      // Generate ETag from cache timestamp
+      const etag = `"filter-options-${filterOptionsCacheTime}"`;
+      
+      // Client needs updated version, return cached data
+      res.set({
+        'Cache-Control': 'public, max-age=7200', // 2 hours in seconds
+        'ETag': etag
+      });
+      console.log("returning cached filter options");
+      return res.status(200).json({
+        success: true,
+        data: filterOptionsCache,
+        cached: true
+      });
+    }
+
+    // Get distinct values from database
+    const ActivityLog = require('../../models/activityLogModel');
+    
+    const [actions, resourceTypes, errorLevels] = await Promise.all([
+      ActivityLog.distinct('action'),
+      ActivityLog.distinct('resourceType'),
+      ActivityLog.distinct('errorLevel')
+    ]);
+    console.log("calculating filter options");
+    // Format actions with categories
+    const actionOptions = {
+      'Authentication': ['login', 'logout', 'register', 'reset_password', 'update_password', 'verify_token'],
+      'Document': ['document_create', 'document_update', 'document_delete', 'document_rename', 'document_reorder', 'document_pin', 'document_versions', 'document_get'],
+      'File': ['file_upload', 'file_download', 'file_delete'],
+      'Auction': ['auction_create', 'auction_update', 'auction_delete', 'auction_get', 'auction_join', 'auction_complete', 'auction_login', 'auction_logout', 'auction_stats', 'auction_live_view', 'auction_analytics', 'auction_summary'],
+      'Team': ['team_create', 'team_update', 'team_delete', 'team_logo_upload', 'team_get'],
+      'Player': ['player_create', 'player_update', 'player_delete', 'player_import', 'player_get', 'player_import_template'],
+      'Set': ['set_create', 'set_update', 'set_delete', 'set_get'],
+      'User': ['user_update', 'user_delete'],
+      'Admin': ['admin_action'],
+      'System': ['system_error', 'system_warning']
+    };
+
+    // Filter to only show actions that exist in database
+    Object.keys(actionOptions).forEach(category => {
+      actionOptions[category] = actionOptions[category].filter(action => actions.includes(action));
+    });
+
+    // Remove empty categories
+    Object.keys(actionOptions).forEach(category => {
+      if (actionOptions[category].length === 0) {
+        delete actionOptions[category];
+      }
+    });
+
+    const filterData = {
+      actions: actionOptions,
+      resourceTypes: resourceTypes.filter(Boolean).sort(), // Remove null/undefined and sort
+      errorLevels: errorLevels.filter(Boolean).sort() // Remove null/undefined and sort
+    };
+
+    // Update cache
+    filterOptionsCache = filterData;
+    filterOptionsCacheTime = now;
+
+    // Set HTTP cache headers for new data
+    res.set({
+      'Cache-Control': 'public, max-age=7200', // 2 hours in seconds
+      'ETag': `"filter-options-${now}"`
+    });
+
+    res.status(200).json({
+      success: true,
+      data: filterData,
+      cached: false
+    });
+  } catch (error) {
+    logger.logError(error, req, {
+      controller: 'adminController',
+      function: 'getActivityFilterOptions',
+      resourceType: 'system',
+      context: { userId: req?.user?._id }
+    });
+    res.status(500).json({
+      success: false,
+      message: "Internal server error: " + error.message,
+    });
+  }
+};
+
 /**
  * Get activity logs
  * GET /api/v1/admin/activity
@@ -382,6 +485,7 @@ exports.getActivityLogs = async (req, res) => {
       email = '',
       action = '',
       resourceType = '',
+      errorLevel = '',
       startDate = '',
       endDate = '',
     } = req.query;
@@ -390,11 +494,20 @@ exports.getActivityLogs = async (req, res) => {
 
     // If email is provided, find user by email first, then filter by userId
     if (email) {
-      const user = await UserModel.findOne({ email: { $regex: email, $options: 'i' } }).select('_id');
-      if (user) {
-        filter.userId = user._id;
+      // Escape special regex characters and ensure partial match works
+      const escapedEmail = email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const users = await UserModel.find({ 
+        $or: [
+          { email: { $regex: escapedEmail, $options: 'i' } },
+          { username: { $regex: escapedEmail, $options: 'i' } }
+        ]
+      }).select('_id');
+      
+      if (users && users.length > 0) {
+        // If multiple users found, use $in to match any of them
+        filter.userId = { $in: users.map(u => u._id) };
       } else {
-        // If no user found with that email, return empty results by using $in with empty array
+        // If no user found with that email/username, return empty results
         filter.userId = { $in: [] };
       }
     } else if (userId) {
@@ -403,6 +516,7 @@ exports.getActivityLogs = async (req, res) => {
 
     if (action) filter.action = action;
     if (resourceType) filter.resourceType = resourceType;
+    if (errorLevel) filter.errorLevel = errorLevel;
 
     if (startDate || endDate) {
       filter.createdAt = {};

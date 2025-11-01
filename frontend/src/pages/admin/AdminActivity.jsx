@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { UserContext } from '../../context/UserContext';
 import adminApi from '../../services/api/adminApi';
 import toast from 'react-hot-toast';
+import useDebounce from '../../hooks/useDebounce';
 
 export default function AdminActivity() {
   const { currUser } = useContext(UserContext);
@@ -15,8 +16,25 @@ export default function AdminActivity() {
   const [email, setEmail] = useState('');
   const [action, setAction] = useState('');
   const [resourceType, setResourceType] = useState('');
+  const [errorLevel, setErrorLevel] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  // Filter options from API
+  const [filterOptions, setFilterOptions] = useState({
+    actions: {},
+    resourceTypes: [],
+    errorLevels: []
+  });
+  const [loadingFilters, setLoadingFilters] = useState(true);
+
+  // Debounce email search input
+  const debouncedEmail = useDebounce(email, 1000);
+
+  // Load filter options on mount
+  useEffect(() => {
+    loadFilterOptions();
+  }, []);
 
   useEffect(() => {
     if (!currUser || currUser.role !== 'admin') {
@@ -24,8 +42,25 @@ export default function AdminActivity() {
       navigate('/');
       return;
     }
-    loadActivities();
-  }, [currUser, navigate, pagination.page, email, action, resourceType, startDate, endDate]);
+    if (!loadingFilters) {
+      loadActivities();
+    }
+  }, [currUser, navigate, pagination.page, debouncedEmail, action, resourceType, errorLevel, startDate, endDate, loadingFilters]);
+
+  const loadFilterOptions = async () => {
+    try {
+      setLoadingFilters(true);
+      const response = await adminApi.getActivityFilterOptions();
+      if (response.success && response.data) {
+        setFilterOptions(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading filter options:', error);
+      toast.error('Failed to load filter options');
+    } finally {
+      setLoadingFilters(false);
+    }
+  };
 
   const loadActivities = async () => {
     try {
@@ -33,9 +68,10 @@ export default function AdminActivity() {
       const response = await adminApi.getActivityLogs({
         page: pagination.page,
         limit: pagination.limit,
-        email: email || undefined,
+        email: debouncedEmail || undefined,
         action: action || undefined,
         resourceType: resourceType || undefined,
+        errorLevel: errorLevel || undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
       });
@@ -66,7 +102,7 @@ export default function AdminActivity() {
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <div>
+            <div className='text-left'>
               <h1 className="text-2xl font-bold text-gray-900">Activity Logs</h1>
               <p className="text-sm text-gray-600 mt-1">View system activity and logs</p>
             </div>
@@ -85,15 +121,15 @@ export default function AdminActivity() {
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email/Username</label>
               <input
-                type="email"
+                type="text"
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
                   setPagination({ ...pagination, page: 1 });
                 }}
-                placeholder="Search by user email..."
+                placeholder="Search by email or username..."
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
@@ -106,17 +142,18 @@ export default function AdminActivity() {
                   setPagination({ ...pagination, page: 1 });
                 }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={loadingFilters}
               >
                 <option value="">All Actions</option>
-                <option value="login">Login</option>
-                <option value="logout">Logout</option>
-                <option value="register">Register</option>
-                <option value="document_create">Document Create</option>
-                <option value="document_update">Document Update</option>
-                <option value="document_delete">Document Delete</option>
-                <option value="file_upload">File Upload</option>
-                <option value="file_download">File Download</option>
-                <option value="file_delete">File Delete</option>
+                {Object.entries(filterOptions.actions || {}).map(([category, actions]) => (
+                  <optgroup key={category} label={category}>
+                    {actions.map((act) => (
+                      <option key={act} value={act}>
+                        {act.replace(/_/g, ' ')}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
               </select>
             </div>
             <div>
@@ -128,12 +165,33 @@ export default function AdminActivity() {
                   setPagination({ ...pagination, page: 1 });
                 }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={loadingFilters}
               >
                 <option value="">All Types</option>
-                <option value="document">Document</option>
-                <option value="file">File</option>
-                <option value="user">User</option>
-                <option value="system">System</option>
+                {filterOptions.resourceTypes?.map((rt) => (
+                  <option key={rt} value={rt}>
+                    {rt.charAt(0).toUpperCase() + rt.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Error Level</label>
+              <select
+                value={errorLevel}
+                onChange={(e) => {
+                  setErrorLevel(e.target.value);
+                  setPagination({ ...pagination, page: 1 });
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={loadingFilters}
+              >
+                <option value="">All Levels</option>
+                {filterOptions.errorLevels?.map((level) => (
+                  <option key={level} value={level}>
+                    {level.charAt(0).toUpperCase() + level.slice(1)}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
@@ -166,6 +224,7 @@ export default function AdminActivity() {
                   setEmail('');
                   setAction('');
                   setResourceType('');
+                  setErrorLevel('');
                   setStartDate('');
                   setEndDate('');
                   setPagination({ ...pagination, page: 1 });

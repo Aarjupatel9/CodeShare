@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { UserContext } from '../../context/UserContext';
 import adminApi from '../../services/api/adminApi';
 import toast from 'react-hot-toast';
+import useDebounce from '../../hooks/useDebounce';
 
 export default function AdminDocuments() {
   const { currUser } = useContext(UserContext);
@@ -15,6 +16,10 @@ export default function AdminDocuments() {
   const [search, setSearch] = useState('');
   const [email, setEmail] = useState('');
 
+  // Debounce search inputs
+  const debouncedSearch = useDebounce(search, 500);
+  const debouncedEmail = useDebounce(email, 500);
+
   useEffect(() => {
     if (!currUser || currUser.role !== 'admin') {
       toast.error('Admin access required');
@@ -22,7 +27,7 @@ export default function AdminDocuments() {
       return;
     }
     loadDocuments();
-  }, [currUser, navigate, pagination.page, search, email]);
+  }, [currUser, navigate, pagination.page, debouncedSearch, debouncedEmail]);
 
   const loadDocuments = async () => {
     try {
@@ -30,8 +35,8 @@ export default function AdminDocuments() {
       const response = await adminApi.getAllDocuments({
         page: pagination.page,
         limit: pagination.limit,
-        search: search || undefined,
-        email: email || undefined,
+        search: debouncedSearch || undefined,
+        email: debouncedEmail || undefined,
       });
 
       if (response.success) {
@@ -68,7 +73,7 @@ export default function AdminDocuments() {
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <div>
+            <div className='text-left'>
               <h1 className="text-2xl font-bold text-gray-900">Document Management</h1>
               <p className="text-sm text-gray-600 mt-1">View and manage all documents</p>
             </div>
@@ -100,15 +105,15 @@ export default function AdminDocuments() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Owner Email</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Owner Email/Username</label>
               <input
-                type="email"
+                type="text"
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
                   setPagination({ ...pagination, page: 1 });
                 }}
-                placeholder="Search by owner email..."
+                placeholder="Search by owner email or username..."
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>

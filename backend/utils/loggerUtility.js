@@ -71,14 +71,14 @@ function getErrorLevel(error, context = {}) {
         'memory',
         'out of memory'
     ];
-    
+
     const errorString = (error?.message || '').toLowerCase();
     if (criticalPatterns.some(pattern => errorString.includes(pattern))) {
         return 'critical';
     }
     
     // Explicitly set level in context
-    if (context.level && ['error', 'warning', 'critical'].includes(context.level)) {
+    if (context.level && ['error', 'warning', 'critical', 'info'].includes(context.level)) {
         return context.level;
     }
     
@@ -143,7 +143,7 @@ async function logError(error, req = null, context = {}) {
         const errorStack = error?.stack || null;
         const errorType = getErrorType(error);
         const errorLevel = getErrorLevel(error, context);
-        
+        console.log("logging error with errorLevel", errorLevel);
         // Extract location information
         const { controller, function: functionName } = extractLocation(error, context);
         
@@ -192,7 +192,7 @@ async function logError(error, req = null, context = {}) {
         let action = 'system_error';
         if (errorLevel === 'warning') {
             action = 'system_warning';
-        } else if (errorLevel === 'critical') {
+        } else if (errorLevel === 'error') {
             action = 'system_error'; // Keep as system_error, but details will indicate critical
         }
         
@@ -205,7 +205,10 @@ async function logError(error, req = null, context = {}) {
             details: errorDetails,
             ipAddress: ipAddress ? ipAddress.substring(0, 45) : null,
             userAgent: userAgent || null,
+            errorLevel: errorLevel,
         };
+
+        console.log("activityLogData", activityLogData);
         
         // Log to database asynchronously using batched logger (don't block the request)
         setImmediate(() => {
@@ -223,7 +226,7 @@ async function logError(error, req = null, context = {}) {
                 batchedLogger.addLog(activityLogData);
                 
                 // Also log critical errors to console for immediate visibility
-                if (errorLevel === 'critical') {
+                if (errorLevel === 'critical' || errorLevel === 'error') {
                     console.error('🚨 CRITICAL ERROR:', errorMessage);
                     console.error('Controller:', controller, 'Function:', functionName);
                     console.error('Stack:', errorStack);

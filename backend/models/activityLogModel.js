@@ -64,6 +64,12 @@ const activityLogSchema = new mongoose.Schema({
             // Truncate if longer than 200 chars
             return v ? v.substring(0, 200) : v;
         }
+    },
+    errorLevel: {
+        type: String,
+        required: false,
+        enum: ['error', 'warning', 'critical', 'info'],
+        default: 'info',
     }
 }, { 
     timestamps: true,

@@ -101,6 +101,18 @@ class AdminApi {
   }
 
   /**
+   * Get filter options for activity logs (public, cached)
+   */
+  async getActivityFilterOptions() {
+    try {
+      const response = await apiClient.get('/api/v1/admin/activity/filters');
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Get activity logs
    */
   async getActivityLogs(params = {}) {
@@ -112,6 +124,7 @@ class AdminApi {
       if (params.userId) queryParams.append('userId', params.userId);
       if (params.action) queryParams.append('action', params.action);
       if (params.resourceType) queryParams.append('resourceType', params.resourceType);
+      if (params.errorLevel) queryParams.append('errorLevel', params.errorLevel);
       if (params.startDate) queryParams.append('startDate', params.startDate);
       if (params.endDate) queryParams.append('endDate', params.endDate);
 

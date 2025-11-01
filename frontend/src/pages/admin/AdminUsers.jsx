@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { UserContext } from '../../context/UserContext';
 import adminApi from '../../services/api/adminApi';
 import toast from 'react-hot-toast';
+import useDebounce from '../../hooks/useDebounce';
 
 export default function AdminUsers() {
   const { currUser } = useContext(UserContext);
@@ -15,6 +16,9 @@ export default function AdminUsers() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [activeFilter, setActiveFilter] = useState('');
+  
+  // Debounce search input
+  const debouncedSearch = useDebounce(search, 500);
   
   // Selected user for actions
   const [selectedUser, setSelectedUser] = useState(null);
@@ -30,7 +34,7 @@ export default function AdminUsers() {
       return;
     }
     loadUsers();
-  }, [currUser, navigate, pagination.page, search, roleFilter, activeFilter]);
+  }, [currUser, navigate, pagination.page, debouncedSearch, roleFilter, activeFilter]);
 
   const loadUsers = async () => {
     try {
@@ -38,7 +42,7 @@ export default function AdminUsers() {
       const response = await adminApi.getUsers({
         page: pagination.page,
         limit: pagination.limit,
-        search,
+        search: debouncedSearch,
         role: roleFilter,
         isActive: activeFilter,
       });
@@ -116,7 +120,7 @@ export default function AdminUsers() {
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <div>
+            <div className='text-left'>
               <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
               <p className="text-sm text-gray-600 mt-1">Manage all user accounts</p>
             </div>
