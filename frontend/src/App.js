@@ -17,6 +17,12 @@ import AboutPage from "./pages/AboutPage";
 import AuctionHelpPage from "./pages/AuctionHelpPage";
 import UserProfilePage from "./pages/UserProfilePage";
 
+// Admin
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminActivity from "./pages/admin/AdminActivity";
+import AdminDocuments from "./pages/admin/AdminDocuments";
+
 // Features
 import GamePage from "./gamePlugin/GamePage";
 
@@ -99,6 +105,12 @@ function App() {
           
           {/* User Profile */}
           <Route path="/p/:userId/profile" element={<PrivateRoute component={UserProfilePage} />} />
+          
+          {/* Admin Panel */}
+          <Route path="/p/:userId/admin" element={<PrivateRoute component={AdminDashboard} />} />
+          <Route path="/p/:userId/admin/users" element={<PrivateRoute component={AdminUsers} />} />
+          <Route path="/p/:userId/admin/activity" element={<PrivateRoute component={AdminActivity} />} />
+          <Route path="/p/:userId/admin/documents" element={<PrivateRoute component={AdminDocuments} />} />
           
           {/* Documents */}
           <Route path="/p/:userId/" element={<PrivateRoute component={MainPage} />} />
