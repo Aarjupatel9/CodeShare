@@ -17,6 +17,7 @@ const {
 const jwt = require("jsonwebtoken");
 
 const mongoose = require("mongoose");
+const logger = require("../utils/loggerUtility");
 
 const playerDataMapping = {
   "PLAYER NO.": "playerNumber",
@@ -57,7 +58,12 @@ exports.checkPublicAvailability = () => {
 
       next();
     } catch (error) {
-      console.error(error);
+      logger.logError(error, req, {
+        controller: 'auctionController',
+        function: 'authenticateAuction',
+        resourceType: 'auction',
+        context: { userId: req?.user?._id }
+      });
       if (error.name == "TokenExpiredError") {
         return res.clearCookie("token").clearCookie("auction_token").status(401).json({ success: false, message: error.message });
       } else {
@@ -127,7 +133,12 @@ exports.auctionLogin = async function (req, res) {
       });
 
   } catch (e) {
-    console.error("error", e);
+    logger.logError(e, req, {
+      controller: 'auctionController',
+      function: 'auctionLogin',
+      resourceType: 'auction',
+      context: { userId: req?.user?._id, auctionName: req.body?.name }
+    });
     res
       .status(500)
       .json({
@@ -148,7 +159,12 @@ exports.auctionLogout = async function (req, res) {
       });
 
   } catch (e) {
-    console.error("error", e);
+    logger.logError(e, req, {
+      controller: 'auctionController',
+      function: 'auctionLogout',
+      resourceType: 'auction',
+      context: { userId: req?.user?._id }
+    });
     res
       .status(500)
       .json({
@@ -193,7 +209,12 @@ exports.auctionDataImports = async function (req, res) {
         }
       }
     } catch (e) {
-      console.error(e);
+      logger.logError(e, req, {
+        controller: 'auctionController',
+        function: 'auctionDataImports',
+        resourceType: 'auction',
+        context: { userId: req?.user?._id }
+      });
       return res.status(200).json({
         success: false,
         message: "Player import error: " + e.toString(),

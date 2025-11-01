@@ -4,6 +4,7 @@ const AuctionTeamModel = require("../../models/auctionTeamModel");
 const AuctionPlayerModel = require("../../models/auctionPlayerModel");
 const AuctionSetModel = require("../../models/auctionSetModel");
 const ViewerAnalytics = require("../../models/viewerAnalyticsModel");
+const logger = require("../../utils/loggerUtility");
 
 /**
  * Get auction statistics for authenticated user
@@ -39,7 +40,12 @@ exports.getAuctionStats = async (req, res) => {
       data: stats,
     });
   } catch (e) {
-    console.error("Error in getAuctionStats:", e);
+    logger.logError(e, req, {
+      controller: 'auctionStatsController',
+      function: 'getAuctionStats',
+      resourceType: 'auction',
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -177,7 +183,13 @@ exports.getAuctionSummary = async (req, res) => {
       data: summary,
     });
   } catch (e) {
-    console.error("Error in getAuctionSummary:", e);
+    logger.logError(e, req, {
+      controller: 'auctionStatsController',
+      function: 'getAuctionSummary',
+      resourceType: 'auction',
+      resourceId: auctionId,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -210,7 +222,13 @@ exports.getRecentSoldPlayers = async (req, res) => {
       data: recentSold,
     });
   } catch (e) {
-    console.error("Error in getRecentSoldPlayers:", e);
+    logger.logError(e, req, {
+      controller: 'auctionStatsController',
+      function: 'getRecentSoldPlayers',
+      resourceType: 'auction',
+      resourceId: auctionId,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -267,7 +285,13 @@ exports.getAuctionLeaderboard = async (req, res) => {
       data: leaderboard,
     });
   } catch (e) {
-    console.error("Error in getAuctionLeaderboard:", e);
+    logger.logError(e, req, {
+      controller: 'auctionStatsController',
+      function: 'getAuctionLeaderboard',
+      resourceType: 'auction',
+      resourceId: auctionId,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -330,7 +354,13 @@ exports.saveViewerSnapshot = async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Error saving viewer snapshot:', error);
+    logger.logError(error, req, {
+      controller: 'auctionStatsController',
+      function: 'saveViewerSnapshot',
+      resourceType: 'auction',
+      resourceId: auctionId,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + error.message
@@ -394,7 +424,13 @@ exports.getViewerAnalytics = async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Error in getViewerAnalytics:', error);
+    logger.logError(error, req, {
+      controller: 'auctionStatsController',
+      function: 'getViewerAnalytics',
+      resourceType: 'auction',
+      resourceId: auctionId,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + error.message

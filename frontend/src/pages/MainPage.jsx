@@ -1,6 +1,8 @@
-import React, { useContext, useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useConfig } from "../hooks/useConfig";
 import userService from "../services/userService";
+import documentApi from "../services/api/documentApi";
+import fileApi from "../services/api/fileApi";
 import { json, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import flobiteJS from "flowbite/dist/flowbite.min.js";
@@ -28,7 +30,6 @@ import {
   generateRandomString,
   getPresizeFileName,
   getTimeInFormate,
-  isValidSlug,
   isReservedRouteName,
   isValidAndNotReservedSlug,
 } from "../common/functions";
@@ -43,6 +44,7 @@ import MobileMenu from "./components/editor/MobileMenu";
 import FloatingHint from "./components/editor/FloatingHint";
 import FeatureModal from "./components/editor/FeatureModal";
 import RedirectUrlInput from "./components/editor/RedirectUrlInput";
+import InputModal from "../components/modals/InputModal";
 
 export default function MainPage(props) {
   const { currUser, setCurrUser } = useContext(UserContext);
@@ -58,6 +60,7 @@ export default function MainPage(props) {
   const [fileList, setFileList] = useState([]);
   const [privateFileList, setPrivateFileList] = useState([]);
   const [tmpSlug, setTmpSlug] = useState("");
+  const loadingFilesRef = useRef(false); // Prevent duplicate API calls
   const [dropdownVisibility, setDropdownVisibility] = useState({
     file: false,
     history: false,
@@ -83,6 +86,12 @@ export default function MainPage(props) {
   const [showNavigationWarning, setShowNavigationWarning] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState(null);
   const [lastSavedContent, setLastSavedContent] = useState("");
+  
+  // Modal states
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [renamePageId, setRenamePageId] = useState(null);
+  const [saveModalType, setSaveModalType] = useState(null); // 'public' or 'new'
 
   // Note: Auth checking and userId validation now handled by PrivateRoute component
   
@@ -100,26 +109,50 @@ export default function MainPage(props) {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
+  // Load user files independently from documents (memoized to prevent duplicate calls)
+  const loadUserFiles = async () => {
+    try {
+      const response = await fileApi.getFiles();
+      if (response.success && response.data) {
+        // Files are independent, no pageName needed, but we keep it for backward compatibility with UI
+        const filesWithPageName = response.data.map(file => ({
+          ...file,
+          pageName: 'user_files', // Placeholder since files are user-level
+        }));
+        setPrivateFileList(filesWithPageName);
+      }
+    } catch (error) {
+      console.error('Error loading files:', error);
+      // Fallback: try to load from localStorage if API fails
+      if (currUser && currUser.pages) {
+        let results = [];
+        Object.values(currUser.pages).forEach((page) => {
+          const { _id, unique_name, files = [] } = page.pageId;
+          files.forEach((file) => {
+            results.push({
+              ...file,
+              pageName: unique_name,
+            });
+          });
+        });
+        setPrivateFileList(results);
+      }
+    } finally {
+      loadingFilesRef.current = false;
+    }
+  };
+
   useEffect(() => {
-    if (props.user) {
+    if (currUser) {
       setPrivateTabs([
         { tabId: 1, tabName: "Pages", selected: true },
         { tabId: 2, tabName: "Files", selected: false },
       ]);
-
-      let results = [];
-      Object.values(props.user.pages).forEach((page) => {
-        const { _id, unique_name, files = [] } = page.pageId;
-        files.forEach((file) => {
-          results.push({
-            ...file,
-            pageName: unique_name,
-          });
-        });
-      });
-      setPrivateFileList(results);
+      console.log('Loading user files for user:', currUser);
+      // Load files independently (files are user-level, not document-level)
+      loadUserFiles();
     }
-  }, []);
+  }, [props.user]);
 
   // Show floating hint after 3 seconds for non-logged mobile users
   useEffect(() => {
@@ -134,9 +167,9 @@ export default function MainPage(props) {
   const checkSlug = () => {
     // Don't auto-generate slug for non-logged users on root path
     if (!slug || slug === '' || slug === '/') {
-      if (props.user) {
+      if (currUser) {
         // On initial load, navigate directly without warning
-        navigate("/p/" + props.user._id + "/new");
+        navigate("/p/" + currUser._id + "/new");
       } else {
         // Just set empty slug - let user work without navigation
         setTmpSlug('');
@@ -145,11 +178,11 @@ export default function MainPage(props) {
       }
     }
     
-    if (!isValidSlug(slug)) {
+    if (!isValidAndNotReservedSlug(slug)) {
       const newSlug = generateRandomString(7);
-      if (props.user) {
+      if (currUser) {
         // On invalid slug, navigate directly without warning
-        navigate("/p/" + props.user._id + "/new");
+        navigate("/p/" + currUser._id + "/new");
       } else {
         navigate("/" + newSlug);
       }
@@ -165,7 +198,7 @@ export default function MainPage(props) {
       if (slug == "new") {
         return;
       }
-      userService.getData(slug, null, "latest", props.user).then((res) => {
+      userService.getData(slug, null, "latest", currUser).then((res) => {
         if (res.success) {
           if (res.result.data) {
             if (editorRef && editorRef.current) {
@@ -191,9 +224,9 @@ export default function MainPage(props) {
             setFileList([]);
           }
         } else {
-          if (props.user) {
+          if (currUser) {
             // Page doesn't exist, navigate to new document
-            navigate("/p/" + props.user._id + "/new");
+            navigate("/p/" + currUser._id + "/new");
           }
           clearEditorValue();
         }
@@ -302,6 +335,99 @@ export default function MainPage(props) {
     });
   }
 
+  const handlePageRename = (pageId) => {
+    // Find the current page to get the old name
+    const currentPage = currUser.pages.find(p => p.pageId._id === pageId);
+    if (!currentPage) {
+      toast.error("Page not found");
+      return;
+    }
+    
+    setRenamePageId(pageId);
+    setShowRenameModal(true);
+  }
+
+  const handleRenameSubmit = (newName) => {
+    if (!renamePageId || !isValidAndNotReservedSlug(newName)) return;
+    
+    const currentPage = currUser.pages.find(p => p.pageId._id === renamePageId);
+    
+    if (!currentPage) {
+      toast.error("Page not found");
+      return;
+    }
+    
+    documentApi.renameDocument(renamePageId, newName).then((res) => {
+      if (res.success) {
+        toast.success("Document renamed successfully.");
+        // Update local state
+        setCurrUser((old) => ({
+          ...old,
+          pages: old.pages.map(p =>
+            p.pageId._id === renamePageId ? { ...p, pageId: { ...p.pageId, unique_name: newName } } : p
+          )
+        }));
+        // If currently viewing this page, navigate to new name
+        if (currentPage && userSlug === currentPage.pageId.unique_name) {
+          navigate(`/p/${currUser._id}/${newName}`);
+        }
+      }
+    }).catch((err) => {
+      toast.error("Error renaming document: " + err);
+    });
+  }
+
+  const validateRenameInput = (name) => {
+    // Validate original name allows spaces and dots
+    if (!isValidAndNotReservedSlug(name)) {
+      return "Please use only letters, numbers, spaces, dots (decimals), underscores, and hyphens";
+    }
+    
+    // Check if name already exists
+    const currentPage = renamePageId ? currUser.pages.find(p => p.pageId._id === renamePageId) : null;
+    if (currentPage && isDuplicatePageName(name) && currentPage.pageId.unique_name !== name) {
+      return "A document with this name already exists";
+    }
+    
+    return true;
+  }
+
+  const handlePageReorder = (activeId, overId, newOrder, callback) => {
+    documentApi.reorderDocuments(newOrder).then((res) => {
+      if (res.success) {
+        // Update local state with new order
+        setCurrUser((old) => ({
+          ...old,
+          pages: newOrder.map((page, index) => ({ ...page, order: index }))
+        }));
+        toast.success("Document order updated.");
+        if (callback) callback(true);
+      } else {
+        if (callback) callback(false);
+      }
+    }).catch((err) => {
+      // Error toast is shown by EditorSidebar callback
+      if (callback) callback(false);
+    });
+  }
+
+  const handlePagePinToggle = (page) => {
+    documentApi.togglePinDocument(page.pageId._id, !page.isPinned).then((res) => {
+      if (res.success) {
+        // Update local state
+        setCurrUser((old) => ({
+          ...old,
+          pages: old.pages.map(p =>
+            p.pageId._id === page.pageId._id ? { ...p, isPinned: !p.isPinned } : p
+          )
+        }));
+        toast.success(page.isPinned ? "Document unpinned." : "Document pinned.");
+      }
+    }).catch((err) => {
+      toast.error("Error updating pin status: " + err);
+    });
+  }
+
   const getAllversionData = (isCliced) => {
     if (allVersionData.length > 0) {
       return;
@@ -311,7 +437,7 @@ export default function MainPage(props) {
       return;
     }
     userService
-      .getData(userSlug, null, "allVersion", props.user)
+      .getData(userSlug, null, "allVersion", currUser)
       .then((res) => {
         let processedData = res.result?.data?.map((r) => {
           r.timeformat = getTimeInFormate(r.time);
@@ -333,7 +459,7 @@ export default function MainPage(props) {
 
   const loadSpecificVersion = (time, index) => {
     userService
-      .getData(userSlug, time, "specific", props.user)
+      .getData(userSlug, time, "specific", currUser)
       .then((res) => {
         if (res.success) {
           if (editorRef && editorRef.current) {
@@ -368,22 +494,6 @@ export default function MainPage(props) {
     setHasUnsavedChanges(false);
   }
 
-  const validateNewPageTitle = (newTitle) => {
-    // Check if slug is reserved
-    if (isReservedRouteName(newTitle)) {
-      toast.error(`"${newTitle}" is a reserved system name and cannot be used. Please choose a different name.`, { duration: 3000 });
-      return false;
-    }
-    
-    // Check if slug is valid format
-    if (!isValidSlug(newTitle)) {
-      toast.error("Please use only letters, numbers, spaces, underscores, and hyphens", { duration: 3000 });
-      return false;
-    }
-    
-    return true;
-  };
-
   const isDuplicatePageName = (newName) => {
     var existingPage = currUser.pages.find((p) => { return p.pageId.unique_name == newName });
     return existingPage ? true : false;
@@ -391,134 +501,53 @@ export default function MainPage(props) {
 
   const saveData = () => {
     // For non-logged users without a slug - ask for document name
-    if (!props.user && (!userSlug || userSlug === '' || userSlug === 'new')) {
-      let newSlug = "";
-      toast.custom((t) => (
-        <div className="z-[1000] bg-white border border-gray-200 p-6 rounded-xl w-[90%] max-w-md shadow-2xl">
-          <div className={`text-gray-800 text-xl font-bold mb-4 ${t.visible ? "animate-enter" : "animate-leave"}`}>
-            Save Your Document
-          </div>
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            newSlug = newSlug.trim();
-            if (newSlug) {
-              newSlug = newSlug.replaceAll(" ", "_");
-              
-              // Check if slug is reserved
-              if (isReservedRouteName(newSlug)) {
-                toast.error(`"${newSlug}" is a reserved system name and cannot be used. Please choose a different name.`, { duration: 4000 });
-                return;
-              }
-              
-              // Check if slug is valid format
-              if (isValidSlug(newSlug)) {
-                toast.dismiss(t.id);
-                // Pass callback to navigate after save
-                saveDataMain(newSlug, () => {
-                  navigate("/" + newSlug);
-                  setUserSlug(newSlug);
-                });
-              } else {
-                toast.error("Please use only letters, numbers, underscores, and hyphens", { duration: 3000 });
-              }
-            }
-          }}
-            className="flex flex-col gap-4">
-            <div className="flex flex-col items-start w-full space-y-2">
-              <label className="text-sm font-medium text-gray-700 text-left">Document Name</label>
-              <input
-                id="newDocName"
-                type="text"
-                placeholder="e.g., my_awesome_document"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                onChange={(e) => (newSlug = e.target.value)}
-                autoFocus
-              />
-              <p className="text-xs text-gray-500">This will be your document's URL</p>
-            </div>
-            <div className="flex flex-row gap-3 justify-end w-full">
-              <button
-                type="button"
-                onClick={() => {
-                  toast.dismiss(t.id);
-                }}
-                className="px-4 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg transition"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
-              >
-                💾 Save
-              </button>
-            </div>
-          </form>
-        </div>
-      ), { duration: 400000 });
+    if (!currUser && (!userSlug || userSlug === '' || userSlug === 'new')) {
+      setSaveModalType('public');
+      setShowSaveModal(true);
       return;
     }
     
     // For logged users with "new" page - ask for page name
-    if (props.user) {
+    if (currUser) {
       if (userSlug.toLocaleLowerCase() == "new") {
-        let newTitle = "";
-        toast.custom((t) => (
-          <div className="z-[1000] bg-white border border-gray-200 p-6 rounded-xl w-[90%] max-w-md shadow-2xl">
-            <div className={`text-gray-800 text-xl font-bold mb-4 ${t.visible ? "animate-enter" : "animate-leave"}`}>
-              Enter new page name
-            </div>
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              newTitle = newTitle.trim()
-              if (newTitle) {
-                newTitle = newTitle.replaceAll(" ", "_");
-                if (validateNewPageTitle(newTitle)) {
-                  if (!isDuplicatePageName(newTitle)) {
-                    saveDataMain(newTitle);
-                    toast.dismiss(t.id);
-                  } else {
-                    toast.error("Page already exist, create page with new name");
-                  }
-                }
-              }
-            }}
-              className="flex flex-col gap-4">
-              <div className="flex flex-col items-start w-full space-y-2">
-                <label className="text-sm font-medium text-gray-700 text-left">Page Name</label>
-                <input
-                  id="newTitle"
-                  type="text"
-                  placeholder="Page name"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  onChange={(e) => (newTitle = e.target.value)}
-                  autoFocus
-                />
-              </div>
-              <div className="flex flex-row gap-3 justify-end w-full">
-                <button
-                  type="button"
-                  onClick={() => {
-                    toast.dismiss(t.id);
-                  }}
-                  className="px-4 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
-                >
-                  💾 Save
-                </button>
-              </div>
-            </form>
-          </div>
-        ), { duration: 400000 });
+        setSaveModalType('new');
+        setShowSaveModal(true);
         return;
       }
     }
     saveDataMain(userSlug);
+  };
+
+  const handleSaveSubmit = (name) => {
+    if (!isValidAndNotReservedSlug(name)) {
+      toast.error("Please use only letters, numbers, spaces, dots (decimals), underscores, and hyphens", { duration: 3000 });
+      return;
+    }
+
+    if (saveModalType === 'public') { 
+      saveDataMain(name, () => {
+        navigate("/" + name);
+        setUserSlug(name);
+      });
+    } else if (saveModalType === 'new') {
+      saveDataMain(name);
+    }
+    
+    setSaveModalType(null);
+  };
+
+  const validateSaveInput = (name) => {
+    // Validate original name allows spaces and dots
+    if (!isValidAndNotReservedSlug(name)) {
+      return "Please use only letters, numbers, spaces, dots (decimals), underscores, and hyphens";
+    }
+    
+    // For logged users with "new" page, check for duplicates
+    if (saveModalType === 'new' && isDuplicatePageName(name)) {
+      return "A page with this name already exists";
+    }
+    
+    return true;
   };
 
   const saveDataMain = (pageTitle, onSaveComplete) => {
@@ -537,7 +566,7 @@ export default function MainPage(props) {
     var body = {
       slug: slugToSave,
       data: editorValue,
-      owner: props.user,
+      owner: currUser,
     };
     
     // Show loading toast
@@ -596,50 +625,76 @@ export default function MainPage(props) {
     if (!currUser) {
       return;
     }
-    let fileSlug = userSlug;
-    if (fileSlug == "new") {
-      if (props.user.pages.length == 0) {
-        toast.error("Please create a page first to save a file.");
-        return;
-      } else {
-        fileSlug = props.user.pages[0].pageId.unique_name;
-      }
-    }
 
     const file = event.target.files[0];
-    if (file.size > 20e6 && !userSlug.includes("aarju")) {
-      toast.error("Please upload a file smaller than 10 MB");
+    if (!file) {
+      return;
+    }
+
+    // Check user's file upload permission and size limit
+    if (!currUser.fileUploadEnabled) {
+      toast.error("File upload is in beta. Contact the developer for more details.");
+      if (inputFile.current) {
+        inputFile.current.value = '';
+      }
+      return false;
+    }
+
+    // Get user's file size limit (default 1MB if not set)
+    const userFileSizeLimit = currUser.fileSizeLimit || (1 * 1024 * 1024); // Default 1MB
+    const maxFileSizeMB = (userFileSizeLimit / (1024 * 1024)).toFixed(1);
+    
+    // Allow special users to bypass limit
+    const allowedEmail = process.env.REACT_APP_ALLOW_FILE_LIMIT || '';
+    const bypassLimit = currUser.email?.includes(allowedEmail) || currUser.email?.includes("aarju");
+    
+    if (file.size > userFileSizeLimit && !bypassLimit) {
+      toast.error(`File size exceeds your limit of ${maxFileSizeMB}MB`);
+      if (inputFile.current) {
+        inputFile.current.value = '';
+      }
       return false;
     }
 
     const formData = new FormData();
     formData.append("file", file);
     formData.append("fileName", file.name);
-    formData.append("fileSize", file.size * 8);
-    formData.append("slug", fileSlug);
-    const toastId = toast.loading("Uploading file server...");
-    userService.saveFile(formData).then((res) => {
-      toast.success(res.message, {
-        id: toastId,
-      });
-      res.result.pageName = fileSlug;
+    formData.append("fileSize", file.size);
+    
+    const toastId = toast.loading("Uploading file to Google Drive...");
+    
+    try {
+      // Files are independent from documents - no documentId needed
+      const response = await fileApi.uploadFile(formData);
+      
+      if (response.success && response.data) {
+        toast.success(response.message || "File uploaded successfully", {
+          id: toastId,
+        });
 
-      setPrivateFileList((file) => [...file, res.result]);
-      var localUser = JSON.parse(localStorage.getItem("currentUser"));
-      localUser.pages.map((page) => {
-        if (page.pageId.unique_name == fileSlug) {
-          page.pageId.files.push(res.result);
+        // Format the file object (files are user-level, not document-level)
+        const fileObject = {
+          ...response.data,
+          pageName: 'user_files', // Placeholder for backward compatibility with UI
+        };
+
+        // Update private file list
+        setPrivateFileList((files) => [...files, fileObject]);
+
+        // Reset file input
+        if (inputFile.current) {
+          inputFile.current.value = '';
         }
-        return page;
-      });
-      localStorage.setItem("currentUser", JSON.stringify(localUser));
-
-    }).catch((error) => {
-      console.error(error);
-      toast.error(error, {
+      } else {
+        throw new Error(response.message || "Failed to upload file");
+      }
+    } catch (error) {
+      console.error("File upload error:", error);
+      const errorMessage = typeof error === 'string' ? error : error?.message || "Failed to upload file";
+      toast.error(errorMessage, {
         id: toastId,
       });
-    });
+    }
   };
 
   const redirect = () => {
@@ -652,7 +707,7 @@ export default function MainPage(props) {
     }
     
     // Check if slug is valid format
-    if (!isValidSlug(slug)) {
+    if (!isValidAndNotReservedSlug(slug)) {
       toast.error("Please use only letters, numbers, spaces, underscores, and hyphens", { duration: 3000 });
       return;
     }
@@ -660,49 +715,39 @@ export default function MainPage(props) {
     navigate("/" + slug.replaceAll(" ", "_"));
   };
 
-  const remvoeCurrentFile = (file) => {
-    userService
-      .removeFile({ slug: file.pageName, file, currUser })
-      .then((res) => {
-        toast.success(res.message);
-        if (currUser) {
-          var currentUser = JSON.parse(localStorage.getItem("currentUser"));
-          const updatedPages = currentUser.pages.map((page) => {
-            const updatedFiles = page.pageId.files.filter(
-              (fo) => fo._id !== file._id
-            );
-            return {
-              ...page,
-              pageId: {
-                ...page.pageId,
-                files: updatedFiles,
-              },
-            };
+  const remvoeCurrentFile = async (file) => {
+    try {
+      // Get file ID - files are independent from documents
+      const fileId = file._id;
+      if (!fileId) {
+        toast.error("File ID not found. Please refresh the page and try again.");
+        return;
+      }
+
+      // Delete file (no document required - files are user-level)
+      const response = await fileApi.deleteFile(fileId);
+      
+      if (response.success) {
+        toast.success(response.message || "File deleted successfully");
+        
+        // Update state - remove from private file list
+        setPrivateFileList((f) => {
+          return f.filter((l) => {
+            // Match by _id
+            return l._id !== fileId;
           });
-          const updatedUser = {
-            ...currentUser,
-            pages: updatedPages,
-          };
-          localStorage.setItem("currentUser", JSON.stringify(updatedUser));
-          setPrivateFileList((f) => {
-            const t = f.filter((l) => {
-              return l.key != file.key;
-            });
-            return t;
-          });
-        } else {
-          setFileList((list) => {
-            const t = list.filter((l) => {
-              return l.key != file.key;
-            });
-            return t;
-          });
-        }
-      })
-      .catch((e) => {
-        console.error(e);
-        toast.error("Error while removing file : " + e);
-      });
+        });
+
+        // Reload files to ensure consistency
+        await loadUserFiles();
+      } else {
+        throw new Error(response.message || "Failed to delete file");
+      }
+    } catch (error) {
+      console.error("File deletion error:", error);
+      const errorMessage = typeof error === 'string' ? error : error?.message || "Error while removing file";
+      toast.error(errorMessage);
+    }
   };
 
   useKeys("ctrl+s", (event) => {
@@ -876,6 +921,9 @@ export default function MainPage(props) {
             onSelectTab={onSelectTab}
             onPageNavigate={handlePageNavigate}
             onPageRemove={confirmPageRemove}
+            onPageRename={handlePageRename}
+            onPageReorder={handlePageReorder}
+            onPagePinToggle={handlePagePinToggle}
             onSelectFile={onSelectFile}
             onFileRemove={confirmFileRemove}
             privateFileList={privateFileList}
@@ -893,10 +941,14 @@ export default function MainPage(props) {
         {currUser && (
           <EditorSidebar
             currUser={currUser}
+            setCurrUser={setCurrUser}
             privateTabs={privateTabs}
             onSelectTab={onSelectTab}
             onPageNavigate={handlePageNavigate}
             onPageRemove={confirmPageRemove}
+            onPageRename={handlePageRename}
+            onPageReorder={handlePageReorder}
+            onPagePinToggle={handlePagePinToggle}
             onSelectFile={onSelectFile}
             onFileRemove={confirmFileRemove}
             privateFileList={privateFileList}
@@ -1067,6 +1119,39 @@ export default function MainPage(props) {
           </div>
         </>
       )}
+
+      {/* Save Modal */}
+      {saveModalType && (
+        <InputModal
+          isOpen={showSaveModal}
+          onClose={() => {
+            setShowSaveModal(false);
+            setSaveModalType(null);
+          }}
+          title={saveModalType === 'public' ? 'Save Your Document' : 'Enter new page name'}
+          label={saveModalType === 'public' ? 'Document Name' : 'Page Name'}
+          placeholder={saveModalType === 'public' ? 'e.g., my_awesome_document' : 'Page name'}
+          onSubmit={handleSaveSubmit}
+          submitButtonText="💾 Save"
+          validateInput={validateSaveInput}
+        />
+      )}
+
+      {/* Rename Modal */}
+      <InputModal
+        isOpen={showRenameModal}
+        onClose={() => {
+          setShowRenameModal(false);
+          setRenamePageId(null);
+        }}
+        title="Rename Document"
+        label="Document Name"
+        placeholder="Enter new document name"
+        defaultValue={renamePageId ? currUser?.pages?.find(p => p.pageId._id === renamePageId)?.pageId?.unique_name || '' : ''}
+        onSubmit={handleRenameSubmit}
+        submitButtonText="Rename"
+        validateInput={validateRenameInput}
+      />
     </div>
   );
 }

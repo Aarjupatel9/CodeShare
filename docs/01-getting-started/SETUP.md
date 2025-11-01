@@ -72,22 +72,37 @@ JWT_EXP_VERIFICATION_EMAIL=1h
 ALLOWED_ORIGIN=http://localhost:3000,http://localhost
 HOST_ORIGIN_IP=127.0.0.1
 
-# File Upload
-MAX_FILE_SIZE=20000000
-ALLOW_FILE_LIMIT=test
+# File Upload Configuration
+MAX_FILE_SIZE=5242880
+ALLOW_FILE_LIMIT=your-email-domain-to-bypass-limits
 
-# AWS S3 (for document files and images)
-AWS_BUCKET_NAME=your-document-bucket-name
-AWS_BUCKET_REGION=us-east-1
-AWS_ACCESS_KEY=your-aws-access-key
-AWS_SECRET_KEY=your-aws-secret-key
+# Google Drive API Configuration (OAuth 2.0)
+# Using OAuth 2.0 for file uploads (user's Google Drive storage)
+# See: backend/GOOGLE_DRIVE_OAUTH_SETUP.md for detailed instructions
+
+# OAuth 2.0 Credentials (from Google Cloud Console)
+GOOGLE_DRIVE_OAUTH_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GOOGLE_DRIVE_OAUTH_CLIENT_SECRET=your-client-secret
+GOOGLE_DRIVE_OAUTH_REDIRECT_URI=http://localhost:8080/api/v1/auth/google-drive/callback
+
+# Encryption key for storing OAuth tokens (32+ characters, keep secret!)
+# Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+GOOGLE_DRIVE_ENCRYPTION_KEY=your-32-character-encryption-key-here-generate-secure-one
+
+# Frontend URL for OAuth callback redirect
+FRONTEND_URL=http://localhost:3000
+
+# Optional: Folder ID for organized storage (user's folder in their Drive)
+# If not set, files upload to user's Drive root
+GOOGLE_DRIVE_FOLDER_ID=
+
+# Activity Log Retention (Optional)
+ACTIVITY_LOG_RETENTION_DAYS=90
 
 # Email Configuration (for password reset)
 APP_EMAIL=your-email@gmail.com
 APP_PASS=your-gmail-app-password
 # Note: See EMAIL_SETUP.md for instructions on generating Gmail App Password
-# Note: Frontend URL is automatically sent from browser, but you can set this as fallback
-FRONTEND_URL=http://localhost:3000
 ```
 
 #### **Socket Server (.env)**

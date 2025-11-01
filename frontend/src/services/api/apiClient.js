@@ -136,6 +136,17 @@ class ApiClient {
   }
 
   /**
+   * PATCH request
+   */
+  async patch(endpoint, data = null, options = {}) {
+    return this.request(endpoint, {
+      ...options,
+      method: 'PATCH',
+      body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  /**
    * DELETE request
    */
   async delete(endpoint, options = {}) {

@@ -3,6 +3,7 @@ const AuctionSetModel = require("../../models/auctionSetModel");
 const AuctionTeamModel = require("../../models/auctionTeamModel");
 const AuctionModel = require("../../models/auctionModel");
 const XLSX = require('xlsx');
+const logger = require("../../utils/loggerUtility");
 
 const playerDataMapping = {
   "PLAYER NO.": "playerNumber",
@@ -55,7 +56,13 @@ exports.getPlayers = async (req, res) => {
       data: players,
     });
   } catch (e) {
-    console.error("Error in getPlayers:", e);
+    logger.logError(e, req, {
+      controller: 'auctionPlayerController',
+      function: 'getPlayers',
+      resourceType: 'auction',
+      resourceId: auctionId,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -115,7 +122,13 @@ exports.createPlayers = async (req, res) => {
       errors: errors.length > 0 ? errors : undefined,
     });
   } catch (e) {
-    console.error("Error in createPlayers:", e);
+    logger.logError(e, req, {
+      controller: 'auctionPlayerController',
+      function: 'createPlayers',
+      resourceType: 'auction',
+      resourceId: auctionId,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -186,7 +199,13 @@ exports.updatePlayers = async (req, res) => {
       errors: errors.length > 0 ? errors : undefined,
     });
   } catch (e) {
-    console.error("Error in updatePlayers:", e);
+    logger.logError(e, req, {
+      controller: 'auctionPlayerController',
+      function: 'updatePlayers',
+      resourceType: 'auction',
+      resourceId: auctionId,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -220,7 +239,13 @@ exports.deletePlayers = async (req, res) => {
       message: `${result.deletedCount} player(s) deleted successfully`,
     });
   } catch (e) {
-    console.error("Error in deletePlayers:", e);
+    logger.logError(e, req, {
+      controller: 'auctionPlayerController',
+      function: 'deletePlayers',
+      resourceType: 'auction',
+      resourceId: auctionId,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -424,7 +449,13 @@ exports.importPlayers = async (req, res) => {
       },
     });
   } catch (e) {
-    console.error("Error in importPlayers:", e);
+    logger.logError(e, req, {
+      controller: 'auctionPlayerController',
+      function: 'importPlayers',
+      resourceType: 'auction',
+      resourceId: auctionId,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -613,7 +644,12 @@ exports.generatePlayerTemplate = async (req, res) => {
     res.send(buffer);
     
   } catch (error) {
-    console.error('Template generation error:', error);
+    logger.logError(error, req, {
+      controller: 'auctionPlayerController',
+      function: 'generateImportTemplate',
+      resourceType: 'auction',
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({ success: false, message: "Failed to generate template" });
   }
 };

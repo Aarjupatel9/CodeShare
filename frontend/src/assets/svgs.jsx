@@ -32,41 +32,51 @@ export const backArrowIcon = (<svg className="w-6 h-6 text-gray-800 dark:text-wh
 </svg>
 )
 
+// Modern zip/archive icon with orange gradient
 export const zipIcon = (
   <svg
-    className="w-6 h-6 text-gray-800 dark:text-white"
-    aria-hidden="true"
+    className="w-5 h-5"
     xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    fill="none"
     viewBox="0 0 24 24"
+    fill="none"
   >
+    <defs>
+      <linearGradient id="zipGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style={{ stopColor: '#F59E0B', stopOpacity: 1 }} />
+        <stop offset="100%" style={{ stopColor: '#EF4444', stopOpacity: 1 }} />
+      </linearGradient>
+    </defs>
     <path
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeWidth="2"
       d="M10 3v4a1 1 0 0 1-1 1H5m14-4v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1Zm-4 1h.01v.01H15V5Zm-2 2h.01v.01H13V7Zm2 2h.01v.01H15V9Zm-2 2h.01v.01H13V11Zm2 2h.01v.01H15V13Zm-2 2h.01v.01H13V15Zm2 2h.01v.01H15V17Zm-2 2h.01v.01H13V19Z"
+      stroke="url(#zipGradient)"
+      strokeWidth="2"
+      strokeLinecap="round"
+      fill="none"
     />
   </svg>
 );
 
+// Modern image icon with green gradient
 export const imageIcon = (
   <svg
-    className="w-6 h-6 text-gray-800 dark:text-white"
-    aria-hidden="true"
+    className="w-5 h-5"
     xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    fill="none"
     viewBox="0 0 24 24"
+    fill="none"
   >
+    <defs>
+      <linearGradient id="imageGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style={{ stopColor: '#10B981', stopOpacity: 1 }} />
+        <stop offset="100%" style={{ stopColor: '#059669', stopOpacity: 1 }} />
+      </linearGradient>
+    </defs>
     <path
-      stroke="currentColor"
+      d="m3 16 5-7 6 6.5m6.5 2.5L16 13l-4.286 6M14 10h.01M4 19h16a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Z"
+      stroke="url(#imageGradient)"
+      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      strokeWidth="2"
-      d="m3 16 5-7 6 6.5m6.5 2.5L16 13l-4.286 6M14 10h.01M4 19h16a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Z"
+      fill="none"
     />
   </svg>
 );
@@ -125,41 +135,127 @@ export const removeIcon = (
   </svg>
 );
 
-export const pdfIcon = (
+// Better trash icon for delete actions
+export const trashIcon = (
   <svg
-    className="w-6 h-6 text-gray-800 dark:text-white"
-    aria-hidden="true"
+    className="w-5 h-5"
     xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
     fill="none"
     viewBox="0 0 24 24"
+    strokeWidth="2"
+    stroke="currentColor"
   >
     <path
-      stroke="currentColor"
       strokeLinecap="round"
       strokeLinejoin="round"
-      strokeWidth="2"
-      d="M5 17v-5h1.5a1.5 1.5 0 1 1 0 3H5m12 2v-5h2m-2 3h2M5 10V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1v6M5 19v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1M10 3v4a1 1 0 0 1-1 1H5m6 4v5h1.375A1.627 1.627 0 0 0 14 15.375v-1.75A1.627 1.627 0 0 0 12.375 12H11Z"
+      d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
     />
   </svg>
 );
 
-export const defaultFileIcon = (
+// Pin icon (unpinned) - map pin outline
+export const pinIcon = (
   <svg
-    className="w-6 h-6 text-gray-800 dark:text-white"
-    aria-hidden="true"
+    className="w-5 h-5"
     xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
     fill="none"
     viewBox="0 0 24 24"
+    strokeWidth="2"
+    stroke="currentColor"
   >
     <path
-      stroke="currentColor"
+      strokeLinecap="round"
       strokeLinejoin="round"
+      d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"
+    />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"
+    />
+  </svg>
+);
+
+// Pinned icon
+export const pinnedIcon = (
+  <svg
+    className="w-5 h-5"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+  >
+    <path
+      fillRule="evenodd"
+      d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z"
+      clipRule="evenodd"
+    />
+  </svg>
+);
+
+// Rename/Edit icon
+export const editIcon = (
+  <svg
+    className="w-5 h-5"
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth="2"
+    stroke="currentColor"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
+    />
+  </svg>
+);
+
+// Modern PDF icon with red gradient
+export const pdfIcon = (
+  <svg
+    className="w-5 h-5"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+  >
+    <defs>
+      <linearGradient id="pdfGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style={{ stopColor: '#EF4444', stopOpacity: 1 }} />
+        <stop offset="100%" style={{ stopColor: '#DC2626', stopOpacity: 1 }} />
+      </linearGradient>
+    </defs>
+    <path
+      d="M5 17v-5h1.5a1.5 1.5 0 1 1 0 3H5m12 2v-5h2m-2 3h2M5 10V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1v6M5 19v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1M10 3v4a1 1 0 0 1-1 1H5m6 4v5h1.375A1.627 1.627 0 0 0 14 15.375v-1.75A1.627 1.627 0 0 0 12.375 12H11Z"
+      stroke="url(#pdfGradient)"
       strokeWidth="2"
-      d="M10 3v4a1 1 0 0 1-1 1H5m14-4v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1Z"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    />
+  </svg>
+);
+
+// Modern file icon with gradient
+export const defaultFileIcon = (
+  <svg
+    className="w-5 h-5"
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+  >
+    <defs>
+      <linearGradient id="fileGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style={{ stopColor: '#3B82F6', stopOpacity: 1 }} />
+        <stop offset="100%" style={{ stopColor: '#6366F1', stopOpacity: 1 }} />
+      </linearGradient>
+    </defs>
+    <path
+      d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+      stroke="url(#fileGradient)"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
     />
   </svg>
 );
@@ -184,22 +280,27 @@ export const fileAddIcon = (
   </svg>
 );
 
+// Modern CSV icon with purple gradient
 export const csvIcon = (
   <svg
-    className="w-6 h-6 text-gray-800 dark:text-white"
-    aria-hidden="true"
+    className="w-5 h-5"
     xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    fill="none"
     viewBox="0 0 24 24"
+    fill="none"
   >
+    <defs>
+      <linearGradient id="csvGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style={{ stopColor: '#8B5CF6', stopOpacity: 1 }} />
+        <stop offset="100%" style={{ stopColor: '#7C3AED', stopOpacity: 1 }} />
+      </linearGradient>
+    </defs>
     <path
-      stroke="currentColor"
+      d="M5 10V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1v6M5 19v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1M10 3v4a1 1 0 0 1-1 1H5m2.665 9H6.647A1.647 1.647 0 0 1 5 15.353v-1.706A1.647 1.647 0 0 1 6.647 12h1.018M16 12l1.443 4.773L19 12m-6.057-.152-.943-.02a1.34 1.34 0 0 0-1.359 1.22 1.32 1.32 0 0 0 1.172 1.421l.536.059a1.273 1.273 0 0 1 1.226 1.718c-.2.571-.636.754-1.337.754h-1.13"
+      stroke="url(#csvGradient)"
+      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      strokeWidth="2"
-      d="M5 10V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1v6M5 19v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1M10 3v4a1 1 0 0 1-1 1H5m2.665 9H6.647A1.647 1.647 0 0 1 5 15.353v-1.706A1.647 1.647 0 0 1 6.647 12h1.018M16 12l1.443 4.773L19 12m-6.057-.152-.943-.02a1.34 1.34 0 0 0-1.359 1.22 1.32 1.32 0 0 0 1.172 1.421l.536.059a1.273 1.273 0 0 1 1.226 1.718c-.2.571-.636.754-1.337.754h-1.13"
+      fill="none"
     />
   </svg>
 );
@@ -296,22 +397,20 @@ export const versionIndicatorIcon = (
   </svg>
 );
 
+// Modern document icon
 export const pageIcon = (
   <svg
-    className="w-6 h-6 text-gray-800 dark:text-white"
-    aria-hidden="true"
+    className="w-5 h-5 text-blue-600"
     xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
     fill="none"
     viewBox="0 0 24 24"
+    strokeWidth="2"
+    stroke="currentColor"
   >
     <path
-      stroke="currentColor"
       strokeLinecap="round"
       strokeLinejoin="round"
-      strokeWidth="2"
-      d="M19 7h1v12a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h11.5M7 14h6m-6 3h6m0-10h.5m-.5 3h.5M7 7h3v3H7V7Z"
+      d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
     />
   </svg>
 );
@@ -364,21 +463,26 @@ export const closeIcon = (
 )
 
 
+// Modern video icon with rose gradient
 const videoIcon = (
   <svg
-    className="w-6 h-6 text-gray-800 dark:text-white"
-    aria-hidden="true"
+    className="w-5 h-5"
     xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    fill="none"
     viewBox="0 0 24 24"
+    fill="none"
   >
+    <defs>
+      <linearGradient id="videoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style={{ stopColor: '#F43F5E', stopOpacity: 1 }} />
+        <stop offset="100%" style={{ stopColor: '#E11D48', stopOpacity: 1 }} />
+      </linearGradient>
+    </defs>
     <path
-      stroke="currentColor"
-      strokeLinejoin="round"
-      strokeWidth="2"
       d="M10 3v4a1 1 0 0 1-1 1H5m14-4v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1ZM9 12h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Zm5.697 2.395v-.733l1.269-1.219v2.984l-1.268-1.032Z"
+      stroke="url(#videoGradient)"
+      strokeWidth="2"
+      strokeLinejoin="round"
+      fill="none"
     />
   </svg>
 );

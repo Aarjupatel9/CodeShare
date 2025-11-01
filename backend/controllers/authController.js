@@ -8,6 +8,7 @@ const {
     sendEmail,
 } = require("../services/authService");
 const jwt = require("jsonwebtoken");
+const logger = require("../utils/loggerUtility");
 
 
 exports.register = async function (req, res) {
@@ -28,6 +29,12 @@ exports.register = async function (req, res) {
 
         res.status(200).json({ message: "Successfully Registered ", success: true });
     } catch (e) {
+        logger.logError(e, req, {
+            controller: 'authController',
+            function: 'register',
+            resourceType: 'user',
+            context: { email: req.body?.email, userId: req?.user?._id }
+        });
         res.status(500).json({
             message: "An error occurred during registration " + e,
             success: false,
@@ -46,15 +53,21 @@ exports.login = async function (req, res) {
 
         const match = await compareHashPassword(password, user.password);
         if (match) {
-            const user = await DataModel.findOne({ email }).populate({
+            // Update lastLogin and increment loginCount
+            await DataModel.findByIdAndUpdate(user._id, {
+                lastLogin: new Date(),
+                $inc: { loginCount: 1 }
+            });
+
+            const populatedUser = await DataModel.findOne({ email }).populate({
                 path: "pages.pageId", // Populate the pageId field
                 select: "unique_name files", // Select only the name field
             });
             const payload = {
-                _id: user._id,
-                username: user.username,
-                email: user.email,
-                password: user.password,
+                _id: populatedUser._id,
+                username: populatedUser.username,
+                email: populatedUser.email,
+                password: populatedUser.password,
             };
             const token = genJWTToken(payload);
             res.cookie("token", token, {
@@ -62,16 +75,22 @@ exports.login = async function (req, res) {
                 secure: process.env.NODE_ENV === 'production',
                 maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
             });
-            user.password = undefined;
+            populatedUser.password = undefined;
             res.status(200).json({
                 message: "Login Successful.",
                 success: true,
-                user: user,
+                user: populatedUser,
             });
         } else {
             res.status(400).json({ message: "Email or Password is wrong.", success: false });
         }
     } catch (e) {
+        logger.logError(e, req, {
+            controller: 'authController',
+            function: 'login',
+            resourceType: 'user',
+            context: { email: req.body?.email, userId: req?.user?._id }
+        });
         res.status(500).json({
             message: "An error occurred during registration",
             success: false,
@@ -105,6 +124,12 @@ exports.getUserDetails = async function (req, res) {
             user: user,
         });
     } catch (e) {
+        logger.logError(e, req, {
+            controller: 'authController',
+            function: 'getUserDetails',
+            resourceType: 'user',
+            context: { email: req.body?.email, userId: req?.user?._id }
+        });
         res.status(500).json({
             message: "An error occurred during registration",
             success: false,
@@ -150,7 +175,13 @@ exports.getResetPasswordLink = async (req, res) => {
                 success: true,
             });
         } catch (err) {
-            console.error("Email sending error: ", err);
+            logger.logError(err, req, {
+                controller: 'authController',
+                function: 'getResetPasswordLink',
+                resourceType: 'user',
+                level: 'warning',
+                context: { email: req.body?.email, userId: req?.user?._id }
+            });
             
             // Determine appropriate error message based on error type
             let errorMessage = "Error while sending the recovery email. Please try again later.";
@@ -176,7 +207,12 @@ exports.getResetPasswordLink = async (req, res) => {
             });
         }
     } catch (error) {
-        console.error("getResetPasswordLink error:", error);
+        logger.logError(error, req, {
+            controller: 'authController',
+            function: 'getResetPasswordLink',
+            resourceType: 'user',
+            context: { email: req.body?.email, userId: req?.user?._id }
+        });
         return res.status(500).json({
             message: "An unknown error occurred.",
             error: error.message,
@@ -206,14 +242,24 @@ exports.validateResetToken = async (req, res) => {
                 email: verify.email,
             });
         } catch (error) {
-            console.error("Token verification error:", error);
+            logger.logWarning(error, req, {
+                controller: 'authController',
+                function: 'validateResetToken',
+                resourceType: 'user',
+                context: { userId: req?.user?._id }
+            });
             return res.status(401).json({
                 error: "Token is invalid or has expired.",
                 success: false,
             });
         }
     } catch (error) {
-        console.error("validateResetToken error:", error);
+        logger.logError(error, req, {
+            controller: 'authController',
+            function: 'validateResetToken',
+            resourceType: 'user',
+            context: { userId: req?.user?._id }
+        });
         return res.status(500).json({
             error: "An error occurred while validating the token.",
             success: false,
@@ -256,14 +302,24 @@ exports.updatePassword = async (req, res) => {
                 success: true,
             });
         } catch (error) {
-            console.error("Token verification error:", error);
+            logger.logWarning(error, req, {
+                controller: 'authController',
+                function: 'updatePassword',
+                resourceType: 'user',
+                context: { userId: req.params?.id, userIdFromReq: req?.user?._id }
+            });
             return res.status(401).json({
                 error: "Token is invalid or has expired.",
                 success: false,
             });
         }
     } catch (error) {
-        console.error("updatePassword error:", error);
+        logger.logError(error, req, {
+            controller: 'authController',
+            function: 'updatePassword',
+            resourceType: 'user',
+            context: { userId: req.params?.id, userIdFromReq: req?.user?._id }
+        });
         return res.status(500).json({
             error: "An error occurred while updating the password.",
             success: false,
@@ -279,6 +335,12 @@ exports.logout = async function (req, res) {
             success: true,
         });
     } catch (e) {
+        logger.logError(e, req, {
+            controller: 'authController',
+            function: 'logout',
+            resourceType: 'user',
+            context: { userId: req?.user?._id }
+        });
         res.status(500).json({
             message: "An error occurred during logout",
             success: false,

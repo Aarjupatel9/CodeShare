@@ -98,25 +98,15 @@ class DocumentApi {
     }
   }
 
+  // NOTE: File upload/delete methods have been moved to fileApi.js
+  // Files are now independent from documents - use fileApi.uploadFile() and fileApi.deleteFile()
+
   /**
-   * Upload file to document
+   * Rename document
    */
-  async uploadFile(documentId, formData) {
+  async renameDocument(documentId, newName) {
     try {
-      const slug = formData.get('slug');
-      const fileSize = formData.get('fileSize');
-      
-      const response = await apiClient.uploadFile(
-        `/api/v1/documents/${documentId}/files`,
-        formData,
-        {
-          headers: {
-            slug: slug,
-            filesize: fileSize,
-          },
-        }
-      );
-      
+      const response = await apiClient.patch(`/api/v1/documents/${documentId}/rename`, { newName });
       return response;
     } catch (error) {
       throw this.handleError(error);
@@ -124,13 +114,23 @@ class DocumentApi {
   }
 
   /**
-   * Delete file from document
+   * Reorder documents
    */
-  async deleteFile(documentId, fileId) {
+  async reorderDocuments(newOrder) {
     try {
-      const response = await apiClient.delete(
-        `/api/v1/documents/${documentId}/files/${fileId}`
-      );
+      const response = await apiClient.patch('/api/v1/documents/reorder', { newOrder });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Toggle pin status of document
+   */
+  async togglePinDocument(documentId, isPinned) {
+    try {
+      const response = await apiClient.patch(`/api/v1/documents/${documentId}/pin`, { isPinned });
       return response;
     } catch (error) {
       throw this.handleError(error);

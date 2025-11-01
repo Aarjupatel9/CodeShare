@@ -53,25 +53,114 @@ export default function AuctionBidding(props) {
         };
     }, [])
 
-    const audioRef = useRef(new Audio(heartBeatSound));
+    const audioRef = useRef(null);
+    const fadeIntervalRef = useRef(null);
 
+    // Initialize audio with better settings
+    useEffect(() => {
+        if (!audioRef.current) {
+            const audio = new Audio(heartBeatSound);
+            audio.loop = true;
+            audio.volume = 0.6; // Start at 60% volume (can be adjusted)
+            audio.preload = 'auto';
+            audioRef.current = audio;
+        }
+    }, []);
+
+    // Fade in/out helper functions
+    const fadeIn = (audio, targetVolume = 0.6, duration = 500) => {
+        if (!audio) return;
+        audio.volume = 0;
+        const steps = 20;
+        const increment = targetVolume / steps;
+        const stepTime = duration / steps;
+        
+        let currentStep = 0;
+        
+        if (fadeIntervalRef.current) {
+            clearInterval(fadeIntervalRef.current);
+        }
+        
+        fadeIntervalRef.current = setInterval(() => {
+            currentStep++;
+            if (currentStep >= steps) {
+                audio.volume = targetVolume;
+                if (fadeIntervalRef.current) {
+                    clearInterval(fadeIntervalRef.current);
+                    fadeIntervalRef.current = null;
+                }
+            } else {
+                audio.volume = increment * currentStep;
+            }
+        }, stepTime);
+    };
+
+    const fadeOut = (audio, duration = 300) => {
+        if (!audio || !audioRef.current) return;
+        const steps = 15;
+        const startVolume = audio.volume;
+        const decrement = startVolume / steps;
+        const stepTime = duration / steps;
+        
+        let currentStep = 0;
+        
+        if (fadeIntervalRef.current) {
+            clearInterval(fadeIntervalRef.current);
+        }
+        
+        fadeIntervalRef.current = setInterval(() => {
+            currentStep++;
+            if (currentStep >= steps) {
+                audio.pause();
+                audio.currentTime = 0;
+                audio.volume = startVolume; // Reset volume for next play
+                if (fadeIntervalRef.current) {
+                    clearInterval(fadeIntervalRef.current);
+                    fadeIntervalRef.current = null;
+                }
+            } else {
+                audio.volume = startVolume - (decrement * currentStep);
+            }
+        }, stepTime);
+    };
+
+    // Enhanced audio playback with fade effects
     useEffect(() => {
         const audio = audioRef.current;
-        audio.loop = true; // Enable looping
-        if (allowMusic) {
-            if (player.bidding && player.bidding.length > 0) {
-                audio.play().then(() => {  }).catch((error) => console.error("Audio play error:", error));
-            } else {
-                audio.pause();
-                audio.currentTime = 0; // Reset audio position
+        if (!audio) return;
+
+        const isBiddingActive = player.bidding && player.bidding.length > 0;
+        const shouldPlay = allowMusic && isBiddingActive;
+
+        if (shouldPlay) {
+            // Fade in when starting
+            if (audio.paused) {
+                audio.play().then(() => {
+                    fadeIn(audio, 0.6, 500); // Fade in over 500ms
+                }).catch((error) => {
+                    console.error("Audio play error:", error);
+                });
             }
         } else {
-            audio.pause();
-            audio.currentTime = 0; // Reset audio position
+            // Fade out when stopping
+            if (!audio.paused) {
+                fadeOut(audio, 300); // Fade out over 300ms
+            } else {
+                // Ensure audio is reset if already paused
+                audio.currentTime = 0;
+            }
         }
 
         return () => {
-            audio.pause();
+            // Cleanup on unmount
+            if (fadeIntervalRef.current) {
+                clearInterval(fadeIntervalRef.current);
+                fadeIntervalRef.current = null;
+            }
+            if (audio) {
+                audio.pause();
+                audio.currentTime = 0;
+            }
         };
     }, [allowMusic, player]);
 

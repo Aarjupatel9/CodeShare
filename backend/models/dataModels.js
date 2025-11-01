@@ -25,30 +25,6 @@ const dataModelsSchema = mongoose.Schema({
             }
         },
     ],
-    files: [
-        {
-            name: {
-                type: String,
-                required: true,
-            },
-            url: {
-                type: String,
-                required: true,
-            },
-            key: {
-                type: String,
-                required: true,
-            },
-            type: {
-                type: String,
-                required: true,
-            },
-            others: {
-                type: Object,
-                required: false,
-            },
-        },
-    ],
     language: {
         type: String,
         required: false,
@@ -62,7 +38,7 @@ const dataModelsSchema = mongoose.Schema({
             user: {
                 type: mongoose.SchemaTypes.ObjectId,
                 required: true,
-                ref: 'userModels',
+                ref: 'userModals',
             },
             right: {
                 type: String, // read, write, delete, owner
@@ -72,7 +48,7 @@ const dataModelsSchema = mongoose.Schema({
     ],
     owner: {
         type: mongoose.SchemaTypes.ObjectId,
-        ref: 'userModels',
+        ref: 'userModals',
         required: false,
     },
     isDeleted: {

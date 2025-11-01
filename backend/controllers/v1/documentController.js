@@ -1,7 +1,7 @@
 const DataModel = require("../../models/dataModels");
 const UserModel = require("../../models/userModels");
-const s3BucketService = require("../../services/s3BucketService");
 const mongoose = require("mongoose");
+const logger = require("../../utils/loggerUtility");
 
 const ObjectId = mongoose.Types.ObjectId;
 
@@ -36,7 +36,6 @@ exports.getDocument = async (req, res) => {
         data: data_present.data,
         unique_name: data_present.unique_name,
         language: data_present.language,
-        files: data_present.files,
       };
 
       if (flag !== "allVersion" && data_present.latestDataVersion) {
@@ -61,7 +60,13 @@ exports.getDocument = async (req, res) => {
       });
     }
   } catch (e) {
-    console.error("Error in getDocument:", e);
+    logger.logError(e, req, {
+      controller: 'documentController',
+      function: 'getDocument',
+      resourceType: 'document',
+      resourceId: identifier,
+      context: { version, flag, userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -97,7 +102,12 @@ exports.getDocuments = async (req, res) => {
       data: documents,
     });
   } catch (e) {
-    console.error("Error in getDocuments:", e);
+    logger.logError(e, req, {
+      controller: 'documentController',
+      function: 'getDocuments',
+      resourceType: 'document',
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -162,7 +172,13 @@ exports.createDocument = async (req, res) => {
       data: savedDocument,
     });
   } catch (e) {
-    console.error("Error in createDocument:", e);
+    logger.logError(e, req, {
+      controller: 'documentController',
+      function: 'createDocument',
+      resourceType: 'document',
+      resourceId: slug,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -231,7 +247,13 @@ exports.updateDocument = async (req, res) => {
       data: newData,
     });
   } catch (e) {
-    console.error("Error in updateDocument:", e);
+    logger.logError(e, req, {
+      controller: 'documentController',
+      function: 'updateDocument',
+      resourceType: 'document',
+      resourceId: id,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -279,7 +301,13 @@ exports.deleteDocument = async (req, res) => {
       message: "Document deleted successfully",
     });
   } catch (e) {
-    console.error("Error in deleteDocument:", e);
+    logger.logError(e, req, {
+      controller: 'documentController',
+      function: 'deleteDocument',
+      resourceType: 'document',
+      resourceId: id,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -311,7 +339,13 @@ exports.getDocumentVersions = async (req, res) => {
       data: versions,
     });
   } catch (e) {
-    console.error("Error in getDocumentVersions:", e);
+    logger.logError(e, req, {
+      controller: 'documentController',
+      function: 'getDocumentVersions',
+      resourceType: 'document',
+      resourceId: id,
+      context: { userId: req?.user?._id }
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error: " + e.message,
@@ -319,147 +353,8 @@ exports.getDocumentVersions = async (req, res) => {
   }
 };
 
-/**
- * Upload file to document
- * POST /api/v1/documents/:id/files
- */
-exports.uploadFile = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const user = req.user;
-
-    if (!user || !id) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid request",
-      });
-    }
-
-    const fileObject = {
-      name: req.file.originalname,
-      url: req.file.location,
-      key: req.file.key,
-      type: req.file.mimetype,
-      others: {
-        contentType: req.file.contentType,
-        encoding: req.file.encoding,
-        bucket: req.file.bucket,
-        metadata: req.file.metadata,
-        etag: req.file.etag,
-        acl: req.file.acl,
-      },
-    };
-
-    await DataModel.updateOne(
-      { _id: id, owner: user._id },
-      { $push: { files: fileObject } }
-    );
-
-    res.status(200).json({
-      success: true,
-      message: "File uploaded successfully",
-      data: fileObject,
-    });
-  } catch (err) {
-    console.error("Error in uploadFile:", err);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error: " + err.message,
-    });
-  }
-};
-
-/**
- * Delete file from document
- * DELETE /api/v1/documents/:id/files/:fileId
- */
-exports.deleteFile = async (req, res) => {
-  try {
-    const { id, fileId } = req.params;
-    const user = req.user;
-
-    if (!id || !fileId || !user) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid request",
-      });
-    }
-
-    const document = await DataModel.findOne({ _id: id, owner: user._id });
-
-    if (!document) {
-      return res.status(404).json({
-        success: false,
-        message: "Document not found",
-      });
-    }
-
-    const file = document.files.id(fileId);
-
-    if (!file) {
-      return res.status(404).json({
-        success: false,
-        message: "File not found",
-      });
-    }
-
-    // Remove from S3
-    try {
-      await s3BucketService.remove(file.key);
-    } catch (err) {
-      console.error("Error removing file from S3:", err);
-    }
-
-    // Remove from database
-    await DataModel.updateOne(
-      { _id: id, owner: user._id },
-      { $pull: { files: { _id: fileId } } }
-    );
-
-    res.status(200).json({
-      success: true,
-      message: "File deleted successfully",
-    });
-  } catch (e) {
-    console.error("Error in deleteFile:", e);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error: " + e.message,
-    });
-  }
-};
-
-/**
- * Validate file upload
- */
-exports.validateFile = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const fileSize = req.headers.filesize;
-
-    if (!id) {
-      return res.status(400).json({
-        success: false,
-        message: "Document ID is required",
-      });
-    }
-
-    if ((!fileSize || fileSize > max_file_size) && !id.includes(allowed_for_slug)) {
-      return res.status(400).json({
-        success: false,
-        message: "File size must be less than " + max_file_size + " bytes",
-      });
-    }
-
-    next();
-  } catch (err) {
-    console.error("Error in validateFile:", err);
-    res.status(500).json({
-      success: false,
-      message: "Error validating file",
-    });
-  }
-};
+// NOTE: File management functions have been moved to fileController.js
+// Files are now independent from documents - use /api/v1/files routes
 
 // Helper functions
 async function _getLatestDataVersion(slug, userId) {
@@ -511,7 +406,12 @@ async function _getLatestDataVersion(slug, userId) {
 
     return doc;
   } catch (error) {
-    console.error("Error fetching latest data version:", error);
+    logger.logError(error, null, {
+      controller: 'documentController',
+      function: '_getLatestDataVersion',
+      resourceType: 'document',
+      context: { slug, userId }
+    });
     return null;
   }
 }
@@ -538,7 +438,12 @@ async function _getRequiredDataVersion(slug, time, userId) {
 
     return result && result.length > 0 ? result[0] : null;
   } catch (error) {
-    console.error("Error fetching required data version:", error);
+    logger.logError(error, null, {
+      controller: 'documentController',
+      function: '_getRequiredDataVersion',
+      resourceType: 'document',
+      context: { slug, time, userId }
+    });
     return null;
   }
 }
@@ -578,8 +483,170 @@ async function _getAllVersion(slug, userId) {
     const result = await DataModel.aggregate(pipeline);
     return Array.isArray(result) ? result[0] : result;
   } catch (error) {
-    console.error("Error fetching all versions:", error);
+    logger.logError(error, null, {
+      controller: 'documentController',
+      function: '_getAllVersion',
+      resourceType: 'document',
+      context: { slug, userId }
+    });
     return null;
   }
 }
+
+/**
+ * Rename document
+ * PATCH /api/v1/documents/:id/rename
+ */
+exports.renameDocument = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newName } = req.body;
+    const owner = req.user;
+
+    if (!id || !newName || !owner) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Document ID and new name are required" 
+      });
+    }
+
+    // Check if new name already exists
+    const existingPage = await DataModel.findOne({ 
+      unique_name: newName, 
+      owner: owner._id,
+      isDeleted: { $ne: true }
+    });
+
+    if (existingPage && existingPage._id.toString() !== id) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "A document with this name already exists" 
+      });
+    }
+
+    // Update the document name
+    const updatedPage = await DataModel.updateOne(
+      { _id: id, owner: owner._id },
+      { $set: { unique_name: newName } }
+    );
+
+    if (updatedPage.matchedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Document not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Document successfully renamed",
+    });
+  } catch (e) {
+    logger.logError(e, req, {
+      controller: 'documentController',
+      function: 'renameDocument',
+      resourceType: 'document',
+      resourceId: id,
+      context: { newName, userId: req?.user?._id }
+    });
+    res.status(500).json({
+      success: false,
+      message: "Internal server error: " + e.message,
+    });
+  }
+};
+
+/**
+ * Reorder documents
+ * PATCH /api/v1/documents/reorder
+ */
+exports.reorderDocuments = async (req, res) => {
+  try {
+    const { newOrder } = req.body;
+    const owner = req.user;
+
+    if (!newOrder || !Array.isArray(newOrder) || !owner) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid request body - newOrder array is required" 
+      });
+    }
+
+    // Build the update array for all pages
+    const updateOps = newOrder.map((page, index) => ({
+      updateOne: {
+        filter: { _id: owner._id, "pages.pageId": new mongoose.Types.ObjectId(page.pageId._id || page.pageId) },
+        update: { $set: { "pages.$.order": index } }
+      }
+    }));
+
+    // Execute bulk update
+    await UserModel.bulkWrite(updateOps);
+
+    res.status(200).json({
+      success: true,
+      message: "Documents successfully reordered",
+    });
+  } catch (e) {
+    logger.logError(e, req, {
+      controller: 'documentController',
+      function: 'reorderDocuments',
+      resourceType: 'document',
+      context: { userId: req?.user?._id }
+    });
+    res.status(500).json({
+      success: false,
+      message: "Internal server error: " + e.message,
+    });
+  }
+};
+
+/**
+ * Toggle pin status of document
+ * PATCH /api/v1/documents/:id/pin
+ */
+exports.togglePinDocument = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isPinned } = req.body;
+    const owner = req.user;
+
+    if (!id || typeof isPinned !== 'boolean' || !owner) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Document ID and isPinned boolean are required" 
+      });
+    }
+
+    // Update the pin status
+    const result = await UserModel.updateOne(
+      { _id: owner._id, "pages.pageId": id },
+      { $set: { "pages.$.isPinned": isPinned } }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Document not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: isPinned ? "Document successfully pinned" : "Document successfully unpinned",
+    });
+  } catch (e) {
+    logger.logError(e, req, {
+      controller: 'documentController',
+      function: 'togglePinDocument',
+      resourceType: 'document',
+      resourceId: id,
+      context: { userId: req?.user?._id }
+    });
+    res.status(500).json({
+      success: false,
+      message: "Internal server error: " + e.message,
+    });
+  }
+};
 

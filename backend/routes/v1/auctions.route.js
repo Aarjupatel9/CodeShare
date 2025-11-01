@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const authenticateUser = require('../../middleware/Authmiddleware');
 const authenticateAuction = require('../../middleware/AuctionMiddleware');
+const activityLogger = require('../../middleware/activityLogger');
 const { 
     getAuctions,
     getAuction,
@@ -39,28 +40,28 @@ router.post("/:id/analytics/snapshot", saveViewerSnapshot);
 router.use(authenticateUser());
 
 // Auction stats (protected)
-router.get("/stats", getAuctionStats);
+router.get("/stats", activityLogger('auction_stats', 'auction'), getAuctionStats);
 
 // Live view related APIs for admin/dashboard (protected, require live view enabled)
-router.get("/:id/recent-sold", getRecentSoldPlayers);
-router.get("/:id/leaderboard", getAuctionLeaderboard);
+router.get("/:id/recent-sold", activityLogger('auction_live_view', 'auction'), getRecentSoldPlayers);
+router.get("/:id/leaderboard", activityLogger('auction_live_view', 'auction'), getAuctionLeaderboard);
 
 // Auction CRUD
-router.get("/", getAuctions);
-router.post("/", createAuction);
-router.get("/:id", authenticateAuction(), getAuction);
-router.put("/:id", authenticateAuction(), updateAuction);
-router.delete("/:id", authenticateAuction(), deleteAuction);
+router.get("/", activityLogger('auction_get', 'auction'), getAuctions);
+router.post("/", activityLogger('auction_create', 'auction'), createAuction);
+router.get("/:id", authenticateAuction(), activityLogger('auction_get', 'auction'), getAuction);
+router.put("/:id", authenticateAuction(), activityLogger('auction_update', 'auction'), updateAuction);
+router.delete("/:id", authenticateAuction(), activityLogger('auction_delete', 'auction'), deleteAuction);
 
 // Auction summary
-router.get("/:id/summary", getAuctionSummary);
+router.get("/:id/summary", activityLogger('auction_summary', 'auction'), getAuctionSummary);
 
 // Viewer analytics
-router.get("/:id/analytics/viewers", getViewerAnalytics);
+router.get("/:id/analytics/viewers", activityLogger('auction_analytics', 'auction'), getViewerAnalytics);
 
 // Auction session management
-router.post("/:id/login", loginAuction);
-router.post("/:id/logout", logoutAuction);
+router.post("/:id/login", activityLogger('auction_login', 'auction'), loginAuction);
+router.post("/:id/logout", activityLogger('auction_logout', 'auction'), logoutAuction);
 
 module.exports = router;
 
