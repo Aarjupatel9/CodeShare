@@ -46,15 +46,21 @@ exports.login = async function (req, res) {
 
         const match = await compareHashPassword(password, user.password);
         if (match) {
-            const user = await DataModel.findOne({ email }).populate({
+            // Update lastLogin and increment loginCount
+            await DataModel.findByIdAndUpdate(user._id, {
+                lastLogin: new Date(),
+                $inc: { loginCount: 1 }
+            });
+
+            const populatedUser = await DataModel.findOne({ email }).populate({
                 path: "pages.pageId", // Populate the pageId field
                 select: "unique_name files", // Select only the name field
             });
             const payload = {
-                _id: user._id,
-                username: user.username,
-                email: user.email,
-                password: user.password,
+                _id: populatedUser._id,
+                username: populatedUser.username,
+                email: populatedUser.email,
+                password: populatedUser.password,
             };
             const token = genJWTToken(payload);
             res.cookie("token", token, {
@@ -62,11 +68,11 @@ exports.login = async function (req, res) {
                 secure: process.env.NODE_ENV === 'production',
                 maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
             });
-            user.password = undefined;
+            populatedUser.password = undefined;
             res.status(200).json({
                 message: "Login Successful.",
                 success: true,
-                user: user,
+                user: populatedUser,
             });
         } else {
             res.status(400).json({ message: "Email or Password is wrong.", success: false });
