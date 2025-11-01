@@ -1,8 +1,8 @@
-const ActivityLog = require('../models/activityLogModel');
+const batchedLogger = require('../utils/batchedActivityLogger');
 
 /**
  * Activity Logger Middleware
- * Logs user activities to the database
+ * Logs user activities to the database using batched logging
  * 
  * @param {string} action - Action type (e.g., 'login', 'document_create')
  * @param {string} resourceType - Resource type (e.g., 'document', 'file')
@@ -13,7 +13,7 @@ module.exports = (action, resourceType = null) => {
         next();
 
         // Log activity asynchronously (don't block request)
-        setImmediate(async () => {
+        setImmediate(() => {
             try {
                 // Optimize details object: store only essential info, limit size
                 const optimizedDetails = {};
@@ -33,16 +33,16 @@ module.exports = (action, resourceType = null) => {
                     });
                 }
 
-                const log = new ActivityLog({
+                // Add log to batched queue
+                batchedLogger.addLog({
                     userId: req.user?._id || req.admin?._id || null,
                     action: action,
                     resourceType: resourceType,
                     resourceId: req.params?.id || req.body?.id || null,
                     details: Object.keys(optimizedDetails).length > 0 ? optimizedDetails : undefined, // Only store if has data
-                    ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+                    ipAddress: req.ip || req.headers['x-forwarded-for'] || req.connection?.remoteAddress || null,
                     userAgent: req.headers['user-agent'] || null
                 });
-                await log.save();
             } catch (error) {
                 console.error('Activity logging failed:', error);
                 // Don't throw - logging should not break requests

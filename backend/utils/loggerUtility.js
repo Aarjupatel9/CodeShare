@@ -1,4 +1,5 @@
 const ActivityLog = require("../models/activityLogModel");
+const batchedLogger = require("./batchedActivityLogger");
 
 /**
  * Error Logger Utility
@@ -206,8 +207,8 @@ async function logError(error, req = null, context = {}) {
             userAgent: userAgent || null,
         };
         
-        // Log to database asynchronously (don't block the request)
-        setImmediate(async () => {
+        // Log to database asynchronously using batched logger (don't block the request)
+        setImmediate(() => {
             try {
                 // Ensure details object doesn't exceed 500 bytes
                 const detailsString = JSON.stringify(activityLogData.details);
@@ -218,8 +219,8 @@ async function logError(error, req = null, context = {}) {
                     );
                 }
                 
-                const activityLog = new ActivityLog(activityLogData);
-                await activityLog.save();
+                // Add to batched logger queue
+                batchedLogger.addLog(activityLogData);
                 
                 // Also log critical errors to console for immediate visibility
                 if (errorLevel === 'critical') {
@@ -229,7 +230,7 @@ async function logError(error, req = null, context = {}) {
                 }
             } catch (logError) {
                 // If logging fails, at least log to console
-                console.error('Failed to log error to database:', logError);
+                console.error('Failed to queue error log:', logError);
                 console.error('Original error:', error);
             }
         });
