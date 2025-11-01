@@ -14,10 +14,13 @@ const activityLogSchema = new mongoose.Schema({
         type: String,
         required: true,
         enum: [
-            'login', 'logout', 'register',
-            'document_create', 'document_update', 'document_delete',
+            'login', 'logout', 'register', 'reset_password', 'update_password', 'verify_token',
+            'document_create', 'document_update', 'document_delete', 'document_rename', 'document_reorder', 'document_pin', 'document_versions', 'document_get',
             'file_upload', 'file_download', 'file_delete',
-            'auction_create', 'auction_join', 'auction_complete',
+            'auction_create', 'auction_update', 'auction_delete', 'auction_get', 'auction_join', 'auction_complete', 'auction_login', 'auction_logout', 'auction_stats', 'auction_live_view', 'auction_analytics', 'auction_summary',
+            'team_create', 'team_update', 'team_delete', 'team_logo_upload', 'team_get', 'team_get',
+            'player_create', 'player_update', 'player_delete', 'player_import', 'player_get', 'player_import_template',
+            'set_create', 'set_update', 'set_delete', 'set_get',
             'user_update', 'user_delete',
             'admin_action', // For admin-specific actions
             'system_error', 'system_warning'
