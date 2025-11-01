@@ -228,17 +228,49 @@ const EditorSidebar = ({
         ) : (
           currUser && (
             <>
+              {/* File Upload Beta Notice */}
+              {(!currUser.fileUploadEnabled || currUser.fileUploadEnabled === undefined) && (
+                <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <span className="text-lg">🚀</span>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-sm font-semibold text-gray-900 mb-1">
+                        File Upload (Beta)
+                      </h4>
+                      <p className="text-xs text-gray-600 leading-relaxed mb-2">
+                        File upload is currently in beta. To enable this feature for your account, please contact the developer.
+                      </p>
+                      <a
+                        href="mailto:support@codeshare.com"
+                        className="text-xs text-blue-600 hover:text-blue-800 hover:underline font-medium"
+                      >
+                        📧 support@codeshare.com
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="mb-3">
-                <label className="w-full px-4 py-2 bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold rounded-lg transition cursor-pointer flex items-center justify-center gap-2 text-sm">
-                  <input
-                    type="file"
-                    accept="*"
-                    onChange={onSelectFile}
-                    className="hidden"
-                  />
-                  <span>📎</span>
-                  <span>Upload File</span>
-                </label>
+                {currUser.fileUploadEnabled ? (
+                  <label className="w-full px-4 py-2 bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold rounded-lg transition cursor-pointer flex items-center justify-center gap-2 text-sm">
+                    <input
+                      type="file"
+                      accept="*"
+                      onChange={onSelectFile}
+                      className="hidden"
+                    />
+                    <span>📎</span>
+                    <span>Upload File</span>
+                  </label>
+                ) : (
+                  <label className="w-full px-4 py-2 bg-gray-100 border-2 border-gray-300 text-gray-400 font-semibold rounded-lg flex items-center justify-center gap-2 text-sm cursor-not-allowed opacity-60">
+                    <span>📎</span>
+                    <span>Upload File</span>
+                  </label>
+                )}
               </div>
 
               {/* Search bar for files */}
