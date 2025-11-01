@@ -64,6 +64,14 @@ const EditorNavbar = ({
           <>
             <button onClick={() => onNavigate("/games")} className="text-gray-700 hover:text-blue-600 transition">Games</button>
             <button onClick={() => onNavigate(`/p/${currUser._id}/t/auction`)} className="text-gray-700 hover:text-blue-600 transition">Auctions</button>
+            {(currUser.role === 'admin' || currUser.role === 'moderator') && (
+              <button 
+                onClick={() => onNavigate(`/p/${currUser._id}/admin`)} 
+                className="text-gray-700 hover:text-purple-600 font-semibold transition"
+              >
+                Admin Panel
+              </button>
+            )}
             <button onClick={() => onNavigate(`/p/${currUser._id}/help`)} className="text-gray-700 hover:text-blue-600 transition">Help</button>
             <button onClick={() => onNavigate(`/p/${currUser._id}/about`)} className="text-gray-700 hover:text-blue-600 transition">About</button>
           </>
@@ -152,6 +160,23 @@ const EditorNavbar = ({
                     <div className="text-xs text-gray-500">Play games</div>
                   </div>
                 </a>
+
+                {/* Admin Panel Link - Only for Admin/Moderator */}
+                {(currUser.role === 'admin' || currUser.role === 'moderator') && (
+                  <>
+                    <div className="border-t border-gray-200 my-2"></div>
+                    <a 
+                      onClick={() => onNavigate(`/p/${currUser._id}/admin`)}
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-purple-50 transition cursor-pointer text-left border-l-4 border-purple-600"
+                    >
+                      <span className="text-xl">⚙️</span>
+                      <div className="flex-1 text-left">
+                        <div className="text-sm font-semibold text-purple-700">Admin Panel</div>
+                        <div className="text-xs text-purple-500">Manage system & users</div>
+                      </div>
+                    </a>
+                  </>
+                )}
 
                 <div className="border-t border-gray-200 my-2"></div>
 
