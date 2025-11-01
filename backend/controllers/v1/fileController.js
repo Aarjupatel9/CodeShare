@@ -75,6 +75,14 @@ exports.validateFile = async (req, res, next) => {
       });
     }
 
+    // Check if Google Drive is connected (required for OAuth uploads)
+    if (!user.googleDriveConnected) {
+      return res.status(403).json({
+        success: false,
+        message: "Google Drive is not connected. Please connect your Google Drive account from your profile settings.",
+      });
+    }
+
     // Get user's file size limit (default 1MB if not set)
     const userFileSizeLimit = user.fileSizeLimit || (1 * 1024 * 1024); // Default 1MB
     
@@ -148,14 +156,19 @@ exports.uploadFile = async (req, res) => {
       });
     }
 
-    // Upload to Google Drive (FREE API)
+    // Upload to Google Drive using OAuth (user's Drive)
     try {
-      console.log('📤 Uploading to Google Drive (FREE API)');
+      console.log('📤 Uploading to Google Drive (OAuth)');
+      
+      // Get user's folder name (default: "CodeShare-Uploads")
+      const folderName = user.fileUploadFolder || "CodeShare-Uploads";
       
       const result = await googleDriveService.uploadFile(
         req.file.buffer,
         req.file.originalname,
-        req.file.mimetype
+        req.file.mimetype,
+        user._id.toString(), // Pass user ID for OAuth token
+        folderName // Pass folder name to use/create folder
       );
 
       console.log(`✅ File stored in Google Drive (FREE): ${result.fileId}`);
@@ -246,11 +259,11 @@ exports.downloadFile = async (req, res) => {
       });
     }
 
-    // Download from Google Drive (FREE API)
+    // Download from Google Drive using OAuth (user's Drive)
     try {
-      console.log('📥 Downloading from Google Drive (FREE API)');
+      console.log('📥 Downloading from Google Drive (OAuth)');
       
-      const stream = await googleDriveService.downloadFile(file.googleDriveFileId);
+      const stream = await googleDriveService.downloadFile(file.googleDriveFileId, user._id.toString());
       
       // Set response headers
       res.setHeader('Content-Type', file.type || 'application/octet-stream');
@@ -321,12 +334,12 @@ exports.deleteFile = async (req, res) => {
       });
     }
 
-    // Delete from Google Drive (FREE API)
+    // Delete from Google Drive using OAuth (user's Drive)
     if (file.googleDriveFileId) {
       try {
-        console.log('🗑️ Deleting from Google Drive (FREE API)');
-        await googleDriveService.deleteFile(file.googleDriveFileId);
-        console.log('✅ File deleted from Google Drive (FREE)');
+        console.log('🗑️ Deleting from Google Drive (OAuth)');
+        await googleDriveService.deleteFile(file.googleDriveFileId, user._id.toString());
+        console.log('✅ File deleted from Google Drive (OAuth)');
       } catch (driveError) {
         logger.logError(driveError, req, {
           controller: 'fileController',

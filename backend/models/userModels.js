@@ -15,6 +15,7 @@ const userSchema = new mongoose.Schema(
         password: {
             type: String,
             required: true,
+            select: false, // Don't return in queries by default
         },
         isVerified: {
             type: Boolean,
@@ -33,10 +34,12 @@ const userSchema = new mongoose.Schema(
         lastLogin: {
             type: Date,
             default: null,
+            select: false, // Don't return in queries by default
         },
         loginCount: {
             type: Number,
-            default: 0,
+            default: 0, 
+            select: false, // Don't return in queries by default
         },
         // File upload settings per user
         fileUploadEnabled: {
@@ -46,6 +49,26 @@ const userSchema = new mongoose.Schema(
         fileSizeLimit: {
             type: Number,
             default: 1 * 1024 * 1024, // Default 1MB in bytes
+        },
+        // Google Drive OAuth tokens (encrypted)
+        googleDriveAccessToken: {
+            type: String,
+            required: false,
+            select: false, // Don't return in queries by default
+        },
+        googleDriveRefreshToken: {
+            type: String,
+            required: false,
+            select: false, // Don't return in queries by default
+        },
+        googleDriveTokenExpiry: {
+            type: Date,
+            required: false,
+            select: false, // Don't return in queries by default
+        },
+        googleDriveConnected: {
+            type: Boolean,
+            default: false,
         },
         pages: [
             {
@@ -68,6 +91,11 @@ const userSchema = new mongoose.Schema(
                 },
             },
         ],
+       
+        fileUploadFolder: {
+            type: String,
+            default: "CodeShare-Uploads",
+        },
     },
     { timestamps: true }
 );
