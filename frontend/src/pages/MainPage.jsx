@@ -633,7 +633,7 @@ export default function MainPage(props) {
 
     // Check user's file upload permission and size limit
     if (!currUser.fileUploadEnabled) {
-      toast.error("File upload is not enabled for your account. Please contact support.");
+      toast.error("File upload is in beta. Contact the developer for more details.");
       if (inputFile.current) {
         inputFile.current.value = '';
       }
@@ -921,6 +921,9 @@ export default function MainPage(props) {
             onSelectTab={onSelectTab}
             onPageNavigate={handlePageNavigate}
             onPageRemove={confirmPageRemove}
+            onPageRename={handlePageRename}
+            onPageReorder={handlePageReorder}
+            onPagePinToggle={handlePagePinToggle}
             onSelectFile={onSelectFile}
             onFileRemove={confirmFileRemove}
             privateFileList={privateFileList}
