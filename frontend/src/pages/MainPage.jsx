@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useRef, useState } from "react";
 import { useConfig } from "../hooks/useConfig";
 import userService from "../services/userService";
 import documentApi from "../services/api/documentApi";
+import fileApi from "../services/api/fileApi";
 import { json, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import flobiteJS from "flowbite/dist/flowbite.min.js";
@@ -114,19 +115,43 @@ export default function MainPage(props) {
         { tabId: 2, tabName: "Files", selected: false },
       ]);
 
-      let results = [];
-      Object.values(props.user.pages).forEach((page) => {
-        const { _id, unique_name, files = [] } = page.pageId;
-        files.forEach((file) => {
-          results.push({
-            ...file,
-            pageName: unique_name,
-          });
-        });
-      });
-      setPrivateFileList(results);
+      // Load files independently (files are user-level, not document-level)
+      loadUserFiles();
     }
   }, [props.user]);
+
+  // Load user files independently from documents
+  const loadUserFiles = async () => {
+    if (!currUser) return;
+    
+    try {
+      const response = await fileApi.getFiles();
+      if (response.success && response.data) {
+        // Files are independent, no pageName needed, but we keep it for backward compatibility with UI
+        const filesWithPageName = response.data.map(file => ({
+          ...file,
+          pageName: 'user_files', // Placeholder since files are user-level
+        }));
+        setPrivateFileList(filesWithPageName);
+      }
+    } catch (error) {
+      console.error('Error loading files:', error);
+      // Fallback: try to load from localStorage if API fails
+      if (props.user && props.user.pages) {
+        let results = [];
+        Object.values(props.user.pages).forEach((page) => {
+          const { _id, unique_name, files = [] } = page.pageId;
+          files.forEach((file) => {
+            results.push({
+              ...file,
+              pageName: unique_name,
+            });
+          });
+        });
+        setPrivateFileList(results);
+      }
+    }
+  };
 
   // Show floating hint after 3 seconds for non-logged mobile users
   useEffect(() => {
@@ -599,50 +624,76 @@ export default function MainPage(props) {
     if (!currUser) {
       return;
     }
-    let fileSlug = userSlug;
-    if (fileSlug == "new") {
-      if (props.user.pages.length == 0) {
-        toast.error("Please create a page first to save a file.");
-        return;
-      } else {
-        fileSlug = props.user.pages[0].pageId.unique_name;
-      }
-    }
 
     const file = event.target.files[0];
-    if (file.size > 20e6 && !userSlug.includes("aarju")) {
-      toast.error("Please upload a file smaller than 10 MB");
+    if (!file) {
+      return;
+    }
+
+    // Check user's file upload permission and size limit
+    if (!currUser.fileUploadEnabled) {
+      toast.error("File upload is not enabled for your account. Please contact support.");
+      if (inputFile.current) {
+        inputFile.current.value = '';
+      }
+      return false;
+    }
+
+    // Get user's file size limit (default 1MB if not set)
+    const userFileSizeLimit = currUser.fileSizeLimit || (1 * 1024 * 1024); // Default 1MB
+    const maxFileSizeMB = (userFileSizeLimit / (1024 * 1024)).toFixed(1);
+    
+    // Allow special users to bypass limit
+    const allowedEmail = process.env.REACT_APP_ALLOW_FILE_LIMIT || '';
+    const bypassLimit = currUser.email?.includes(allowedEmail) || currUser.email?.includes("aarju");
+    
+    if (file.size > userFileSizeLimit && !bypassLimit) {
+      toast.error(`File size exceeds your limit of ${maxFileSizeMB}MB`);
+      if (inputFile.current) {
+        inputFile.current.value = '';
+      }
       return false;
     }
 
     const formData = new FormData();
     formData.append("file", file);
     formData.append("fileName", file.name);
-    formData.append("fileSize", file.size * 8);
-    formData.append("slug", fileSlug);
-    const toastId = toast.loading("Uploading file server...");
-    userService.saveFile(formData).then((res) => {
-      toast.success(res.message, {
-        id: toastId,
-      });
-      res.result.pageName = fileSlug;
+    formData.append("fileSize", file.size);
+    
+    const toastId = toast.loading("Uploading file to Google Drive...");
+    
+    try {
+      // Files are independent from documents - no documentId needed
+      const response = await fileApi.uploadFile(formData);
+      
+      if (response.success && response.data) {
+        toast.success(response.message || "File uploaded successfully", {
+          id: toastId,
+        });
 
-      setPrivateFileList((file) => [...file, res.result]);
-      var localUser = JSON.parse(localStorage.getItem("currentUser"));
-      localUser.pages.map((page) => {
-        if (page.pageId.unique_name == fileSlug) {
-          page.pageId.files.push(res.result);
+        // Format the file object (files are user-level, not document-level)
+        const fileObject = {
+          ...response.data,
+          pageName: 'user_files', // Placeholder for backward compatibility with UI
+        };
+
+        // Update private file list
+        setPrivateFileList((files) => [...files, fileObject]);
+
+        // Reset file input
+        if (inputFile.current) {
+          inputFile.current.value = '';
         }
-        return page;
-      });
-      localStorage.setItem("currentUser", JSON.stringify(localUser));
-
-    }).catch((error) => {
-      console.error(error);
-      toast.error(error, {
+      } else {
+        throw new Error(response.message || "Failed to upload file");
+      }
+    } catch (error) {
+      console.error("File upload error:", error);
+      const errorMessage = typeof error === 'string' ? error : error?.message || "Failed to upload file";
+      toast.error(errorMessage, {
         id: toastId,
       });
-    });
+    }
   };
 
   const redirect = () => {
@@ -663,49 +714,39 @@ export default function MainPage(props) {
     navigate("/" + slug.replaceAll(" ", "_"));
   };
 
-  const remvoeCurrentFile = (file) => {
-    userService
-      .removeFile({ slug: file.pageName, file, currUser })
-      .then((res) => {
-        toast.success(res.message);
-        if (currUser) {
-          var currentUser = JSON.parse(localStorage.getItem("currentUser"));
-          const updatedPages = currentUser.pages.map((page) => {
-            const updatedFiles = page.pageId.files.filter(
-              (fo) => fo._id !== file._id
-            );
-            return {
-              ...page,
-              pageId: {
-                ...page.pageId,
-                files: updatedFiles,
-              },
-            };
+  const remvoeCurrentFile = async (file) => {
+    try {
+      // Get file ID - files are independent from documents
+      const fileId = file._id;
+      if (!fileId) {
+        toast.error("File ID not found. Please refresh the page and try again.");
+        return;
+      }
+
+      // Delete file (no document required - files are user-level)
+      const response = await fileApi.deleteFile(fileId);
+      
+      if (response.success) {
+        toast.success(response.message || "File deleted successfully");
+        
+        // Update state - remove from private file list
+        setPrivateFileList((f) => {
+          return f.filter((l) => {
+            // Match by _id
+            return l._id !== fileId;
           });
-          const updatedUser = {
-            ...currentUser,
-            pages: updatedPages,
-          };
-          localStorage.setItem("currentUser", JSON.stringify(updatedUser));
-          setPrivateFileList((f) => {
-            const t = f.filter((l) => {
-              return l.key != file.key;
-            });
-            return t;
-          });
-        } else {
-          setFileList((list) => {
-            const t = list.filter((l) => {
-              return l.key != file.key;
-            });
-            return t;
-          });
-        }
-      })
-      .catch((e) => {
-        console.error(e);
-        toast.error("Error while removing file : " + e);
-      });
+        });
+
+        // Reload files to ensure consistency
+        await loadUserFiles();
+      } else {
+        throw new Error(response.message || "Failed to delete file");
+      }
+    } catch (error) {
+      console.error("File deletion error:", error);
+      const errorMessage = typeof error === 'string' ? error : error?.message || "Error while removing file";
+      toast.error(errorMessage);
+    }
   };
 
   useKeys("ctrl+s", (event) => {
