@@ -138,6 +138,42 @@ class DocumentApi {
   }
 
   /**
+   * Rename document
+   */
+  async renameDocument(documentId, newName) {
+    try {
+      const response = await apiClient.patch(`/api/v1/documents/${documentId}/rename`, { newName });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Reorder documents
+   */
+  async reorderDocuments(newOrder) {
+    try {
+      const response = await apiClient.patch('/api/v1/documents/reorder', { newOrder });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * Toggle pin status of document
+   */
+  async togglePinDocument(documentId, isPinned) {
+    try {
+      const response = await apiClient.patch(`/api/v1/documents/${documentId}/pin`, { isPinned });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  /**
    * Handle API errors
    */
   handleError(error) {

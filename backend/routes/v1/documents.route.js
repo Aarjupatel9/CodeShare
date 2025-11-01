@@ -10,7 +10,10 @@ const {
     getDocumentVersions,
     uploadFile, 
     deleteFile, 
-    validateFile 
+    validateFile,
+    renameDocument,
+    reorderDocuments,
+    togglePinDocument
 } = require("../../controllers/v1/documentController");
 const { multerUpload } = require("../../services/s3BucketService");
 
@@ -29,6 +32,11 @@ router.delete("/:id", deleteDocument);
 
 // Document versions
 router.get("/:id/versions", getDocumentVersions);
+
+// Document management
+router.patch("/:id/rename", renameDocument);
+router.patch("/reorder", reorderDocuments);
+router.patch("/:id/pin", togglePinDocument);
 
 // File management
 router.post("/:id/files", validateFile, multerUpload.single("file"), uploadFile);

@@ -583,3 +583,143 @@ async function _getAllVersion(slug, userId) {
   }
 }
 
+/**
+ * Rename document
+ * PATCH /api/v1/documents/:id/rename
+ */
+exports.renameDocument = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newName } = req.body;
+    const owner = req.user;
+
+    if (!id || !newName || !owner) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Document ID and new name are required" 
+      });
+    }
+
+    // Check if new name already exists
+    const existingPage = await DataModel.findOne({ 
+      unique_name: newName, 
+      owner: owner._id,
+      isDeleted: { $ne: true }
+    });
+
+    if (existingPage && existingPage._id.toString() !== id) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "A document with this name already exists" 
+      });
+    }
+
+    // Update the document name
+    const updatedPage = await DataModel.updateOne(
+      { _id: id, owner: owner._id },
+      { $set: { unique_name: newName } }
+    );
+
+    if (updatedPage.matchedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Document not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Document successfully renamed",
+    });
+  } catch (e) {
+    console.error("Error in renameDocument:", e);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error: " + e.message,
+    });
+  }
+};
+
+/**
+ * Reorder documents
+ * PATCH /api/v1/documents/reorder
+ */
+exports.reorderDocuments = async (req, res) => {
+  try {
+    const { newOrder } = req.body;
+    const owner = req.user;
+
+    if (!newOrder || !Array.isArray(newOrder) || !owner) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid request body - newOrder array is required" 
+      });
+    }
+
+    // Build the update array for all pages
+    const updateOps = newOrder.map((page, index) => ({
+      updateOne: {
+        filter: { _id: owner._id, "pages.pageId": new mongoose.Types.ObjectId(page.pageId._id || page.pageId) },
+        update: { $set: { "pages.$.order": index } }
+      }
+    }));
+
+    // Execute bulk update
+    await UserModel.bulkWrite(updateOps);
+
+    res.status(200).json({
+      success: true,
+      message: "Documents successfully reordered",
+    });
+  } catch (e) {
+    console.error("Error in reorderDocuments:", e);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error: " + e.message,
+    });
+  }
+};
+
+/**
+ * Toggle pin status of document
+ * PATCH /api/v1/documents/:id/pin
+ */
+exports.togglePinDocument = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isPinned } = req.body;
+    const owner = req.user;
+
+    if (!id || typeof isPinned !== 'boolean' || !owner) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Document ID and isPinned boolean are required" 
+      });
+    }
+
+    // Update the pin status
+    const result = await UserModel.updateOne(
+      { _id: owner._id, "pages.pageId": id },
+      { $set: { "pages.$.isPinned": isPinned } }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Document not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: isPinned ? "Document successfully pinned" : "Document successfully unpinned",
+    });
+  } catch (e) {
+    console.error("Error in togglePinDocument:", e);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error: " + e.message,
+    });
+  }
+};
+

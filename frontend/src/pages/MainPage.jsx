@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { useConfig } from "../hooks/useConfig";
 import userService from "../services/userService";
+import documentApi from "../services/api/documentApi";
 import { json, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import flobiteJS from "flowbite/dist/flowbite.min.js";
@@ -28,7 +29,6 @@ import {
   generateRandomString,
   getPresizeFileName,
   getTimeInFormate,
-  isValidSlug,
   isReservedRouteName,
   isValidAndNotReservedSlug,
 } from "../common/functions";
@@ -43,6 +43,7 @@ import MobileMenu from "./components/editor/MobileMenu";
 import FloatingHint from "./components/editor/FloatingHint";
 import FeatureModal from "./components/editor/FeatureModal";
 import RedirectUrlInput from "./components/editor/RedirectUrlInput";
+import InputModal from "../components/modals/InputModal";
 
 export default function MainPage(props) {
   const { currUser, setCurrUser } = useContext(UserContext);
@@ -83,6 +84,12 @@ export default function MainPage(props) {
   const [showNavigationWarning, setShowNavigationWarning] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState(null);
   const [lastSavedContent, setLastSavedContent] = useState("");
+  
+  // Modal states
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [renamePageId, setRenamePageId] = useState(null);
+  const [saveModalType, setSaveModalType] = useState(null); // 'public' or 'new'
 
   // Note: Auth checking and userId validation now handled by PrivateRoute component
   
@@ -119,7 +126,7 @@ export default function MainPage(props) {
       });
       setPrivateFileList(results);
     }
-  }, []);
+  }, [props.user]);
 
   // Show floating hint after 3 seconds for non-logged mobile users
   useEffect(() => {
@@ -145,7 +152,7 @@ export default function MainPage(props) {
       }
     }
     
-    if (!isValidSlug(slug)) {
+    if (!isValidAndNotReservedSlug(slug)) {
       const newSlug = generateRandomString(7);
       if (props.user) {
         // On invalid slug, navigate directly without warning
@@ -302,6 +309,99 @@ export default function MainPage(props) {
     });
   }
 
+  const handlePageRename = (pageId) => {
+    // Find the current page to get the old name
+    const currentPage = currUser.pages.find(p => p.pageId._id === pageId);
+    if (!currentPage) {
+      toast.error("Page not found");
+      return;
+    }
+    
+    setRenamePageId(pageId);
+    setShowRenameModal(true);
+  }
+
+  const handleRenameSubmit = (newName) => {
+    if (!renamePageId || !isValidAndNotReservedSlug(newName)) return;
+    
+    const currentPage = currUser.pages.find(p => p.pageId._id === renamePageId);
+    
+    if (!currentPage) {
+      toast.error("Page not found");
+      return;
+    }
+    
+    documentApi.renameDocument(renamePageId, newName).then((res) => {
+      if (res.success) {
+        toast.success("Document renamed successfully.");
+        // Update local state
+        setCurrUser((old) => ({
+          ...old,
+          pages: old.pages.map(p =>
+            p.pageId._id === renamePageId ? { ...p, pageId: { ...p.pageId, unique_name: newName } } : p
+          )
+        }));
+        // If currently viewing this page, navigate to new name
+        if (currentPage && userSlug === currentPage.pageId.unique_name) {
+          navigate(`/p/${currUser._id}/${newName}`);
+        }
+      }
+    }).catch((err) => {
+      toast.error("Error renaming document: " + err);
+    });
+  }
+
+  const validateRenameInput = (name) => {
+    // Validate original name allows spaces and dots
+    if (!isValidAndNotReservedSlug(name)) {
+      return "Please use only letters, numbers, spaces, dots (decimals), underscores, and hyphens";
+    }
+    
+    // Check if name already exists
+    const currentPage = renamePageId ? currUser.pages.find(p => p.pageId._id === renamePageId) : null;
+    if (currentPage && isDuplicatePageName(name) && currentPage.pageId.unique_name !== name) {
+      return "A document with this name already exists";
+    }
+    
+    return true;
+  }
+
+  const handlePageReorder = (activeId, overId, newOrder, callback) => {
+    documentApi.reorderDocuments(newOrder).then((res) => {
+      if (res.success) {
+        // Update local state with new order
+        setCurrUser((old) => ({
+          ...old,
+          pages: newOrder.map((page, index) => ({ ...page, order: index }))
+        }));
+        toast.success("Document order updated.");
+        if (callback) callback(true);
+      } else {
+        if (callback) callback(false);
+      }
+    }).catch((err) => {
+      // Error toast is shown by EditorSidebar callback
+      if (callback) callback(false);
+    });
+  }
+
+  const handlePagePinToggle = (page) => {
+    documentApi.togglePinDocument(page.pageId._id, !page.isPinned).then((res) => {
+      if (res.success) {
+        // Update local state
+        setCurrUser((old) => ({
+          ...old,
+          pages: old.pages.map(p =>
+            p.pageId._id === page.pageId._id ? { ...p, isPinned: !p.isPinned } : p
+          )
+        }));
+        toast.success(page.isPinned ? "Document unpinned." : "Document pinned.");
+      }
+    }).catch((err) => {
+      toast.error("Error updating pin status: " + err);
+    });
+  }
+
   const getAllversionData = (isCliced) => {
     if (allVersionData.length > 0) {
       return;
@@ -376,7 +476,7 @@ export default function MainPage(props) {
     }
     
     // Check if slug is valid format
-    if (!isValidSlug(newTitle)) {
+    if (!isValidAndNotReservedSlug(newTitle)) {
       toast.error("Please use only letters, numbers, spaces, underscores, and hyphens", { duration: 3000 });
       return false;
     }
@@ -392,133 +492,52 @@ export default function MainPage(props) {
   const saveData = () => {
     // For non-logged users without a slug - ask for document name
     if (!props.user && (!userSlug || userSlug === '' || userSlug === 'new')) {
-      let newSlug = "";
-      toast.custom((t) => (
-        <div className="z-[1000] bg-white border border-gray-200 p-6 rounded-xl w-[90%] max-w-md shadow-2xl">
-          <div className={`text-gray-800 text-xl font-bold mb-4 ${t.visible ? "animate-enter" : "animate-leave"}`}>
-            Save Your Document
-          </div>
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            newSlug = newSlug.trim();
-            if (newSlug) {
-              newSlug = newSlug.replaceAll(" ", "_");
-              
-              // Check if slug is reserved
-              if (isReservedRouteName(newSlug)) {
-                toast.error(`"${newSlug}" is a reserved system name and cannot be used. Please choose a different name.`, { duration: 4000 });
-                return;
-              }
-              
-              // Check if slug is valid format
-              if (isValidSlug(newSlug)) {
-                toast.dismiss(t.id);
-                // Pass callback to navigate after save
-                saveDataMain(newSlug, () => {
-                  navigate("/" + newSlug);
-                  setUserSlug(newSlug);
-                });
-              } else {
-                toast.error("Please use only letters, numbers, underscores, and hyphens", { duration: 3000 });
-              }
-            }
-          }}
-            className="flex flex-col gap-4">
-            <div className="flex flex-col items-start w-full space-y-2">
-              <label className="text-sm font-medium text-gray-700 text-left">Document Name</label>
-              <input
-                id="newDocName"
-                type="text"
-                placeholder="e.g., my_awesome_document"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                onChange={(e) => (newSlug = e.target.value)}
-                autoFocus
-              />
-              <p className="text-xs text-gray-500">This will be your document's URL</p>
-            </div>
-            <div className="flex flex-row gap-3 justify-end w-full">
-              <button
-                type="button"
-                onClick={() => {
-                  toast.dismiss(t.id);
-                }}
-                className="px-4 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg transition"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
-              >
-                💾 Save
-              </button>
-            </div>
-          </form>
-        </div>
-      ), { duration: 400000 });
+      setSaveModalType('public');
+      setShowSaveModal(true);
       return;
     }
     
     // For logged users with "new" page - ask for page name
     if (props.user) {
       if (userSlug.toLocaleLowerCase() == "new") {
-        let newTitle = "";
-        toast.custom((t) => (
-          <div className="z-[1000] bg-white border border-gray-200 p-6 rounded-xl w-[90%] max-w-md shadow-2xl">
-            <div className={`text-gray-800 text-xl font-bold mb-4 ${t.visible ? "animate-enter" : "animate-leave"}`}>
-              Enter new page name
-            </div>
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              newTitle = newTitle.trim()
-              if (newTitle) {
-                newTitle = newTitle.replaceAll(" ", "_");
-                if (validateNewPageTitle(newTitle)) {
-                  if (!isDuplicatePageName(newTitle)) {
-                    saveDataMain(newTitle);
-                    toast.dismiss(t.id);
-                  } else {
-                    toast.error("Page already exist, create page with new name");
-                  }
-                }
-              }
-            }}
-              className="flex flex-col gap-4">
-              <div className="flex flex-col items-start w-full space-y-2">
-                <label className="text-sm font-medium text-gray-700 text-left">Page Name</label>
-                <input
-                  id="newTitle"
-                  type="text"
-                  placeholder="Page name"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  onChange={(e) => (newTitle = e.target.value)}
-                  autoFocus
-                />
-              </div>
-              <div className="flex flex-row gap-3 justify-end w-full">
-                <button
-                  type="button"
-                  onClick={() => {
-                    toast.dismiss(t.id);
-                  }}
-                  className="px-4 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
-                >
-                  💾 Save
-                </button>
-              </div>
-            </form>
-          </div>
-        ), { duration: 400000 });
+        setSaveModalType('new');
+        setShowSaveModal(true);
         return;
       }
     }
     saveDataMain(userSlug);
+  };
+
+  const handleSaveSubmit = (name) => {
+    if (!isValidAndNotReservedSlug(name)) {
+      toast.error("Please use only letters, numbers, spaces, dots (decimals), underscores, and hyphens", { duration: 3000 });
+      return;
+    }
+
+    if (saveModalType === 'public') { 
+      saveDataMain(name, () => {
+        navigate("/" + name);
+        setUserSlug(name);
+      });
+    } else if (saveModalType === 'new') {
+      saveDataMain(name);
+    }
+    
+    setSaveModalType(null);
+  };
+
+  const validateSaveInput = (name) => {
+    // Validate original name allows spaces and dots
+    if (!isValidAndNotReservedSlug(name)) {
+      return "Please use only letters, numbers, spaces, dots (decimals), underscores, and hyphens";
+    }
+    
+    // For logged users with "new" page, check for duplicates
+    if (saveModalType === 'new' && isDuplicatePageName(name)) {
+      return "A page with this name already exists";
+    }
+    
+    return true;
   };
 
   const saveDataMain = (pageTitle, onSaveComplete) => {
@@ -652,7 +671,7 @@ export default function MainPage(props) {
     }
     
     // Check if slug is valid format
-    if (!isValidSlug(slug)) {
+    if (!isValidAndNotReservedSlug(slug)) {
       toast.error("Please use only letters, numbers, spaces, underscores, and hyphens", { duration: 3000 });
       return;
     }
@@ -893,10 +912,14 @@ export default function MainPage(props) {
         {currUser && (
           <EditorSidebar
             currUser={currUser}
+            setCurrUser={setCurrUser}
             privateTabs={privateTabs}
             onSelectTab={onSelectTab}
             onPageNavigate={handlePageNavigate}
             onPageRemove={confirmPageRemove}
+            onPageRename={handlePageRename}
+            onPageReorder={handlePageReorder}
+            onPagePinToggle={handlePagePinToggle}
             onSelectFile={onSelectFile}
             onFileRemove={confirmFileRemove}
             privateFileList={privateFileList}
@@ -1067,6 +1090,39 @@ export default function MainPage(props) {
           </div>
         </>
       )}
+
+      {/* Save Modal */}
+      {saveModalType && (
+        <InputModal
+          isOpen={showSaveModal}
+          onClose={() => {
+            setShowSaveModal(false);
+            setSaveModalType(null);
+          }}
+          title={saveModalType === 'public' ? 'Save Your Document' : 'Enter new page name'}
+          label={saveModalType === 'public' ? 'Document Name' : 'Page Name'}
+          placeholder={saveModalType === 'public' ? 'e.g., my_awesome_document' : 'Page name'}
+          onSubmit={handleSaveSubmit}
+          submitButtonText="💾 Save"
+          validateInput={validateSaveInput}
+        />
+      )}
+
+      {/* Rename Modal */}
+      <InputModal
+        isOpen={showRenameModal}
+        onClose={() => {
+          setShowRenameModal(false);
+          setRenamePageId(null);
+        }}
+        title="Rename Document"
+        label="Document Name"
+        placeholder="Enter new document name"
+        defaultValue={renamePageId ? currUser?.pages?.find(p => p.pageId._id === renamePageId)?.pageId?.unique_name || '' : ''}
+        onSubmit={handleRenameSubmit}
+        submitButtonText="Rename"
+        validateInput={validateRenameInput}
+      />
     </div>
   );
 }

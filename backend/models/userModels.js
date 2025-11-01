@@ -31,6 +31,14 @@ const userSchema = new mongoose.Schema(
                     type: String, // read, write, delete, owner
                     required: true,
                 },
+                order: {
+                    type: Number,
+                    default: 0,
+                },
+                isPinned: {
+                    type: Boolean,
+                    default: false,
+                },
             },
         ],
     },
