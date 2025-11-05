@@ -1,6 +1,7 @@
 {
-  "short_name": "Code Share",
-  "name": "Code Share",
+  "short_name": "CodeShare",
+  "name": "CodeShare - Collaborative Document Editor",
+  "description": "Create, edit, and share documents instantly with beautiful formatting and real-time collaboration",
   "icons": [
     {
       "src": "favicon64.ico",
@@ -10,16 +11,21 @@
     {
       "src": "favicon192.ico",
       "type": "image/x-icon",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
-      "src": "favicon512.ico",
-      "type": "image/x-icon",
-      "sizes": "512x512"
+      "src": "favicon512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#3b82f6",
+  "background_color": "#ffffff",
+  "orientation": "any",
+  "categories": ["productivity", "utilities", "education"],
+  "prefer_related_applications": false
 }
