@@ -9,7 +9,8 @@ var bodyParser = require("body-parser");
 // Legacy routes
 const userRoute = require('../routes/userRoute');
 const authRoute = require('../routes/authRoute');
-const auctionRoute = require('../routes/auctionRoute');
+// COMMENTED OUT - Auction moved to separate site
+// const auctionRoute = require('../routes/auctionRoute');
 
 // New API v1 routes
 const v1Routes = require('../routes/v1');
@@ -75,7 +76,8 @@ app.use("/api/v1", v1Routes);
 // Legacy routes (for backward compatibility)
 app.use("/api/data", userRoute);
 app.use("/api/auth", authRoute);
-app.use("/api/auction", auctionRoute);
+// COMMENTED OUT - Auction API disabled (moved to separate site)
+// app.use("/api/auction", auctionRoute);
 
 
 app.get('*', (req, res) => {
