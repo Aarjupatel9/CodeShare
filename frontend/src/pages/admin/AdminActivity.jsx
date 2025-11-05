@@ -79,7 +79,7 @@ export default function AdminActivity() {
         errorLevel: errorLevel || undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
-        excludeAdmin: excludeAdmin || undefined,
+        excludeAdmin: excludeAdmin ? 'true' : undefined,
       });
 
       if (response.success) {
@@ -105,6 +105,74 @@ export default function AdminActivity() {
     if (action.includes('create') || action.includes('upload')) return 'bg-blue-100 text-blue-800';
     if (action.includes('update') || action.includes('edit')) return 'bg-yellow-100 text-yellow-800';
     return 'bg-gray-100 text-gray-800';
+  };
+
+  // Helper function to render JSON details in a more readable format
+  const renderDetails = (details) => {
+    if (!details || typeof details !== 'object') return null;
+    
+    const renderValue = (value, indent = 0) => {
+      const spacing = '  '.repeat(indent);
+      
+      if (value === null) {
+        return <span className="text-gray-500">null</span>;
+      }
+      
+      if (typeof value === 'string') {
+        return <span className="text-yellow-300">"{value}"</span>;
+      }
+      
+      if (typeof value === 'number') {
+        return <span className="text-blue-400">{value}</span>;
+      }
+      
+      if (typeof value === 'boolean') {
+        return <span className="text-purple-400">{value.toString()}</span>;
+      }
+      
+      if (Array.isArray(value)) {
+        if (value.length === 0) return <span className="text-gray-400">[]</span>;
+        return (
+          <span>
+            <span className="text-gray-400">[</span>
+            {value.map((item, i) => (
+              <div key={i} style={{ marginLeft: `${(indent + 1) * 16}px` }}>
+                {renderValue(item, indent + 1)}
+                {i < value.length - 1 && <span className="text-gray-400">,</span>}
+              </div>
+            ))}
+            <div style={{ marginLeft: `${indent * 16}px` }}>
+              <span className="text-gray-400">]</span>
+            </div>
+          </span>
+        );
+      }
+      
+      if (typeof value === 'object') {
+        const keys = Object.keys(value);
+        if (keys.length === 0) return <span className="text-gray-400">{'{}'}</span>;
+        return (
+          <span>
+            <span className="text-gray-400">{'{'}</span>
+            {keys.map((key, i) => (
+              <div key={key} style={{ marginLeft: `${(indent + 1) * 16}px` }}>
+                <span className="text-cyan-400">"{key}"</span>
+                <span className="text-gray-400">: </span>
+                {renderValue(value[key], indent + 1)}
+                {i < keys.length - 1 && <span className="text-gray-400">,</span>}
+              </div>
+            ))}
+            <div style={{ marginLeft: `${indent * 16}px` }}>
+              <span className="text-gray-400">{'}'}</span>
+            </div>
+          </span>
+        );
+      }
+      
+      return <span className="text-gray-300">{String(value)}</span>;
+    };
+    
+    return <div className="text-left">{renderValue(details)}</div>;
   };
 
   return (
@@ -469,8 +537,8 @@ export default function AdminActivity() {
                       {selectedLog.errorMessage && (
                         <div>
                           <span className="text-sm font-medium text-red-600 block mb-2">Error Message:</span>
-                          <div className="bg-red-50 border border-red-200 rounded p-3">
-                            <p className="text-sm text-red-800 whitespace-pre-wrap">{selectedLog.errorMessage}</p>
+                          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                            <p className="text-sm text-red-800 text-left whitespace-pre-wrap font-mono">{selectedLog.errorMessage}</p>
                           </div>
                         </div>
                       )}
@@ -489,10 +557,10 @@ export default function AdminActivity() {
                       {selectedLog.details && Object.keys(selectedLog.details).length > 0 && (
                         <div>
                           <span className="text-sm font-medium text-gray-700 block mb-2">Details:</span>
-                          <div className="bg-white border border-gray-200 rounded p-3 max-h-60 overflow-y-auto">
-                            <pre className="text-xs text-gray-800 whitespace-pre-wrap font-mono">
-                              {JSON.stringify(selectedLog.details, null, 2)}
-                            </pre>
+                          <div className="bg-gray-900 border border-gray-700 rounded-lg p-4 max-h-80 overflow-y-auto overflow-x-auto">
+                            <div className="text-xs font-mono">
+                              {renderDetails(selectedLog.details)}
+                            </div>
                           </div>
                         </div>
                       )}
