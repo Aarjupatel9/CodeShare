@@ -36,15 +36,6 @@ class BatchedActivityLogger {
             return;
         }
 
-        // Optimize details object size
-        if (logData.details && typeof logData.details === 'object') {
-            const detailsString = JSON.stringify(logData.details);
-            if (detailsString.length > 500) {
-                // Truncate if too large
-                logData.details = JSON.parse(detailsString.substring(0, 490) + '..."truncated"');
-            }
-        }
-
         // Add to queue
         this.queue.push({
             ...logData,
