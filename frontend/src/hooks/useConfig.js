@@ -95,6 +95,16 @@ export const getBackendSocketUrl = () => {
 };
 
 /**
+ * Get auction website URL from config
+ * Returns default URL if config not loaded
+ * 
+ * @returns {string} Auction website URL
+ */
+export const getAuctionUrl = () => {
+    return configCache?.auction_url || 'https://codeshare.auctionng.org';
+};
+
+/**
  * Preload config (call this in App.js or index.js)
  * Ensures config is loaded before components need it
  */

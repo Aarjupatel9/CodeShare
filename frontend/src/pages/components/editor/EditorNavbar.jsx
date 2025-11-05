@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import useClickOutside from '../../../hooks/useClickOutside';
+import { getAuctionUrl } from '../../../hooks/useConfig';
 
 /**
  * EditorNavbar - Top navigation bar
@@ -19,6 +20,7 @@ const EditorNavbar = ({
   MobileMenuComponent
 }) => {
   const profileDropdownRef = useRef(null);
+  const auctionUrl = getAuctionUrl();
   
   const handleProfileClick = () => {
     setDropdownVisibility((prev) => {
@@ -52,7 +54,7 @@ const EditorNavbar = ({
           <>
             <button onClick={() => onNavigate("/games")} className="text-gray-700 hover:text-blue-600 transition">Games</button>
             <a 
-              href="https://auction.codeshare.com"
+              href={auctionUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-700 hover:text-blue-600 flex items-center gap-1 transition"
@@ -66,7 +68,7 @@ const EditorNavbar = ({
           <>
             <button onClick={() => onNavigate("/games")} className="text-gray-700 hover:text-blue-600 transition">Games</button>
             <a 
-              href="https://auction.codeshare.com"
+              href={auctionUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-700 hover:text-blue-600 flex items-center gap-1 transition"
@@ -149,7 +151,7 @@ const EditorNavbar = ({
                 </a>
 
                 <a 
-                  href="https://auction.codeshare.com"
+                  href={auctionUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition cursor-pointer text-left"
