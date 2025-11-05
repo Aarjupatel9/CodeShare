@@ -117,23 +117,29 @@ curl http://localhost:8080/
 1. Go to http://localhost:3000/auth/register
 2. Register a new account
 3. Login with credentials
-4. Start creating documents or auctions!
+4. Start creating documents!
 
 ---
 
-## 🎯 Create First Auction
+## 📝 Create First Document
 
 1. Login to your account
-2. Click "Auctions" in navigation
-3. Click "Create New Auction"
-4. Fill in details:
-   - Auction name
-   - Password
-   - Budget per team
-   - Max/min players
-5. Go to "Setup & Manage"
-6. Add teams, players, sets
-7. Start bidding!
+2. Click "New Document" or "+" button
+3. Start typing in the rich text editor
+4. Use formatting tools (bold, italic, lists, etc.)
+5. Save your document
+6. Share via public link or keep it private
+
+---
+
+## 📁 Setup Google Drive (Optional)
+
+For file upload functionality:
+
+1. Get Google OAuth credentials (see SETUP.md)
+2. Add credentials to backend .env
+3. Go to Profile → Connect Google Drive
+4. Upload files to your documents
 
 ---
 

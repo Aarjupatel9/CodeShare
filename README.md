@@ -1,6 +1,6 @@
 # CodeShare
 
-A multi-functional web platform for document sharing, cricket auctions, and gaming.
+A modern collaborative document editor and code sharing platform with real-time synchronization.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
@@ -14,23 +14,22 @@ A multi-functional web platform for document sharing, cricket auctions, and gami
 - Collaborative document editing with TinyMCE
 - Real-time synchronization via WebSockets
 - Version control (last 30 versions)
-- File attachments support
+- File attachments with Google Drive integration
 - Public/Private document access
 - Slug-based URL sharing
-
-### **🏏 Cricket Auction System**
-- Complete IPL-style auction management
-- Team and player management
-- Live bidding interface with real-time updates
-- Budget tracking and calculations
-- Excel player data import
-- Team logos with smart caching
-- Public spectator view
+- Beautiful formatting options
 
 ### **🎮 Gaming Platform**
 - Multiple casual games
 - Score tracking
 - Leaderboards
+
+### **🚀 Modern Features**
+- SEO optimized with Open Graph support
+- PWA ready with manifest.json
+- Mobile responsive design
+- Fast and lightweight
+- Zero external dependencies for SEO
 
 ---
 
@@ -104,8 +103,8 @@ Comprehensive documentation available in [`/docs`](docs/):
 - MongoDB + Mongoose
 - JWT Authentication
 - Socket.IO
-- Sharp (Image processing)
-- AWS S3 (Document files)
+- Google Drive API (File storage)
+- OAuth 2.0
 
 ### **Testing**
 - Jest
@@ -124,6 +123,9 @@ POST   /api/v1/auth/register
 POST   /api/v1/auth/login
 POST   /api/v1/auth/logout
 POST   /api/v1/auth/verify-token
+POST   /api/v1/auth/google-drive/authorize
+GET    /api/v1/auth/google-drive/callback
+POST   /api/v1/auth/google-drive/disconnect
 
 Documents:
 GET    /api/v1/documents
@@ -133,15 +135,15 @@ PUT    /api/v1/documents/:id
 DELETE /api/v1/documents/:id
 GET    /api/v1/documents/public/:slug
 
-Auctions:
-GET    /api/v1/auctions
-POST   /api/v1/auctions
-GET    /api/v1/auctions/:id
-PUT    /api/v1/auctions/:id
-POST   /api/v1/auctions/:id/login
+Files:
+POST   /api/v1/files/upload
+GET    /api/v1/files/:fileId
+DELETE /api/v1/files/:fileId
 
-Teams, Players, Sets:
-Nested under /api/v1/auctions/:auctionId/
+Admin:
+GET    /api/v1/admin/users
+POST   /api/v1/admin/users/:userId
+GET    /api/v1/admin/activity-logs
 ```
 
 See [API Usage Documentation](docs/03-api/API_USAGE.md) for complete reference.
@@ -194,21 +196,23 @@ See [Getting Started Guide](docs/01-getting-started/SETUP.md#building-for-produc
 
 ## 🔑 Key Highlights
 
-### **Recent Updates (Oct 2025)**
+### **Recent Updates (Nov 2025)**
 
+✅ **SEO Optimized** - Comprehensive meta tags, sitemap, robots.txt, Open Graph support  
+✅ **Google Drive Integration** - OAuth 2.0 based file storage  
 ✅ **RESTful API v1** - Modern API architecture with proper HTTP methods  
-✅ **Team Logo System** - AWS S3-free with 3-tier caching (10-40x faster)  
-✅ **Security Improvements** - Password hashing, proper token expiry  
+✅ **Security Improvements** - Password hashing, proper token expiry, file upload controls  
 ✅ **Frontend API Client** - Centralized, maintainable service layer  
 ✅ **Test Suite** - Jest + Supertest with 71 test cases  
 ✅ **Documentation** - Comprehensive guides for all aspects  
+✅ **Admin Panel** - Activity logs with detailed error tracking and filtering  
 
 ### **Performance**
 
 | Operation | Response Time |
 |-----------|---------------|
 | Document Load | ~500ms |
-| Team Logo (cached) | ~5ms |
+| File Upload (Google Drive) | ~2s |
 | API Request | ~100ms |
 | Real-time Sync | <50ms |
 
@@ -257,19 +261,22 @@ For questions or issues:
 
 ## 🗺️ Roadmap
 
-### **Current Version: 1.0.0**
+### **Current Version: 2.1.0**
 
 ### **Upcoming**
 - [ ] API v2 with GraphQL
 - [ ] Real-time collaboration cursors
-- [ ] Enhanced auction analytics
+- [ ] Enhanced document analytics
 - [ ] Mobile app (React Native)
 - [ ] Elasticsearch integration
 - [ ] Redis caching layer
+- [ ] Multi-language support
+
+### **Note:** Auction functionality has been moved to a separate dedicated platform
 
 ---
 
 **Star ⭐ this repo if you find it useful!**
 
-Last Updated: October 31, 2025  
+Last Updated: November 5, 2025  
 Author: Aarju Patel

@@ -14,7 +14,7 @@ import ResetPasswordComponent from "./pages/ResetPasswordComponent";
 import PublicPages from "./pages/PublicPages";
 import HelpPage from "./pages/HelpPage";
 import AboutPage from "./pages/AboutPage";
-import AuctionHelpPage from "./pages/AuctionHelpPage";
+// import AuctionHelpPage from "./pages/AuctionHelpPage"; // COMMENTED OUT - Auction moved to separate site
 import UserProfilePage from "./pages/UserProfilePage";
 
 // Admin
@@ -26,12 +26,12 @@ import AdminDocuments from "./pages/admin/AdminDocuments";
 // Features
 import GamePage from "./gamePlugin/GamePage";
 
-// Auction
-import AuctionHome from "./auction/AuctionHome";
-import AuctionDashboard from "./auction/AuctionDashboard";
-import AuctionSetup from "./auction/AuctionSetup";
-import AuctionBidding from "./auction/AuctionBidding";
-import AuctionLiveView from "./auction/AuctionLiveView";
+// Auction - COMMENTED OUT (Moved to separate dedicated site)
+// import AuctionHome from "./auction/AuctionHome";
+// import AuctionDashboard from "./auction/AuctionDashboard";
+// import AuctionSetup from "./auction/AuctionSetup";
+// import AuctionBidding from "./auction/AuctionBidding";
+// import AuctionLiveView from "./auction/AuctionLiveView";
 
 // Route components
 import PrivateRoute from "./components/routes/PrivateRoute";
@@ -89,8 +89,8 @@ function App() {
           <Route path="/games" element={<PublicRoute component={GamePage} />} />
           <Route path="/game/:gameName/*" element={<PublicRoute component={GamePage} />} />
           
-          {/* Public Auction View */}
-          <Route path="/t/auction/:auctionId/live" element={<PublicRoute component={AuctionLiveView} />} />
+          {/* Public Auction View - COMMENTED OUT (Moved to separate site) */}
+          {/* <Route path="/t/auction/:auctionId/live" element={<PublicRoute component={AuctionLiveView} />} /> */}
           
           {/* Public Documents */}
           <Route path="/:userId/:slug" element={<PublicRoute component={PublicPages} />} />
@@ -116,12 +116,12 @@ function App() {
           <Route path="/p/:userId/" element={<PrivateRoute component={MainPage} />} />
           <Route path="/p/:userId/:slug" element={<PrivateRoute component={MainPage} />} />
           
-          {/* Auction Management */}
-          <Route path="/p/:userId/t/auction/" element={<PrivateRoute component={AuctionHome} />} />
-          <Route path="/p/:userId/t/auction/help" element={<PrivateRoute component={AuctionHelpPage} />} />
-          <Route path="/p/:userId/t/auction/:auctionId" element={<PrivateRoute component={AuctionDashboard} />} />
-          <Route path="/p/:userId/t/auction/:auctionId/manage" element={<PrivateRoute component={AuctionSetup} />} />
-          <Route path="/p/:userId/t/auction/:auctionId/bidding" element={<PrivateRoute component={AuctionBidding} />} />
+          {/* Auction Management - COMMENTED OUT (Moved to separate dedicated site) */}
+          {/* <Route path="/p/:userId/t/auction/" element={<PrivateRoute component={AuctionHome} />} /> */}
+          {/* <Route path="/p/:userId/t/auction/help" element={<PrivateRoute component={AuctionHelpPage} />} /> */}
+          {/* <Route path="/p/:userId/t/auction/:auctionId" element={<PrivateRoute component={AuctionDashboard} />} /> */}
+          {/* <Route path="/p/:userId/t/auction/:auctionId/manage" element={<PrivateRoute component={AuctionSetup} />} /> */}
+          {/* <Route path="/p/:userId/t/auction/:auctionId/bidding" element={<PrivateRoute component={AuctionBidding} />} /> */}
           
           {/* Fallback */}
           <Route path="*" element={<PublicRoute component={PublicPages} />} />

@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import useClickOutside from '../../../hooks/useClickOutside';
+import { getAuctionUrl } from '../../../hooks/useConfig';
 
 /**
  * EditorNavbar - Top navigation bar
@@ -19,6 +20,7 @@ const EditorNavbar = ({
   MobileMenuComponent
 }) => {
   const profileDropdownRef = useRef(null);
+  const auctionUrl = getAuctionUrl();
   
   const handleProfileClick = () => {
     setDropdownVisibility((prev) => {
@@ -51,19 +53,28 @@ const EditorNavbar = ({
         {!currUser ? (
           <>
             <button onClick={() => onNavigate("/games")} className="text-gray-700 hover:text-blue-600 transition">Games</button>
-            <button 
-              onClick={onShowSubscription}
+            <a 
+              href={auctionUrl}
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-gray-700 hover:text-blue-600 flex items-center gap-1 transition"
             >
-              Auctions <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">Pro</span>
-            </button>
+              Auctions <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">New</span>
+            </a>
             <button onClick={() => onNavigate("/help")} className="text-gray-700 hover:text-blue-600 transition">Help</button>
             <button onClick={() => onNavigate("/about")} className="text-gray-700 hover:text-blue-600 transition">About</button>
           </>
         ) : (
           <>
             <button onClick={() => onNavigate("/games")} className="text-gray-700 hover:text-blue-600 transition">Games</button>
-            <button onClick={() => onNavigate(`/p/${currUser._id}/t/auction`)} className="text-gray-700 hover:text-blue-600 transition">Auctions</button>
+            <a 
+              href={auctionUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-700 hover:text-blue-600 flex items-center gap-1 transition"
+            >
+              Auctions <span className="text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full ml-1">New</span>
+            </a>
             {(currUser.role === 'admin' || currUser.role === 'moderator') && (
               <button 
                 onClick={() => onNavigate(`/p/${currUser._id}/admin`)} 
@@ -140,13 +151,18 @@ const EditorNavbar = ({
                 </a>
 
                 <a 
-                  onClick={() => onNavigate(`/p/${currUser._id}/t/auction`)}
+                  href={auctionUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition cursor-pointer text-left"
                 >
                   <span className="text-xl">🏏</span>
                   <div className="flex-1 text-left">
-                    <div className="text-sm font-medium text-gray-900">Auctions</div>
-                    <div className="text-xs text-gray-500">Manage auctions</div>
+                    <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                      Auctions 
+                      <span className="text-xs bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full">New</span>
+                    </div>
+                    <div className="text-xs text-green-600">Visit New Site →</div>
                   </div>
                 </a>
 

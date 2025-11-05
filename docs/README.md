@@ -1,18 +1,19 @@
 # CodeShare Documentation
 
-**Last Updated**: October 31, 2025  
-**Version**: 2.0  
+**Last Updated**: November 5, 2025  
+**Version**: 2.1  
 **Author**: Aarju Patel
 
 ---
 
 ## 📖 Welcome to CodeShare
 
-CodeShare is a collaborative platform featuring:
-- 📝 **Code Editor**: Real-time collaborative editing
-- 🎯 **Auction Management**: Complete IPL-style auction system
-- 📺 **Live View**: Public spectator page with real-time updates
-- 📊 **Analytics**: Viewer tracking and auction statistics
+CodeShare is a modern collaborative document editor and code sharing platform featuring:
+- 📝 **Document Editor**: Real-time collaborative editing with TinyMCE
+- 📁 **File Management**: Google Drive integration for file uploads
+- 🔒 **Authentication**: Secure JWT-based auth with Google OAuth
+- 🎮 **Gaming**: Built-in casual games with score tracking
+- 🚀 **SEO Optimized**: Comprehensive meta tags and social media integration
 
 ---
 
@@ -101,39 +102,32 @@ See [System Design](./02-architecture/SYSTEM_DESIGN.md) for details.
 
 ## 📊 Key Features
 
-### 🎯 Auction Management
-- Team management with logo uploads
-- Player management with Excel import
-- Set-based bidding system
-- Real-time bidding interface
-
-### 📺 Live View
-- Public spectator page
-- Real-time viewer count
-- Leaderboard and recent sales
-- Team rosters with player search
-
-### 📊 Analytics
-- Optional viewer tracking (1-minute snapshots)
-- Peak, average, minimum viewers
-- Trend visualization
-- 90-day data retention
-
 ### 📝 Document Editor
-- Real-time collaboration
-- Syntax highlighting
-- File management
+- Rich text editing with TinyMCE
+- Real-time collaboration via Socket.IO
+- Version control (last 30 versions)
+- Public/private document access
+- Slug-based URL sharing
 
----
+### 📁 File Management
+- Google Drive OAuth 2.0 integration
+- Per-user file upload controls
+- File size limits
+- Drag-and-drop file uploads
+- Search, rename, delete, pin files
 
-## 🚀 Performance
+### 🔒 Security & Admin
+- JWT authentication
+- Password hashing with bcrypt
+- Admin activity logging
+- User management panel
+- Detailed error tracking
 
-### **Server Capacity (t2.micro - 1GB RAM):**
-
-**Single Server**: 500-800 concurrent viewers  
-**2-Server Setup**: 1000-1600 concurrent viewers
-
-See [Capacity Analysis](./05-performance/CAPACITY_ANALYSIS.md) for details.
+### 🚀 SEO & Performance
+- Comprehensive meta tags (Open Graph, Twitter Cards)
+- sitemap.xml and robots.txt
+- PWA support with manifest.json
+- Fast and lightweight
 
 ---
 

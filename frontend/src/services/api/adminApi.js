@@ -127,6 +127,7 @@ class AdminApi {
       if (params.errorLevel) queryParams.append('errorLevel', params.errorLevel);
       if (params.startDate) queryParams.append('startDate', params.startDate);
       if (params.endDate) queryParams.append('endDate', params.endDate);
+      if (params.excludeAdmin) queryParams.append('excludeAdmin', params.excludeAdmin);
 
       const queryString = queryParams.toString();
       const endpoint = `/api/v1/admin/activity${queryString ? '?' + queryString : ''}`;

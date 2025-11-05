@@ -511,6 +511,7 @@ exports.getActivityLogs = async (req, res) => {
       errorLevel = '',
       startDate = '',
       endDate = '',
+      excludeAdmin = '',
     } = req.query;
 
     const filter = {};
@@ -537,6 +538,27 @@ exports.getActivityLogs = async (req, res) => {
       filter.userId = userId;
     }
 
+    // If excludeAdmin is true, filter out admin and moderator activities
+    if (excludeAdmin === 'true') {
+      const adminUsers = await UserModel.find({
+        role: { $in: ['admin', 'moderator'] }
+      }).select('_id');
+      
+      if (adminUsers && adminUsers.length > 0) {
+        const adminIds = adminUsers.map(u => u._id);
+        // Exclude admin users from results
+        if (filter.userId && filter.userId.$in) {
+          // If userId filter exists with $in, exclude admins from that list
+          filter.userId.$in = filter.userId.$in.filter(id => 
+            !adminIds.some(adminId => adminId.toString() === id.toString())
+          );
+        } else if (!filter.userId) {
+          // If no userId filter, add a $nin (not in) condition
+          filter.userId = { $nin: adminIds };
+        }
+      }
+    }
+
     if (action) filter.action = action;
     if (resourceType) filter.resourceType = resourceType;
     if (errorLevel) filter.errorLevel = errorLevel;
@@ -550,7 +572,7 @@ exports.getActivityLogs = async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const activities = await ActivityLog.find(filter)
-      .populate('userId', 'username email')
+      .populate('userId', 'username email role')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
