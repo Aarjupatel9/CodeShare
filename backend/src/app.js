@@ -3,6 +3,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const path = require('path');
+const compression = require('compression');
 require("dotenv").config();
 var bodyParser = require("body-parser");
 
@@ -35,6 +36,9 @@ app.use(cors({
     origin: allowedOrigin,
     credentials: true
 }));
+
+// Enable gzip/brotli compression for all responses (60-80% bandwidth reduction)
+app.use(compression());
 
 app.use(logger("dev")); // for logs
 app.use(cookieParser());

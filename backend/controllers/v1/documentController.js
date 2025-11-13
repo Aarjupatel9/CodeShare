@@ -77,10 +77,15 @@ exports.getDocument = async (req, res) => {
 /**
  * Get all documents for authenticated user
  * GET /api/v1/documents
+ * Query params:
+ *   - fields: Comma-separated list of fields to return (default: unique_name,language,createdAt,updatedAt)
+ *             Use '*' to return all fields
+ * Example: GET /api/v1/documents?fields=unique_name,createdAt
  */
 exports.getDocuments = async (req, res) => {
   try {
     const user = req.user;
+    const { fields } = req.query;
     
     if (!user) {
       return res.status(401).json({
@@ -89,12 +94,29 @@ exports.getDocuments = async (req, res) => {
       });
     }
 
-    const documents = await DataModel.find({ 
+    // Parse field selection
+    let selectFields = 'unique_name language createdAt updatedAt'; // Default minimal fields
+    if (fields) {
+      if (fields === '*') {
+        // Select all fields (MongoDB default behavior when no select is used)
+        selectFields = '';
+      } else {
+        // Convert comma-separated list to space-separated for Mongoose
+        selectFields = fields.split(',').map(f => f.trim()).join(' ');
+      }
+    }
+
+    const query = DataModel.find({ 
       owner: user._id, 
       isDeleted: { $ne: true } 
-    })
-    .select('unique_name language createdAt updatedAt')
-    .sort({ updatedAt: -1 });
+    }).sort({ updatedAt: -1 });
+
+    // Only apply select if fields are specified (empty string means select all)
+    if (selectFields) {
+      query.select(selectFields);
+    }
+
+    const documents = await query;
 
     res.status(200).json({
       success: true,
@@ -106,7 +128,7 @@ exports.getDocuments = async (req, res) => {
       controller: 'documentController',
       function: 'getDocuments',
       resourceType: 'document',
-      context: { userId: req?.user?._id }
+      context: { userId: req?.user?._id, fields: req.query?.fields }
     });
     res.status(500).json({
       success: false,
@@ -316,27 +338,82 @@ exports.deleteDocument = async (req, res) => {
 };
 
 /**
- * Get document versions
+ * Get document versions with pagination
  * GET /api/v1/documents/:id/versions
+ * Query params:
+ *   - page: Page number (default: 1)
+ *   - limit: Items per page (default: 20)
+ * Example: GET /api/v1/documents/:id/versions?page=2&limit=10
  */
 exports.getDocumentVersions = async (req, res) => {
   try {
     const { id } = req.params;
+    const { page = 1, limit = 20 } = req.query;
     const user = req.user;
 
-    const versions = await _getAllVersion(id, user?._id);
+    // Build match condition
+    const matchCondition = {
+      $or: [
+        { unique_name: id },
+        { _id: mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : null }
+      ],
+      isDeleted: { $ne: true }
+    };
 
-    if (!versions) {
+    if (user?._id) {
+      matchCondition.owner = new mongoose.Types.ObjectId(user._id);
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Optimized aggregation with pagination
+    const result = await DataModel.aggregate([
+      { $match: matchCondition },
+      {
+        $project: {
+          unique_name: 1,
+          language: 1,
+          totalVersions: { $size: "$dataVersion" },
+          dataVersion: {
+            $map: {
+              input: { 
+                $slice: [
+                  { $reverseArray: "$dataVersion" }, // Latest first
+                  skip, 
+                  parseInt(limit)
+                ]
+              },
+              as: "version",
+              in: { time: "$$version.time" }
+            }
+          }
+        }
+      }
+    ]);
+
+    if (!result || result.length === 0) {
       return res.status(404).json({
         success: false,
         message: "Document not found",
       });
     }
 
+    const document = result[0];
+
     res.status(200).json({
       success: true,
       message: "Versions retrieved successfully",
-      data: versions,
+      data: {
+        unique_name: document.unique_name,
+        language: document.language,
+        dataVersion: document.dataVersion,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: document.totalVersions,
+          pages: Math.ceil(document.totalVersions / parseInt(limit))
+        }
+      }
     });
   } catch (e) {
     logger.logError(e, req, {
@@ -344,7 +421,7 @@ exports.getDocumentVersions = async (req, res) => {
       function: 'getDocumentVersions',
       resourceType: 'document',
       resourceId: id,
-      context: { userId: req?.user?._id }
+      context: { userId: req?.user?._id, page: req.query?.page, limit: req.query?.limit }
     });
     res.status(500).json({
       success: false,
@@ -393,7 +470,6 @@ async function _getLatestDataVersion(slug, userId) {
           language: { $first: "$language" },
           unique_name: { $first: "$unique_name" },
           latestDataVersion: { $first: "$dataVersion" },
-          files: { $first: "$files" },
         },
       },
     ]);
