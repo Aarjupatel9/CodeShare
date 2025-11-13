@@ -9,14 +9,9 @@ var bodyParser = require("body-parser");
 // Legacy routes
 const userRoute = require('../routes/userRoute');
 const authRoute = require('../routes/authRoute');
-// COMMENTED OUT - Auction moved to separate site
-// const auctionRoute = require('../routes/auctionRoute');
 
 // New API v1 routes
 const v1Routes = require('../routes/v1');
-
-// Services for logo sync
-const imageService = require('../services/imageService');
 
 const app = express();
 
@@ -76,26 +71,8 @@ app.use("/api/v1", v1Routes);
 // Legacy routes (for backward compatibility)
 app.use("/api/data", userRoute);
 app.use("/api/auth", authRoute);
-// COMMENTED OUT - Auction API disabled (moved to separate site)
-// app.use("/api/auction", auctionRoute);
-
 
 app.get('*', (req, res) => {
-    // Check if this is a team logo request
-    if (req.path.startsWith('/uploads/teams/') && req.path.match(/\/uploads\/teams\/[a-fA-F0-9]+\.[a-zA-Z]+$/)) {
-      const matches = req.path.match(/\/uploads\/teams\/([a-fA-F0-9]+)\.([a-zA-Z]+)$/);
-      if (matches) {
-        const teamId = matches[1];
-        
-        // Trigger background sync
-        imageService.syncTeamLogoFromDB(teamId).catch(err => {
-          console.error('Background logo sync error:', err.message);
-        });
-        
-        return res.status(404).send('Logo not found');
-      }
-    }
-    
     return res.status(404).json({ message: 'Content not found' });
 })
 
