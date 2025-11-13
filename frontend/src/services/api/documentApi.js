@@ -31,10 +31,27 @@ class DocumentApi {
 
   /**
    * Get all documents for current user
+   * @param {Object} options - Optional parameters
+   * @param {string|string[]} options.fields - Comma-separated field names or array of fields to fetch
+   *                                          Use '*' for all fields, or omit for default minimal fields
+   *                                          Example: 'unique_name,createdAt' or ['unique_name', 'createdAt']
+   * @returns {Promise} API response with documents
    */
-  async getDocuments() {
+  async getDocuments(options = {}) {
     try {
-      const response = await apiClient.get('/api/v1/documents');
+      const { fields } = options;
+      
+      const queryParams = new URLSearchParams();
+      if (fields) {
+        // Support both string and array formats
+        const fieldsString = Array.isArray(fields) ? fields.join(',') : fields;
+        queryParams.append('fields', fieldsString);
+      }
+      
+      const queryString = queryParams.toString();
+      const endpoint = `/api/v1/documents${queryString ? '?' + queryString : ''}`;
+      
+      const response = await apiClient.get(endpoint);
       return response;
     } catch (error) {
       throw this.handleError(error);
@@ -87,11 +104,25 @@ class DocumentApi {
   }
 
   /**
-   * Get document versions
+   * Get document versions with pagination
+   * @param {string} identifier - Document ID or slug
+   * @param {Object} options - Optional parameters
+   * @param {number} options.page - Page number (default: 1)
+   * @param {number} options.limit - Items per page (default: 20)
+   * @returns {Promise} API response with versions and pagination info
    */
-  async getDocumentVersions(identifier) {
+  async getDocumentVersions(identifier, options = {}) {
     try {
-      const response = await apiClient.get(`/api/v1/documents/${identifier}/versions`);
+      const { page, limit } = options;
+      
+      const queryParams = new URLSearchParams();
+      if (page) queryParams.append('page', page);
+      if (limit) queryParams.append('limit', limit);
+      
+      const queryString = queryParams.toString();
+      const endpoint = `/api/v1/documents/${identifier}/versions${queryString ? '?' + queryString : ''}`;
+      
+      const response = await apiClient.get(endpoint);
       return response;
     } catch (error) {
       throw this.handleError(error);
