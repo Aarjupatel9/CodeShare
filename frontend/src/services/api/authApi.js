@@ -154,6 +154,5 @@ class AuthApi {
   }
 }
 
-const authApi = new AuthApi();
-export default authApi;
-
+const AuthApiService = new AuthApi();
+export default AuthApiService;

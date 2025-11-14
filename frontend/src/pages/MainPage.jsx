@@ -1,9 +1,9 @@
-import React, { useContext, useEffect, useRef, useState, useCallback, useMemo } from "react";
+import React, { useContext, useEffect, useRef, useState, useCallback } from "react";
 import { useConfig } from "../hooks/useConfig";
 import userService from "../services/userService";
 import documentApi from "../services/api/documentApi";
 import fileApi from "../services/api/fileApi";
-import { json, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import flobiteJS from "flowbite/dist/flowbite.min.js";
 import { io } from "socket.io-client";
@@ -12,14 +12,7 @@ import useClickOutside from "../hooks/useClickOutside";
 import {
   currentVersionIcon,
   versionIndicatorIcon,
-  fileIcon,
-  downloadIcon,
-  removeIcon,
-  fileAddIcon,
   downArrowIcon,
-  pageIcon,
-  pageListIcon,
-  menuIcon,
   userProfileIcon,
   profilePicture,
   redirectArrowIcon,
@@ -28,7 +21,6 @@ import { UserContext } from "../context/UserContext";
 import TmceEditor from "./TmceEditor";
 import {
   generateRandomString,
-  getPresizeFileName,
   getTimeInFormate,
   isReservedRouteName,
   isValidAndNotReservedSlug,
@@ -51,13 +43,12 @@ export default function MainPage(props) {
 
   const editorRef = useRef(null);
   const navigate = useNavigate();
-  const { slug, userId } = useParams();
+  const { slug } = useParams();
   const { config: appConfig } = useConfig();
   const [userSlug, setUserSlug] = useState(slug);
   const [socketEnabled, setSocketEnabled] = useState(true);
   const [allVersionData, setAllVersionData] = useState([]);
   const [socket, setSocket] = useState(null);
-  const [fileList, setFileList] = useState([]);
   const [privateFileList, setPrivateFileList] = useState([]);
   const [tmpSlug, setTmpSlug] = useState("");
   const loadingFilesRef = useRef(false); // Prevent duplicate API calls
@@ -110,7 +101,7 @@ export default function MainPage(props) {
   }, [hasUnsavedChanges]);
 
   // Load user files independently from documents (memoized to prevent duplicate calls)
-  const loadUserFiles = async () => {
+  const loadUserFiles = useCallback(async () => {
     try {
       const response = await fileApi.getFiles();
       if (response.success && response.data) {
@@ -127,7 +118,7 @@ export default function MainPage(props) {
       if (currUser && currUser.pages) {
         let results = [];
         Object.values(currUser.pages).forEach((page) => {
-          const { _id, unique_name, files = [] } = page.pageId;
+          const { unique_name, files = [] } = page.pageId;
           files.forEach((file) => {
             results.push({
               ...file,
@@ -140,7 +131,7 @@ export default function MainPage(props) {
     } finally {
       loadingFilesRef.current = false;
     }
-  };
+  }, [currUser]);
 
   useEffect(() => {
     if (currUser) {
@@ -190,12 +181,11 @@ export default function MainPage(props) {
       setUserSlug(newSlug);
     } else {
       setAllVersionData([]);
-      setFileList([]);
       setLatestVersion({ time: "", data: "", _id: "" });
       setTmpSlug(slug);
       setUserSlug(slug);
 
-      if (slug == "new") {
+      if (slug === "new") {
         return;
       }
       userService.getData(slug, null, "latest", currUser).then((res) => {
@@ -218,10 +208,7 @@ export default function MainPage(props) {
               publicFile.forEach(function (file) {
                 file.pageName = slug;
               });
-              setFileList(publicFile);
             }
-          } else {
-            setFileList([]);
           }
         } else {
           if (currUser) {
@@ -247,17 +234,17 @@ export default function MainPage(props) {
   useEffect(() => {
     if (socketEnabled && appConfig.backend_socket_url) {
       if (slug) {
-        const socket = new io(appConfig.backend_socket_url, {
+        const newSocket = new io(appConfig.backend_socket_url, {
           query: { slug: slug },
           path: "/socket/", // Custom path for Socket.IO
         });
-        socket.on("room_message", (room, content) => {
+        newSocket.on("room_message", (room, content) => {
           setIncomingEditorValue(content);
         });
-        setSocket(socket);
+        setSocket(newSocket);
 
         return () => {
-          socket.disconnect();
+          newSocket.disconnect();
         };
       }
     } else {
@@ -280,7 +267,7 @@ export default function MainPage(props) {
         onSubmit={(e) => {
           e.preventDefault();
           if (confirmText.trim()) {
-            if (confirmText == "confirm") {
+            if (confirmText === "confirm") {
               handlePageRemove(page._id)
               toast.dismiss(t.id);
             } else {
@@ -488,14 +475,13 @@ export default function MainPage(props) {
     if (editorRef && editorRef.current) {
       editorRef.current.value = "";
     }
-    setFileList([]);
     // Reset saved content and unsaved changes when clearing
     setLastSavedContent("");
     setHasUnsavedChanges(false);
   }
 
   const isDuplicatePageName = (newName) => {
-    var existingPage = currUser.pages.find((p) => { return p.pageId.unique_name == newName });
+    var existingPage = currUser.pages.find((p) => { return p.pageId.unique_name === newName });
     return existingPage ? true : false;
   }
 
@@ -509,7 +495,7 @@ export default function MainPage(props) {
     
     // For logged users with "new" page - ask for page name
     if (currUser) {
-      if (userSlug.toLocaleLowerCase() == "new") {
+      if (userSlug.toLocaleLowerCase() === "new") {
         setSaveModalType('new');
         setShowSaveModal(true);
         return;
@@ -603,7 +589,7 @@ export default function MainPage(props) {
             return user;
           });
         }
-        if (userSlug == "new") {
+        if (userSlug === "new") {
           navigate("/p/" + currUser._id + "/" + pageTitle);
         }
         
@@ -849,7 +835,7 @@ export default function MainPage(props) {
       setHasUnsavedChanges(false);
     }
     
-    if (value != incomingEditorValue && socket && socketEnabled && userSlug) {
+    if (value !== incomingEditorValue && socket && socketEnabled && userSlug) {
       socket.emit("room_message", userSlug, value);
     }
   };
@@ -858,7 +844,7 @@ export default function MainPage(props) {
     e.preventDefault();
     setPrivateTabs((old) => {
       return old.map((o) => {
-        if (o.tabId == tabId) {
+        if (o.tabId === tabId) {
           o.selected = true;
         } else {
           o.selected = false;

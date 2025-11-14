@@ -6,7 +6,6 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  DragEndEvent,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -18,13 +17,11 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import {
   pageIcon,
-  removeIcon,
   trashIcon,
   pinIcon,
   pinnedIcon,
   editIcon,
-  fileIcon,
-  downloadIcon
+  fileIcon
 } from '../../../assets/svgs';
 import { getPresizeFileName, generateRandomString } from '../../../common/functions';
 import useClickOutside from '../../../hooks/useClickOutside';

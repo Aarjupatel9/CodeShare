@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { useParams, useNavigate, useLocation, Routes, Route, Navigate } from 'react-router-dom';
+import { useParams, Routes, Route, Navigate } from 'react-router-dom';
 import gamesConfig from './games.json';
 import GameNavbar from './components/GameNavbar';
 import { GameProvider } from './context/GameContext';
@@ -13,7 +13,6 @@ function GamePageContent() {
   const [loadedGameName, setLoadedGameName] = useState(null);
 
   const { gameName, routeName } = useParams();
-  const location = useLocation();
   const { safeNavigate, NavigationWarningModal } = useSafeNavigate();
 
   // Load all components upfront when game is selected
@@ -81,9 +80,6 @@ function GamePageContent() {
   // Determine current view from URL for navbar highlighting
   const getCurrentView = () => {
     if (!gameName || !selectedGameData?.routes) return null;
-    
-    const currentPath = location.pathname;
-    const basePath = `/game/${gameName}`;
     
     if (routeName) {
       if (selectedGameData?.routes[routeName]) {

@@ -112,8 +112,6 @@ export default function AdminActivity() {
     if (!details || typeof details !== 'object') return null;
     
     const renderValue = (value, indent = 0) => {
-      const spacing = '  '.repeat(indent);
-      
       if (value === null) {
         return <span className="text-gray-500">null</span>;
       }

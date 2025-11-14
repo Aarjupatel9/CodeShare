@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React from 'react';
 import MainPage from './MainPage';
 
 export default function PublicPages() {

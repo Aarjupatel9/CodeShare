@@ -1,15 +1,13 @@
 import { Editor } from '@tinymce/tinymce-react';
 import {
-    socketIcon,
-    addFileIcon
+    socketIcon
 } from "../assets/svgs";
-import { useEffect } from 'react';
 
 var tinyApiKey = process.env.REACT_APP_TINYMCE_KEY;
 
 
 export default function TmceEditor({ props }) {
-    const { editorRef, inputFile, latestVersion, setSocketEnabled, saveData, handleOnEditorChange } = props;
+    const { editorRef, latestVersion, setSocketEnabled, handleOnEditorChange } = props;
     return (
         <Editor
             tinymceScriptSrc='/tinymce/tinymce.min.js'
