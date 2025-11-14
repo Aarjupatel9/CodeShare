@@ -23,13 +23,13 @@ CodeShare is a modern collaborative document editor and code sharing platform fe
 Quick start guide, installation, and deployment instructions.
 
 ### 🏗️ [Architecture](./02-architecture/README.md)
-System design, database schema, and server architecture (2-server setup).
+System design, database schema, and server architecture.
 
 ### 🔌 [API Reference](./03-api/README.md)
 REST API endpoints, Socket.IO events, and authentication.
 
 ### ✨ [Features](./04-features/README.md)
-Detailed guides for auction bidding, live view, analytics, and more.
+Detailed guides for document collaboration, file management, and more.
 
 ### ⚡ [Performance](./05-performance/CAPACITY_ANALYSIS.md)
 Optimization strategies, capacity analysis, and server sizing.
@@ -48,16 +48,13 @@ git clone <repo-url>
 # 2. Install dependencies
 cd backend && npm install
 cd ../frontend && npm install
-cd ../socketServer && npm install
 
 # 3. Configure environment
 cp backend/.env.example backend/.env
-cp socketServer/.env.example socketServer/.env
-# Edit .env files with your configuration
+# Edit .env file with your configuration
 
-# 4. Start servers
-cd backend && npm start          # Port 8080
-cd socketServer && npm start     # Port 8081
+# 4. Start server
+cd backend && npm start          # Port 8080 (API + Socket.IO)
 cd frontend && npm start         # Port 3000
 
 # 5. Access application
@@ -70,7 +67,7 @@ See [Getting Started Guide](./01-getting-started/SETUP.md) for details.
 
 ## 🏗️ Architecture Overview
 
-### **2-Server Setup:**
+### **Single Server Setup:**
 
 ```
 ┌─────────────────────────────────────────┐
@@ -78,21 +75,13 @@ See [Getting Started Guide](./01-getting-started/SETUP.md) for details.
 │ - React application                     │
 │ - Static file serving                   │
 └─────────────────────────────────────────┘
-            ↓ HTTP/REST API
+            ↓ HTTP/REST API + Socket.IO
 ┌─────────────────────────────────────────┐
 │ Backend Server (Port 8080)              │
 │ - Express.js REST API                   │
+│ - Socket.IO (document collaboration)    │
 │ - MongoDB integration                   │
 │ - Authentication & authorization        │
-└─────────────────────────────────────────┘
-            
-            ↓ HTTP (analytics)
-            
-┌─────────────────────────────────────────┐
-│ Socket Server (Port 8081)               │
-│ - Socket.IO for real-time updates       │
-│ - Viewer tracking                       │
-│ - Bidding broadcasts                    │
 └─────────────────────────────────────────┘
 ```
 
