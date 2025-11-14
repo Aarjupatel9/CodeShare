@@ -1,10 +1,9 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import { UserIcon } from './assets/svgs';
 
 
 export default function Player(props) {
-    const { name, isActive, color, placedPlayer } = props.user1;
-    const possition = props.possition;
+    const { name, isActive, color } = props.user1;
     const availablePieces = 9 - props.user1.retirePlayer;
  
     return (

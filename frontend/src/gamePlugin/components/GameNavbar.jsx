@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 const GameNavbar = ({ selectedGameData, currentView, onNavigateToRoute, safeNavigate: externalSafeNavigate }) => {
   const location = useLocation();
