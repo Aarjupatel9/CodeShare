@@ -2,8 +2,6 @@ const UserModel = require("../../models/userModels");
 const DataModel = require("../../models/dataModels");
 const ActivityLog = require("../../models/activityLogModel");
 const AdminSettings = require("../../models/adminModels");
-const AuctionModel = require("../../models/auctionModel");
-const mongoose = require("mongoose");
 const logger = require("../../utils/loggerUtility");
 
 /**
@@ -697,7 +695,6 @@ exports.getOverviewStats = async (req, res) => {
       activeUsers30d,
       totalDocuments,
       totalFiles,
-      totalAuctions,
       newUsers24h,
       newUsers7d,
       newUsers30d
@@ -712,7 +709,6 @@ exports.getOverviewStats = async (req, res) => {
         { $unwind: { path: '$files', preserveNullAndEmptyArrays: true } },
         { $count: 'total' }
       ]).then(result => result[0]?.total || 0).catch(() => 0),
-      AuctionModel.countDocuments({}).catch(() => 0) || 0,
       UserModel.countDocuments({ createdAt: { $gte: last24h } }),
       UserModel.countDocuments({ createdAt: { $gte: last7d } }),
       UserModel.countDocuments({ createdAt: { $gte: last30d } })
@@ -737,9 +733,6 @@ exports.getOverviewStats = async (req, res) => {
         files: {
           total: totalFiles[0]?.total || 0
         },
-        auctions: {
-          total: totalAuctions
-        }
       }
     });
   } catch (error) {

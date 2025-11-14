@@ -38,10 +38,6 @@ cd CodeShare
 cd backend
 npm install
 
-# Socket Server
-cd ../socketServer
-npm install
-
 # Frontend
 cd ../frontend
 npm install
@@ -105,20 +101,7 @@ APP_PASS=your-gmail-app-password
 # Note: See EMAIL_SETUP.md for instructions on generating Gmail App Password
 ```
 
-#### **Socket Server (.env)**
-Create `/socketServer/.env`:
-```env
-# Server Configuration
-PORT=8081
-
-# CORS & Security
-ALLOWED_ORIGIN=http://localhost:3000,http://localhost
-HOST_ORIGIN_IP=127.0.0.1
-
-# Backend API Connection
-BACKEND_API_URL=http://localhost:8080
-INTERNAL_API_KEY=your-secret-key-here-12345
-```
+**Note:** Socket.IO is now integrated into the backend server (port 8080). No separate socket server configuration needed.
 
 #### **Frontend (.env.local)** (Optional)
 Create `/frontend/.env.local` (if needed):
@@ -132,7 +115,7 @@ Edit `/frontend/public/config.json`:
 ```json
 {
   "backend_url": "http://localhost:8080",
-  "backend_socket_url": "http://localhost:8081"
+  "backend_socket_url": "http://localhost:8080"
 }
 ```
 
@@ -148,14 +131,7 @@ npm start
 # Should see: "Database service is up and running..."
 ```
 
-#### **Terminal 2 - Socket Server**
-```bash
-cd socketServer
-npm start
-# Should see: "Socket Server running on port 8081"
-```
-
-#### **Terminal 3 - Frontend**
+#### **Terminal 2 - Frontend**
 ```bash
 cd frontend
 npm run dev
@@ -173,10 +149,7 @@ npm run dev
 # Backend
 curl http://localhost:8080/
 # Should return: {"message":"server is up and running 🛠",...}
-
-# Socket Server (check process)
-lsof -i :8081
-# Should show node process
+# Should also see: "📡 Socket.IO available at /socket/"
 
 # Frontend
 curl http://localhost:3000/
@@ -225,9 +198,8 @@ git pull origin main
 cd backend && npm install
 cd frontend && npm install
 
-# 3. Start all services (3 terminals)
-cd backend && npm run dev        # Nodemon (auto-restart)
-cd socketServer && npm start
+# 3. Start all services (2 terminals)
+cd backend && npm run dev        # Nodemon (auto-restart) - includes Socket.IO
 cd frontend && npm run dev
 
 # 4. Make changes and test
@@ -289,9 +261,6 @@ CodeShare/
 │   │   └── team-logos/      # Logo cache
 │   ├── tests/               # Test suites
 │   └── scripts/             # Utility scripts
-│
-├── socketServer/             # Socket.IO server
-│   └── app.js
 │
 └── docs/                     # Documentation
     ├── api/
@@ -362,7 +331,7 @@ cat .env
 
 ```bash
 # Clear node_modules
-rm -rf backend/node_modules frontend/node_modules socketServer/node_modules
+rm -rf backend/node_modules frontend/node_modules
 
 # Clear caches
 rm -rf backend/public/team-logos/*
@@ -450,7 +419,7 @@ docker-compose logs -f backend
 ### **Development**
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8080
-- Socket Server: http://localhost:8081
+- Socket.IO: http://localhost:8080/socket/
 
 ### **Production**
 - Application: http://your-domain.com

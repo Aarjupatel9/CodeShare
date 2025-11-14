@@ -27,9 +27,6 @@ This document lists which pages and functionality use **Legacy API** (`/api/auth
 - `LoginComponent.jsx` - User login
 - `RegisterComponent.jsx` - User registration
 - `PrivateRoute.jsx` - Authentication check
-- `AuctionDashboard.js` - Session verification
-- `AuctionSetup.js` - Session verification
-- `AuctionHome.js` - Session verification
 - `UserProfilePage.jsx` - Session verification
 - `systemService.jsx` - User status checks
 
@@ -66,24 +63,7 @@ This document lists which pages and functionality use **Legacy API** (`/api/auth
 
 **Note**: Login, register, and logout still use Legacy API.
 
----
-
-### Auctions (V1)
-
-**Service**: `frontend/src/services/api/auctionApi.js`
-
-**Endpoints Used**: All auction endpoints under `/api/v1/auctions/*`
-
-**Pages Using V1 Auction API**:
-- `AuctionHome.js` - Auction listing and stats
-- `AuctionDashboard.js` - Auction management
-- `AuctionSetup.js` - Auction configuration
-- `AuctionBidding.js` - Bidding interface
-- `AuctionLiveView.js` - Public live view
-
-**All auction functionality uses V1 API**.
-
----
+**Note**: Auction functionality has been moved to a separate dedicated platform.
 
 ### Documents (V1)
 

@@ -231,7 +231,6 @@ async function _getLatestDataVersion(slug, userId) {
           language: { $first: "$language" },
           unique_name: { $first: "$unique_name" },
           latestDataVersion: { $first: "$dataVersion" },
-          files: { $first: "$files" },
         },
       },
     ]);
