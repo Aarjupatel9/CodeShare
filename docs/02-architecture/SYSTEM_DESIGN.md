@@ -22,23 +22,22 @@ CodeShare follows a **microservices architecture** with three independent servic
                           ↓ HTTP/WebSocket
 ┌─────────────────────────────────────────────────────────────┐
 │                  APPLICATION LAYER                           │
-│  ┌──────────────────────┐  ┌──────────────────────┐        │
-│  │  Backend API         │  │  Socket Server       │        │
-│  │  Express.js:8080     │  │  Socket.IO:8081      │        │
-│  │  - RESTful API v1    │  │  - Document sync     │        │
-│  │  - Authentication    │  │  - Auction updates   │        │
-│  │  - Business Logic    │  │  - Real-time events  │        │
-│  └──────────────────────┘  └──────────────────────┘        │
+│  ┌──────────────────────────────────────────────┐          │
+│  │  Backend Server (Port 8080)                  │          │
+│  │  - Express.js REST API                       │          │
+│  │  - Socket.IO (document collaboration)        │          │
+│  │  - Authentication & Authorization            │          │
+│  │  - Business Logic                            │          │
+│  └──────────────────────────────────────────────┘          │
 └─────────────────────────────────────────────────────────────┘
                           ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                    DATA LAYER                                │
 │  ┌────────────────────┐  ┌────────────────────┐            │
 │  │  MongoDB Atlas     │  │  Public Folder     │            │
-│  │  - User data       │  │  - Cached logos    │            │
-│  │  - Documents       │  │  - Static assets   │            │
-│  │  - Auction data    │  │                    │            │
-│  │  - Team logos (b64)│  │                    │            │
+│  │  - User data       │  │  - Static assets   │            │
+│  │  - Documents       │  │                    │            │
+│  │  - Files metadata  │  │                    │            │
 │  └────────────────────┘  └────────────────────┘            │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -69,8 +68,9 @@ CodeShare follows a **microservices architecture** with three independent servic
      │
      ↓
 ┌──────────────────────┐
-│  Socket Server       │
+│  Socket.IO           │
 │  Broadcast to room   │
+│  (same server)      │
 └────┬─────────────────┘
      │
      ↓
@@ -277,10 +277,10 @@ Later Retrieval:
 
 ## 🔌 Socket.IO Architecture
 
-### **Dual Socket Servers**
+### **Integrated Socket Server**
 
 ```
-Main IO (path: /socket/)
+Document Collaboration (path: /socket/)
 ├── Room: document-slug
 │   ├── Events:
 │   │   ├── room_message (content sync)
@@ -421,8 +421,7 @@ Auction State:
 ```
 Developer Machine
 ├── Frontend:      localhost:3000 (React dev server)
-├── Backend:       localhost:8080 (Node.js)
-├── Socket Server: localhost:8081 (Socket.IO)
+├── Backend:       localhost:8080 (Node.js + Socket.IO)
 └── Database:      MongoDB Atlas (cloud)
 ```
 
@@ -430,8 +429,7 @@ Developer Machine
 ```
 Docker Host
 ├── code_share_frontend (Nginx:80)
-├── code_share_backend (Node:8080)
-├── code_share_socket_server (Node:8081)
+├── code_share_backend (Node:8080 - API + Socket.IO)
 └── MongoDB Atlas (external)
 
 Networks:
@@ -475,10 +473,9 @@ Backend:
 ├── Console logs (development)
 └── File logs (planned)
 
-Socket Server:
-├── Connection logs
-├── Usage logs (socket_usage.log)
-└── Every 10 seconds: connection count
+Socket.IO (integrated in backend):
+├── Connection logs (console)
+└── Connection tracking
 ```
 
 ### **Future Monitoring**
@@ -592,12 +589,9 @@ Backend (.env):
 Frontend (.env):
 └── REACT_APP_API_URL    # Backend URL
 
-Socket Server (.env):
-└── ALLOWED_ORIGIN       # CORS whitelist
-
 Public (config.json):
 ├── backend_url          # API base URL
-└── backend_socket_url   # Socket server URL
+└── backend_socket_url   # Socket URL (same as backend_url)
 ```
 
 ---
@@ -611,7 +605,7 @@ Public (config.json):
 | **Team Logo Caching** | 10-40x faster | `services/imageService.js` |
 | **WebP Compression** | 70% smaller files | Image service |
 | **MongoDB Indexes** | 100x faster queries | All models |
-| **Socket.IO Rooms** | Isolated broadcasts | `socketServer/app.js` |
+| **Socket.IO Rooms** | Isolated broadcasts | `backend/server.js` |
 | **Aggregation Pipelines** | Efficient version queries | `controllers/documentController.js` |
 
 ### **Planned**
