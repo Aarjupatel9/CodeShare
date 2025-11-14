@@ -161,4 +161,6 @@ class UserService {
   }
 }
 
-export default new UserService()
+const UserServiceService = new UserService();
+
+export default UserServiceService;

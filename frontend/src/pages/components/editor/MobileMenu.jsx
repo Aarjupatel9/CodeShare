@@ -18,11 +18,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { 
   menuIcon,
   pageIcon, 
-  pageListIcon, 
-  removeIcon, 
   fileIcon, 
-  downloadIcon, 
-  fileAddIcon,
   pinIcon,
   pinnedIcon,
   editIcon,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { useParams, useLocation, Routes, Route, Navigate } from 'react-router-dom';
+import { useParams, Routes, Route, Navigate } from 'react-router-dom';
 import gamesConfig from './games.json';
 import GameNavbar from './components/GameNavbar';
 import { GameProvider } from './context/GameContext';
@@ -13,7 +13,6 @@ function GamePageContent() {
   const [loadedGameName, setLoadedGameName] = useState(null);
 
   const { gameName, routeName } = useParams();
-  const location = useLocation();
   const { safeNavigate, NavigationWarningModal } = useSafeNavigate();
 
   // Load all components upfront when game is selected
