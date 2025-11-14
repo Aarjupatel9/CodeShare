@@ -102,9 +102,6 @@ APP_PASS=your-gmail-app-password
 ```
 
 **Note:** Socket.IO is now integrated into the backend server (port 8080). No separate socket server configuration needed.
-BACKEND_API_URL=http://localhost:8080
-INTERNAL_API_KEY=your-secret-key-here-12345
-```
 
 #### **Frontend (.env.local)** (Optional)
 Create `/frontend/.env.local` (if needed):
