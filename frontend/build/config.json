@@ -1,5 +1,6 @@
 {
-    "backend_url":"http://localhost:8080",
-    "backend_socket_url":"http://localhost:8080",
-    "auction_url":"https://codeshare.auctionng.org"
+    "backend_url": "https://codeshare.auctionng.org",
+    "backend_socket_url": "https://codeshare.auctionng.org",
+    "auction_url": "https://auctionng.org",
+    "adsense_publisher_id": "ca-pub-8653039795540767"
 }
