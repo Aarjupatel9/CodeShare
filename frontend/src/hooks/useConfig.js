@@ -105,6 +105,17 @@ export const getAuctionUrl = () => {
 };
 
 /**
+ * Get Google AdSense publisher ID from config
+ * Falls back to default CodeShare publisher ID if not configured
+ *
+ * @returns {string} AdSense publisher ID
+ */
+export const getAdsensePublisherId = () => {
+    const DEFAULT_PUBLISHER_ID = 'ca-pub-8653039795540767';
+    return configCache?.adsense_publisher_id || DEFAULT_PUBLISHER_ID;
+};
+
+/**
  * Preload config (call this in App.js or index.js)
  * Ensures config is loaded before components need it
  */
