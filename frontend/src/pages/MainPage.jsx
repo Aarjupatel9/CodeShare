@@ -870,7 +870,7 @@ export default function MainPage(props) {
   };
 
   return (
-    <div className="MainPage flex flex-col h-full w-full overflow-hidden bg-gray-50">
+    <div className="MainPage flex flex-col h-screen w-full bg-gray-50">
       <script src={flobiteJS}></script>
       <input
         type="file"

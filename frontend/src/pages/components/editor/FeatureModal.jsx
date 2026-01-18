@@ -44,7 +44,7 @@ const FeatureModal = ({ isVisible, onClose, onNavigate }) => {
             </div>
           </div>
 
-          <div className="bg-gray-50 rounded-xl p-4">
+          {/* <div className="bg-gray-50 rounded-xl p-4">
             <div className="flex items-start gap-3">
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
                 <span className="text-2xl">🏏</span>
@@ -54,7 +54,7 @@ const FeatureModal = ({ isVisible, onClose, onNavigate }) => {
                 <p className="text-sm text-gray-600">Live bidding, team management, and real-time tracking</p>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
 
         <div className="p-4 border-t border-gray-200">

@@ -46,7 +46,7 @@ const PremiumSidebar = ({ onNavigate }) => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-4 shadow-sm">
+        {/* <div className="bg-white rounded-xl p-4 shadow-sm">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
               <span className="text-xl">🏏</span>
@@ -60,7 +60,7 @@ const PremiumSidebar = ({ onNavigate }) => {
               </ul>
             </div>
           </div>
-        </div>
+        </div> */}
 
         <button onClick={() => onNavigate("/auth/register")} className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition shadow-lg">
           🚀 Sign Up Free
