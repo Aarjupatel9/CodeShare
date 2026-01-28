@@ -1,30 +1,49 @@
-# CodeShare - robots.txt
-# Allow all search engines
+# CodeShare Robots Configuration
+# This file provides indexing instructions for search engine crawlers and AdSense bots.
 
+# 1. Global Crawler Rules (Applies to all bots)
 User-agent: *
 Allow: /
 Allow: /about
 Allow: /help
 Allow: /games
+Allow: /legal/privacy
+Allow: /legal/terms
+Allow: /contact
 Disallow: /auth/
 Disallow: /p/
 Disallow: /admin/
 Disallow: /api/
 Disallow: /*.json$
 
-# Sitemap location
-Sitemap: https://codeshare.auctionng.org/sitemap.xml
+# Prevent indexing of search query fragments to avoid duplicate content
+Disallow: /*?s=*
+Disallow: /*&s=*
 
-# Crawl-delay for bots (helps with server load)
+# Optimization: Limit crawl frequency for non-Google bots to protect server resources
 Crawl-delay: 1
 
-# Specific rules for major search engines
+# Official Sitemap Location
+Sitemap: https://codeshare.auctionng.org/sitemap.xml
+
+# 2. Specific Instructions for Googlebot
+# Prioritizes crawling of high-value informational and legal pages.
 User-agent: Googlebot
 Allow: /
+Allow: /about
+Allow: /help
+Allow: /contact
+Allow: /legal/privacy
+Allow: /legal/terms
 Disallow: /auth/
 Disallow: /p/
 
-User-agent: Bingbot
+# 3. Google AdSense Crawler Rules
+# Explicitly grants permission for AdSense bots to audit content for quality and policy compliance.
+User-agent: Mediapartners-Google
 Allow: /
-Disallow: /auth/
-Disallow: /p/
+Allow: /about
+Allow: /help
+Allow: /contact
+Allow: /legal/privacy
+Allow: /legal/terms
