@@ -15,6 +15,9 @@ import PublicPages from "./pages/PublicPages";
 import HelpPage from "./pages/HelpPage";
 import AboutPage from "./pages/AboutPage";
 import UserProfilePage from "./pages/UserProfilePage";
+import PrivacyPage from "./pages/PrivacyPage";
+import TermsPage from "./pages/TermsPage";
+import ContactPage from "./pages/ContactPage";
 
 // Admin
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -24,6 +27,7 @@ import AdminDocuments from "./pages/admin/AdminDocuments";
 
 // Features
 import GamePage from "./gamePlugin/GamePage";
+import CookieConsent from "./components/common/CookieConsent";
 
 // Route components
 import PrivateRoute from "./components/routes/PrivateRoute";
@@ -46,10 +50,10 @@ function App() {
   if (!configLoaded) {
     return (
       <div className="App">
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
           height: '100vh',
           fontSize: '1.2rem',
           color: '#666'
@@ -59,55 +63,60 @@ function App() {
       </div>
     );
   }
-  
+
   return (
     <div className="App">
       <Toaster />
       <UserProvider>
         <Routes>
           {/* ==================== PUBLIC ROUTES ==================== */}
-          
+
           {/* Authentication */}
           <Route path="/auth/login" element={<PublicRoute component={LoginComponent} />} />
           <Route path="/auth/register" element={<PublicRoute component={RegisterComponent} />} />
           <Route path="/auth/forgetpassword" element={<PublicRoute component={ForgetPasswordComponent} />} />
           <Route path="/auth/reset-password/:id/:token" element={<PublicRoute component={ResetPasswordComponent} />} />
-          
+
           {/* Information Pages */}
           <Route path="/help" element={<PublicRoute component={HelpPage} />} />
           <Route path="/about" element={<PublicRoute component={AboutPage} />} />
-          
+          <Route path="/legal/privacy" element={<PublicRoute component={PrivacyPage} />} />
+          <Route path="/legal/terms" element={<PublicRoute component={TermsPage} />} />
+          <Route path="/contact" element={<PublicRoute component={ContactPage} />} />
+
           {/* Games */}
           <Route path="/games" element={<PublicRoute component={GamePage} />} />
           <Route path="/game/:gameName/*" element={<PublicRoute component={GamePage} />} />
-          
+
           {/* Public Documents */}
           <Route path="/:userId/:slug" element={<PublicRoute component={PublicPages} />} />
           <Route path="/:slug" element={<PublicRoute component={PublicPages} />} />
           <Route path="/" element={<PublicRoute component={PublicPages} />} />
-          
+
           {/* ==================== PRIVATE ROUTES ==================== */}
-          
+
           {/* Information Pages (skipAuth for performance) */}
           <Route path="/p/:userId/help" element={<PrivateRoute component={HelpPage} skipAuth={true} />} />
           <Route path="/p/:userId/about" element={<PrivateRoute component={AboutPage} skipAuth={true} />} />
-          
+          <Route path="/p/:userId/contact" element={<PrivateRoute component={ContactPage} skipAuth={true} />} />
+
           {/* User Profile */}
           <Route path="/p/:userId/profile" element={<PrivateRoute component={UserProfilePage} />} />
-          
+
           {/* Admin Panel */}
           <Route path="/p/:userId/admin" element={<PrivateRoute component={AdminDashboard} />} />
           <Route path="/p/:userId/admin/users" element={<PrivateRoute component={AdminUsers} />} />
           <Route path="/p/:userId/admin/activity" element={<PrivateRoute component={AdminActivity} />} />
           <Route path="/p/:userId/admin/documents" element={<PrivateRoute component={AdminDocuments} />} />
-          
+
           {/* Documents */}
           <Route path="/p/:userId/" element={<PrivateRoute component={MainPage} />} />
           <Route path="/p/:userId/:slug" element={<PrivateRoute component={MainPage} />} />
-          
+
           {/* Fallback */}
           <Route path="*" element={<PublicRoute component={PublicPages} />} />
         </Routes>
+        <CookieConsent />
       </UserProvider>
     </div>
   );

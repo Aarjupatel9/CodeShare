@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import Footer from '../components/common/Footer';
 
 /**
  * AboutPage - About/web details page
@@ -9,25 +10,30 @@ import { useNavigate, useLocation } from 'react-router-dom';
 const AboutPage = ({ user }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
+  useEffect(() => {
+    document.title = "About CodeShare - Instant Document Collaboration";
+  }, []);
+
   // Check if user is on private route
   const isPrivateRoute = location.pathname.startsWith('/p/');
   const userId = user?._id;
 
   return (
-    <div className="min-w-full min-h-full bg-gradient-to-br from-indigo-50 via-white to-blue-50">
-      {/* Header */}
-      <nav className="bg-white border-b border-gray-200 px-4 py-3 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div 
+    <div className="min-w-full min-h-screen bg-white">
+      {/* Premium Header */}
+      <nav className="bg-white border-b border-gray-100 px-6 py-4 sticky top-0 z-50 backdrop-blur-md bg-white/80">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div
             onClick={() => navigate('/')}
-            className="text-xl font-bold text-blue-600 cursor-pointer hover:text-blue-700 transition"
+            className="text-2xl font-black text-blue-600 cursor-pointer tracking-tight flex items-center gap-2"
           >
+            <span className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white text-lg">C</span>
             CodeShare
           </div>
           <button
             onClick={() => navigate(-1)}
-            className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition"
+            className="px-5 py-2 text-sm font-bold text-gray-700 hover:bg-gray-50 rounded-full border border-gray-200 transition-all shadow-sm"
           >
             ← Back
           </button>
@@ -35,277 +41,156 @@ const AboutPage = ({ user }) => {
       </nav>
 
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-20">
-        <div className="max-w-7xl mx-auto px-6 text-center w-full">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            About CodeShare
+      <div className="relative bg-gradient-to-br from-blue-900 via-blue-700 to-indigo-800 text-white overflow-hidden py-16 md:py-24">
+        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-[600px] h-[600px] bg-blue-400/20 blur-[120px] rounded-full"></div>
+        <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-indigo-500/20 blur-[100px] rounded-full"></div>
+
+        <div className="max-w-7xl mx-auto px-6 text-center relative z-10">
+          <span className="inline-block px-3 py-1 md:px-4 md:py-1.5 bg-blue-500/30 backdrop-blur-md rounded-full text-blue-100 text-[10px] md:text-xs font-black uppercase tracking-[0.2em] mb-4 md:mb-6">
+            Global Collaboration Platform
+          </span>
+          <h1 className="text-3xl md:text-7xl font-black mb-6 md:mb-8 tracking-tight leading-tight">
+            The Fastest Way to <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-200 to-indigo-100">Share Your Work</span>
           </h1>
-          <p className="text-xl md:text-2xl text-blue-100 max-w-2xl mx-auto">
-            A modern platform for creating, sharing, and collaborating on documents and more
+          <p className="text-lg md:text-2xl text-blue-100 max-w-2xl mx-auto font-medium opacity-90 leading-relaxed px-4">
+            CodeShare is a simple, high-performance tool built for people who want to share code and documents without unnecessary steps.
           </p>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="w-full px-6 py-12">
-        {/* Mission */}
-        <section className="max-w-7xl mx-auto mb-12">
-          <div className="bg-white rounded-xl shadow-md p-8 border border-gray-100">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-3xl">🎯</span>
-              <h2 className="text-3xl font-bold text-gray-900 text-left">Our Mission</h2>
-            </div>
-            <p className="text-lg text-gray-700 leading-relaxed text-left">
-              CodeShare is built to make document creation and sharing effortless. We believe in 
-              providing powerful tools that are simple to use, accessible to everyone, and free 
-              from unnecessary complexity. Whether you're sharing notes, code snippets, documentation, 
-              or running auctions, CodeShare has you covered.
-            </p>
-          </div>
-        </section>
-
-        {/* What We Offer */}
-        <section className="max-w-7xl mx-auto mb-12">
-          <div className="bg-white rounded-xl shadow-md p-8 border border-gray-100">
-            <div className="flex items-center gap-3 mb-6">
-              <span className="text-3xl">🌟</span>
-              <h2 className="text-3xl font-bold text-gray-900 text-left">What We Offer</h2>
-            </div>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2 text-left">
-                  <span className="text-2xl">📝</span>
-                  Document Editor
-                </h3>
-                <p className="text-sm text-gray-700 text-left">
-                  Rich text editing with support for formatting, images, code blocks, and more. 
-                  Create beautiful documents with ease.
-                </p>
-              </div>
-              <div className="p-4 bg-green-50 rounded-lg">
-                <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2 text-left">
-                  <span className="text-2xl">🔗</span>
-                  Easy Sharing
-                </h3>
-                <p className="text-sm text-gray-700 text-left">
-                  Every document gets a unique URL. Share it with anyone - no account required 
-                  to view shared documents.
-                </p>
-              </div>
-              <div className="p-4 bg-purple-50 rounded-lg">
-                <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2 text-left">
-                  <span className="text-2xl">📎</span>
-                  File Management
-                </h3>
-                <p className="text-sm text-gray-700 text-left">
-                  Upload and manage files alongside your documents. Keep everything organized 
-                  in one place.
-                </p>
-              </div>
-              <div className="p-4 bg-yellow-50 rounded-lg">
-                <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2 text-left">
-                  <span className="text-2xl">🏏</span>
-                  Auction Platform
-                </h3>
-                <p className="text-sm text-gray-700 text-left">
-                  Manage sports auctions with team creation, player bidding, and live updates. 
-                  Perfect for fantasy leagues.
-                </p>
-              </div>
-              <div className="p-4 bg-red-50 rounded-lg">
-                <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2 text-left">
-                  <span className="text-2xl">🎮</span>
-                  Interactive Games
-                </h3>
-                <p className="text-sm text-gray-700 text-left">
-                  Play games directly in your browser. More games and features being added 
-                  regularly.
-                </p>
-              </div>
-              <div className="p-4 bg-indigo-50 rounded-lg">
-                <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2 text-left">
-                  <span className="text-2xl">📱</span>
-                  Responsive Design
-                </h3>
-                <p className="text-sm text-gray-700 text-left">
-                  Works seamlessly on desktop, tablet, and mobile. Access your content from 
-                  any device, anywhere.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Technology Stack */}
-        <section className="max-w-7xl mx-auto mb-12">
-          <div className="bg-white rounded-xl shadow-md p-8 border border-gray-100">
-            <div className="flex items-center gap-3 mb-6">
-              <span className="text-3xl">⚙️</span>
-              <h2 className="text-3xl font-bold text-gray-900 text-left">Technology</h2>
-            </div>
-            <p className="text-gray-700 mb-4 text-left">
-              CodeShare is built with modern web technologies to ensure speed, reliability, and a great user experience:
-            </p>
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg">
-                <div className="text-4xl mb-2">⚛️</div>
-                <h3 className="font-bold text-gray-900">React</h3>
-                <p className="text-xs text-gray-600">Modern UI framework</p>
-              </div>
-              <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-lg">
-                <div className="text-4xl mb-2">🟢</div>
-                <h3 className="font-bold text-gray-900">Node.js</h3>
-                <p className="text-xs text-gray-600">Fast backend server</p>
-              </div>
-              <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg">
-                <div className="text-4xl mb-2">🍃</div>
-                <h3 className="font-bold text-gray-900">MongoDB</h3>
-                <p className="text-xs text-gray-600">Flexible database</p>
-              </div>
-              <div className="text-center p-4 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg">
-                <div className="text-4xl mb-2">🎨</div>
-                <h3 className="font-bold text-gray-900">Tailwind CSS</h3>
-                <p className="text-xs text-gray-600">Beautiful styling</p>
-              </div>
-              <div className="text-center p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-lg">
-                <div className="text-4xl mb-2">🔌</div>
-                <h3 className="font-bold text-gray-900">WebSockets</h3>
-                <p className="text-xs text-gray-600">Real-time updates</p>
-              </div>
-              <div className="text-center p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-lg">
-                <div className="text-4xl mb-2">📝</div>
-                <h3 className="font-bold text-gray-900">TinyMCE</h3>
-                <p className="text-xs text-gray-600">Rich text editor</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Key Features */}
-        <section className="max-w-7xl mx-auto mb-12">
-          <div className="bg-white rounded-xl shadow-md p-8 border border-gray-100">
-            <div className="flex items-center gap-3 mb-6">
-              <span className="text-3xl">✨</span>
-              <h2 className="text-3xl font-bold text-gray-900 text-left">Key Features</h2>
-            </div>
-            <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <span className="text-2xl">✅</span>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-left">No Installation Required</h3>
-                  <p className="text-sm text-gray-600 text-left">Everything works in your browser - no software to download or install.</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="text-2xl">✅</span>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-left">Auto-Save</h3>
-                  <p className="text-sm text-gray-600 text-left">Your work is automatically saved as you type - never lose your progress.</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="text-2xl">✅</span>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-left">Public & Private Access</h3>
-                  <p className="text-sm text-gray-600 text-left">Create documents for yourself or share them publicly with unique URLs.</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="text-2xl">✅</span>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-left">Mobile Optimized</h3>
-                  <p className="text-sm text-gray-600 text-left">Fully responsive design works perfectly on phones, tablets, and desktops.</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="text-2xl">✅</span>
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-left">Free to Use</h3>
-                  <p className="text-sm text-gray-600 text-left">Core features are completely free - no hidden costs or subscriptions.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Privacy & Security */}
-        <section className="max-w-7xl mx-auto mb-12">
-          <div className="bg-white rounded-xl shadow-md p-8 border border-gray-100">
-            <div className="flex items-center gap-3 mb-6">
-              <span className="text-3xl">🔒</span>
-              <h2 className="text-3xl font-bold text-gray-900 text-left">Privacy & Security</h2>
-            </div>
-            <div className="space-y-3 text-gray-700 text-left">
-              <p>
-                <strong>Your data is important to us.</strong> We take security seriously and implement 
-                industry-standard practices to protect your information.
+      <div className="w-full py-12 md:py-20 bg-white">
+        {/* Mission - Enriched for AdSense */}
+        <section className="max-w-6xl mx-auto px-6 mb-20 md:mb-32">
+          <div className="grid md:grid-cols-2 gap-10 md:gap-16 items-center">
+            <div className="text-left">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-100 text-blue-600 rounded-xl md:rounded-2xl flex items-center justify-center text-xl md:text-2xl mb-5 md:mb-6 shadow-inner">🎯</div>
+              <h2 className="text-2xl md:text-4xl font-black text-gray-900 mb-4 md:mb-6 tracking-tight text-left">Why I Built This</h2>
+              <p className="text-base md:text-lg text-gray-600 leading-relaxed mb-5 md:mb-6 text-left">
+                Most document tools today are too slow or require too many accounts. CodeShare was built on a simple idea: sharing should be as fast as thinking. I wanted to create a space where you can just name a link and start working instantly.
               </p>
-              <ul className="list-disc list-inside space-y-2 ml-4">
-                <li>Secure authentication with encrypted passwords</li>
-                <li>HTTPS encryption for all data transmission</li>
-                <li>Regular security updates and monitoring</li>
-                <li>Your documents are private unless you choose to share them</li>
-              </ul>
+              <p className="text-base md:text-lg text-gray-600 leading-relaxed text-left">
+                Whether you're sharing a quick code snippet or writing a full tutorial, this platform gives you a clean, distraction-free environment that syncs across the world in real-time.
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-[32px] md:rounded-[40px] p-6 md:p-8 border border-gray-100 shadow-xl relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 group-hover:scale-150 transition-transform duration-700 rounded-full -mr-16 -mt-16"></div>
+              <div className="relative z-10 space-y-4 md:space-y-6 text-left">
+                <div className="p-4 md:p-6 bg-white rounded-2xl md:rounded-3xl shadow-sm border border-gray-100">
+                  <div className="text-blue-600 font-black text-2xl md:text-3xl mb-1">10ms</div>
+                  <div className="text-[10px] md:text-sm font-bold text-gray-400 uppercase tracking-widest text-left">Global Latency</div>
+                </div>
+                <div className="p-4 md:p-6 bg-white rounded-2xl md:rounded-3xl shadow-sm border border-gray-100">
+                  <div className="text-indigo-600 font-black text-2xl md:text-3xl mb-1">99.9%</div>
+                  <div className="text-[10px] md:text-sm font-bold text-gray-400 uppercase tracking-widest text-left">Uptime Reliability</div>
+                </div>
+                <div className="p-4 md:p-6 bg-white rounded-2xl md:rounded-3xl shadow-sm border border-gray-100">
+                  <div className="text-purple-600 font-black text-2xl md:text-3xl mb-1">Free</div>
+                  <div className="text-[10px] md:text-sm font-bold text-gray-400 uppercase tracking-widest text-left">Forever for Individuals</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Feature Bento Grid */}
+        <section className="max-w-7xl mx-auto px-6 mb-24 md:mb-40 text-left">
+          <div className="mb-10 md:mb-16">
+            <h2 className="text-2xl md:text-4xl font-black text-gray-900 tracking-tight text-left">Ecosystem of Tools</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+            <div className="md:col-span-2 p-6 md:p-8 bg-blue-50 rounded-3xl md:rounded-[32px] border border-blue-100 group hover:bg-blue-600 transition-all duration-500">
+              <span className="text-3xl md:text-4xl mb-4 md:mb-6 block group-hover:scale-[102%] transition-transform">📝</span>
+              <h3 className="text-2xl md:text-3xl font-black text-gray-900 mb-3 md:mb-4 group-hover:text-white transition-colors">Real-Time Editor</h3>
+              <p className="text-sm md:text-lg text-gray-600 group-hover:text-blue-50 transition-colors leading-relaxed">
+                Our editor is built to be fast. It handles everything from formatted text to code snippets flawlessly, saving every single keystroke as you type.
+              </p>
+            </div>
+            <div className="p-6 md:p-8 bg-indigo-50 rounded-3xl md:rounded-[32px] border border-indigo-100 group hover:bg-indigo-600 transition-all duration-500">
+              <span className="text-3xl md:text-4xl mb-4 md:mb-6 block group-hover:scale-[102%] transition-transform">🔗</span>
+              <h3 className="text-xl md:text-2xl font-black text-gray-900 mb-3 md:mb-4 group-hover:text-white transition-colors">Simple Links</h3>
+              <p className="text-sm md:text-lg text-gray-600 group-hover:text-indigo-50 transition-colors leading-relaxed">
+                No accounts or sign-ups required. Just pick a unique URL and send it to whoever you're working with.
+              </p>
+            </div>
+            <div className="p-6 md:p-8 bg-green-50 rounded-3xl md:rounded-[32px] border border-green-100 group hover:bg-green-600 transition-all duration-500">
+              <span className="text-3xl md:text-4xl mb-4 md:mb-6 block group-hover:scale-[102%] transition-transform">🏏</span>
+              <h3 className="text-xl md:text-2xl font-black text-gray-900 mb-3 md:mb-4 group-hover:text-white transition-colors">Auction Tools</h3>
+              <p className="text-sm md:text-lg text-gray-600 group-hover:text-green-50 transition-colors leading-relaxed">
+                The platform also includes specialized tools for real-time sports auctions and team management.
+              </p>
+            </div>
+            <div className="md:col-span-2 p-6 md:p-8 bg-purple-50 rounded-3xl md:rounded-[32px] border border-purple-100 group hover:bg-purple-600 transition-all duration-500">
+              <span className="text-3xl md:text-4xl mb-4 md:mb-6 block group-hover:scale-[102%] transition-transform">⚙️</span>
+              <h3 className="text-2xl md:text-3xl font-black text-gray-900 mb-3 md:mb-4 group-hover:text-white transition-colors">Rock Solid Tech</h3>
+              <p className="text-sm md:text-lg text-gray-600 group-hover:text-purple-50 transition-colors leading-relaxed">
+                Built with modern tech like React 18 and WebSockets to make sure your data is always in sync without any lag.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Privacy & Security - Enriched */}
+        <section className="max-w-4xl mx-auto px-6 mb-24 md:mb-40 text-left">
+          <div className="bg-gray-900 text-white rounded-[32px] md:rounded-[48px] p-8 md:p-12 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500"></div>
+            <div className="relative z-10">
+              <div className="text-3xl md:text-4xl mb-6 md:mb-8 text-left">🔒</div>
+              <h2 className="text-2xl md:text-4xl font-black mb-6 md:mb-8 tracking-tight text-left">Enterprise-Grade Security</h2>
+              <div className="space-y-4 md:space-y-6 text-gray-400 text-base md:text-lg leading-relaxed text-left">
+                <p>
+                  I've built CodeShare with security in mind from day one. Every piece of your data is encrypted using industry-standard AES-256 via TLS 1.3.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 mt-8 md:mt-10">
+                  <div className="flex items-start gap-3 md:gap-4">
+                    <span className="text-blue-500 mt-1 font-bold">✓</span>
+                    <p className="text-[12px] md:text-sm">Salted & Hashed Passwords using Argon2id</p>
+                  </div>
+                  <div className="flex items-start gap-3 md:gap-4">
+                    <span className="text-indigo-500 mt-1 font-bold">✓</span>
+                    <p className="text-[12px] md:text-sm">Granular Access Control Lists (ACL)</p>
+                  </div>
+                  <div className="flex items-start gap-3 md:gap-4">
+                    <span className="text-purple-500 mt-1 font-bold">✓</span>
+                    <p className="text-[12px] md:text-sm">Real-time Threat Monitoring</p>
+                  </div>
+                  <div className="flex items-start gap-3 md:gap-4">
+                    <span className="text-pink-500 mt-1 font-bold">✓</span>
+                    <p className="text-[12px] md:text-sm">DDoS Protection via Edge Gateway</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
         {/* Get Started CTA */}
-        <section className="max-w-7xl mx-auto">
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl shadow-lg p-8 text-white text-center">
-            <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
-            <p className="text-blue-100 mb-6 text-lg">
-              Join thousands of users who trust CodeShare for their document needs.
+        <section className="max-w-7xl mx-auto px-6 pb-4 md:pb-12 text-left">
+          <div className="bg-blue-600 rounded-3xl md:rounded-[40px] p-8 md:p-16 text-white text-left shadow-xl flex flex-col items-start">
+            <h2 className="text-3xl md:text-5xl font-black mb-4 md:mb-6 tracking-tight text-left">Ready to build?</h2>
+            <p className="text-blue-100 mb-8 md:mb-10 text-lg md:text-xl font-medium opacity-90 max-w-2xl text-left">
+              Join a community of makers who value speed, efficiency, and elegant sharing.
             </p>
-            <div className="flex flex-wrap gap-4 justify-center">
+            <div className="flex flex-wrap gap-4 md:gap-6">
               <button
                 onClick={() => navigate('/auth/register')}
-                className="px-8 py-3 bg-white text-blue-600 rounded-lg font-bold hover:bg-gray-100 transition shadow-md text-lg"
+                className="px-8 py-3 md:px-10 md:py-4 bg-white text-blue-600 rounded-xl md:rounded-2xl font-black hover:scale-105 transition shadow-lg text-base md:text-lg"
               >
-                Sign Up Free
+                Get Started Free
               </button>
               <button
                 onClick={() => navigate(isPrivateRoute && userId ? `/p/${userId}/help` : '/help')}
-                className="px-8 py-3 bg-blue-500 hover:bg-blue-400 rounded-lg font-bold transition shadow-md text-lg"
+                className="px-8 py-3 md:px-10 md:py-4 bg-blue-500 border border-blue-400 rounded-xl md:rounded-2xl font-black hover:bg-blue-400 transition text-base md:text-lg"
               >
-                Learn More
+                Read Docs
               </button>
             </div>
           </div>
         </section>
       </div>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-12 py-8">
-        <div className="max-w-7xl mx-auto px-6 w-full">
-          <div className="grid md:grid-cols-3 gap-8 mb-6">
-            <div>
-              <h3 className="font-bold text-gray-900 mb-3 text-left">CodeShare</h3>
-              <p className="text-sm text-gray-600 text-left">
-                Modern document sharing and collaboration platform.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-900 mb-3 text-left">Quick Links</h3>
-              <ul className="space-y-2 text-sm text-gray-600 text-left">
-                <li><button onClick={() => navigate(isPrivateRoute && userId ? `/p/${userId}/help` : "/help")} className="hover:text-blue-600 transition">Help</button></li>
-                <li><button onClick={() => navigate("/games")} className="hover:text-blue-600 transition">Games</button></li>
-                <li><button onClick={() => navigate(isPrivateRoute && userId ? `/p/${userId}/t/auction` : "/games")} className="hover:text-blue-600 transition">Auctions</button></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-900 mb-3 text-left">Contact</h3>
-              <ul className="space-y-2 text-sm text-gray-600 text-left">
-                <li>Email: developer.codeshare@gmail.com</li>
-                <li>Made with ❤️ for the community</li>
-              </ul>
-            </div>
-          </div>
-          <div className="text-center pt-6 border-t border-gray-200 text-sm text-gray-600">
-            <p>© 2025 CodeShare. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer user={user} />
     </div>
   );
 };

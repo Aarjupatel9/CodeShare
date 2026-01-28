@@ -3,7 +3,7 @@
     "name": "9Players",
     "displayName": "9 VS 9",
     "path": "/9Players",
-    "description": "Play 9 VS 9 and have fun!",
+    "description": "A classic strategy board game where you build 'mills' to remove your opponent's pieces. Simple to learn, but takes a lifetime to master.",
     "component": {
       "Home": {
         "path": "/",
@@ -23,4 +23,3 @@
     }
   }
 ]
-      

@@ -7,15 +7,15 @@
     <!-- Homepage -->
     <url>
         <loc>https://codeshare.auctionng.org/</loc>
-        <lastmod>2025-11-05</lastmod>
-        <changefreq>daily</changefreq>
+        <lastmod>2026-01-28</lastmod>
+        <changefreq>weekly</changefreq>
         <priority>1.0</priority>
     </url>
     
     <!-- About Page -->
     <url>
         <loc>https://codeshare.auctionng.org/about</loc>
-        <lastmod>2025-11-05</lastmod>
+        <lastmod>2026-01-28</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>
@@ -23,7 +23,7 @@
     <!-- Help Page -->
     <url>
         <loc>https://codeshare.auctionng.org/help</loc>
-        <lastmod>2025-11-05</lastmod>
+        <lastmod>2026-01-28</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>
@@ -31,7 +31,7 @@
     <!-- Games Page -->
     <url>
         <loc>https://codeshare.auctionng.org/games</loc>
-        <lastmod>2025-11-05</lastmod>
+        <lastmod>2026-01-28</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.7</priority>
     </url>
@@ -39,15 +39,39 @@
     <!-- Login Page -->
     <url>
         <loc>https://codeshare.auctionng.org/auth/login</loc>
-        <lastmod>2025-11-05</lastmod>
+        <lastmod>2026-01-28</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.6</priority>
+    </url>
+    
+    <!-- Privacy Policy -->
+    <url>
+        <loc>https://codeshare.auctionng.org/legal/privacy</loc>
+        <lastmod>2026-01-28</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+    </url>
+    
+    <!-- Terms of Service -->
+    <url>
+        <loc>https://codeshare.auctionng.org/legal/terms</loc>
+        <lastmod>2026-01-28</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+    </url>
+    
+    <!-- Contact Page -->
+    <url>
+        <loc>https://codeshare.auctionng.org/contact</loc>
+        <lastmod>2026-01-28</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
     </url>
     
     <!-- Register Page -->
     <url>
         <loc>https://codeshare.auctionng.org/auth/register</loc>
-        <lastmod>2025-11-05</lastmod>
+        <lastmod>2026-01-28</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.6</priority>
     </url>
