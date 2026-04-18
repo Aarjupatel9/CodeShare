@@ -25,6 +25,7 @@ import {
 } from '../../../assets/svgs'
 import { getPresizeFileName, generateRandomString } from '../../../common/functions';
 import useClickOutside from '../../../hooks/useClickOutside';
+import useConfig from '../../../hooks/useConfig';
 import toast from 'react-hot-toast';
 
 const isPreviewable = (fileName) => {
@@ -53,9 +54,22 @@ const EditorSidebar = ({
   onPageReorder,
   onPagePinToggle
 }) => {
+  const { config } = useConfig();
   const [documentSearch, setDocumentSearch] = useState('');
   const [fileSearch, setFileSearch] = useState('');
   const [optimisticPages, setOptimisticPages] = useState(null);
+
+  // Helper to construct absolute URL
+  const getFullUrl = (targetUrl) => {
+    if (!targetUrl) return '';
+    if (targetUrl.startsWith('http')) return targetUrl;
+    
+    const baseUrl = config?.backend_url || '';
+    const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    const cleanPath = targetUrl.startsWith('/') ? targetUrl : `/${targetUrl}`;
+    
+    return `${cleanBase}${cleanPath}`;
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -309,7 +323,7 @@ const EditorSidebar = ({
                         </div>
                         <div className="flex gap-2 pt-2 border-t border-gray-100">
                           <a
-                            href={file.url}
+                            href={getFullUrl(file.downloadUrl || (file._id ? `/api/v1/files/${file._id}` : file.url))}
                             target="_blank"
                             download={file.name}
                             rel="noreferrer"
