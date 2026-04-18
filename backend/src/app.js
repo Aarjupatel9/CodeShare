@@ -4,6 +4,7 @@ const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const path = require('path');
 const compression = require('compression');
+const localStorageService = require('../services/localStorageService');
 require("dotenv").config();
 var bodyParser = require("body-parser");
 
@@ -47,6 +48,9 @@ app.use(express.json({ limit: '2mb' }));
 
 // Serve static files from public directory
 app.use(express.static(path.join(__dirname, '../public')));
+
+// Serve uploaded files from the actual storage path (for local storage preview)
+app.use('/uploads/codeshare', express.static(localStorageService.getUploadPath()));
 
 app.set('view engine', 'ejs');
 app.set('views', './views');

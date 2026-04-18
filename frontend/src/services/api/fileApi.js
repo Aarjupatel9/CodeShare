@@ -81,6 +81,28 @@ class FileApi {
   }
 
   /**
+   * Get raw file content (for previewing text-based files)
+   * @param {string} url - Absolute URL to fetch content from
+   */
+  async getFileContent(url) {
+    try {
+      const response = await fetch(url, {
+        credentials: 'include',
+        method: 'GET',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file content: ${response.status} ${response.statusText}`);
+      }
+      
+      return await response.text();
+    } catch (error) {
+      console.error('FileApi: Error fetching file content:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Handle API errors
    */
   handleError(error) {

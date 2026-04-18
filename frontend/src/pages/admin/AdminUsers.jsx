@@ -232,13 +232,16 @@ export default function AdminUsers() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-left">
-                        <div className="flex flex-col">
-                          <span className={`px-2 py-1 text-xs font-semibold rounded-full inline-block mb-1 ${(user.fileUploadEnabled !== undefined && user.fileUploadEnabled) ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
-                            {(user.fileUploadEnabled !== undefined && user.fileUploadEnabled) ? 'Enabled' : 'Disabled'}
+                        <div className="flex flex-col space-y-1">
+                          <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full inline-block w-fit ${(user.fileUploadEnabled) ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                            GDrive: {user.fileUploadEnabled ? 'ON' : 'OFF'}
                           </span>
-                          {user.fileUploadEnabled && user.fileSizeLimit && (
-                            <span className="text-xs text-gray-500">
-                              {(user.fileSizeLimit / (1024 * 1024)).toFixed(1)} MB max
+                          <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full inline-block w-fit ${(user.localFileUploadEnabled) ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-600'}`}>
+                            Local: {user.localFileUploadEnabled ? 'ON' : 'OFF'}
+                          </span>
+                          {(user.fileUploadEnabled || user.localFileUploadEnabled) && user.fileSizeLimit && (
+                            <span className="text-[10px] text-gray-500 ml-1">
+                              Max: {(user.fileSizeLimit / (1024 * 1024)).toFixed(1)} MB
                             </span>
                           )}
                         </div>
@@ -360,6 +363,7 @@ function EditUserModal({ user, onClose, onSave }) {
     isActive: user.isActive !== undefined ? user.isActive : true,
     isVerified: user.isVerified !== undefined ? user.isVerified : false,
     fileUploadEnabled: user.fileUploadEnabled !== undefined ? user.fileUploadEnabled : false,
+    localFileUploadEnabled: user.localFileUploadEnabled !== undefined ? user.localFileUploadEnabled : false,
     fileSizeLimit: user.fileSizeLimit ? (user.fileSizeLimit / (1024 * 1024)).toFixed(1) : '1.0', // Convert bytes to MB
   });
 
@@ -369,11 +373,11 @@ function EditUserModal({ user, onClose, onSave }) {
     // Convert fileSizeLimit from MB to bytes before saving
     const dataToSave = {
       ...formData,
-      fileSizeLimit: formData.fileUploadEnabled 
+      fileSizeLimit: (formData.fileUploadEnabled || formData.localFileUploadEnabled)
         ? Math.round(parseFloat(formData.fileSizeLimit) * 1024 * 1024) // Convert MB to bytes
         : undefined,
-      // If fileUploadEnabled is false, set fileSizeLimit to undefined/null
-      ...(formData.fileUploadEnabled ? {} : { fileSizeLimit: undefined }),
+      // If no file upload is enabled, set fileSizeLimit to undefined/null
+      ...((formData.fileUploadEnabled || formData.localFileUploadEnabled) ? {} : { fileSizeLimit: undefined }),
     };
     
     onSave(dataToSave);
@@ -441,17 +445,30 @@ function EditUserModal({ user, onClose, onSave }) {
           <div className="border-t pt-4 mt-4">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">File Upload Settings</h3>
             
-            <div className="mb-4">
-              <label className="flex items-center mb-2">
+            <div className="mb-2">
+              <label className="flex items-center mb-1">
                 <input
                   type="checkbox"
                   checked={formData.fileUploadEnabled}
                   onChange={(e) => setFormData({ ...formData, fileUploadEnabled: e.target.checked })}
                   className="mr-2"
                 />
-                <span className="text-sm text-gray-700">Enable File Upload</span>
+                <span className="text-sm text-gray-700">Enable Google Drive Upload</span>
               </label>
-              <p className="text-xs text-gray-500 ml-6">Allow user to upload files to Google Drive</p>
+              <p className="text-[10px] text-gray-500 ml-6">Use user's personal Google Drive</p>
+            </div>
+
+            <div className="mb-4">
+              <label className="flex items-center mb-1">
+                <input
+                  type="checkbox"
+                  checked={formData.localFileUploadEnabled}
+                  onChange={(e) => setFormData({ ...formData, localFileUploadEnabled: e.target.checked })}
+                  className="mr-2"
+                />
+                <span className="text-sm text-gray-700">Enable Local Disk Upload</span>
+              </label>
+              <p className="text-[10px] text-gray-500 ml-6">Store files on server disk (/uploads)</p>
             </div>
             
             <div>
@@ -471,7 +488,7 @@ function EditUserModal({ user, onClose, onSave }) {
                   }
                 }}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                disabled={!formData.fileUploadEnabled}
+                disabled={!formData.fileUploadEnabled && !formData.localFileUploadEnabled}
               />
               <p className="text-xs text-gray-500 mt-1">
                 Maximum file size allowed (default: 1.0 MB)

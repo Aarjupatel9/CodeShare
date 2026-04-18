@@ -4,7 +4,16 @@ const userModel = require('../models/userModels');
 module.exports = () => {
     return async (req, res, next) => {
         try {
-            const token = req.cookies.token;
+            let token = req.cookies.token;
+            
+            // Fallback to Authorization header
+            if (!token && req.headers.authorization) {
+                if (req.headers.authorization.startsWith('Bearer ')) {
+                    token = req.headers.authorization.split(' ')[1];
+                } else {
+                    token = req.headers.authorization;
+                }
+            }
             if (!req.cookies.token && req.body && req.body.isPublic) {
                 const data = {
                     _id: '',

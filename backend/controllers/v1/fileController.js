@@ -1,7 +1,9 @@
 const FileModel = require("../../models/fileModels");
 const UserModel = require("../../models/userModels");
 const googleDriveService = require("../../services/googleDriveService");
+const localStorageService = require("../../services/localStorageService");
 const logger = require("../../utils/loggerUtility");
+const fs = require('fs');
 
 /**
  * ========================================
@@ -75,11 +77,13 @@ exports.validateFile = async (req, res, next) => {
       });
     }
 
-    // Check if Google Drive is connected (required for OAuth uploads)
-    if (!user.googleDriveConnected) {
+    // Check if either Google Drive is connected OR local upload is enabled
+    const localFileUploadEnabled = user.localFileUploadEnabled !== undefined ? user.localFileUploadEnabled : false;
+    
+    if (!user.googleDriveConnected && !localFileUploadEnabled) {
       return res.status(403).json({
         success: false,
-        message: "Google Drive is not connected. Please connect your Google Drive account from your profile settings.",
+        message: "No storage method is configured. Please connect Google Drive or enable local upload in your profile settings.",
       });
     }
 
@@ -156,8 +160,67 @@ exports.uploadFile = async (req, res) => {
       });
     }
 
-    // Upload to Google Drive using OAuth (user's Drive)
+    // 1. Try Local Storage if enabled for user
+    const localFileUploadEnabled = user.localFileUploadEnabled !== undefined ? user.localFileUploadEnabled : false;
+    
+    if (localFileUploadEnabled) {
+      try {
+        console.log('📤 Uploading to Local Disk');
+        const result = await localStorageService.uploadFile(req.file.buffer, req.file.originalname);
+        
+        console.log(`✅ File stored on Local Disk: ${result.fileName}`);
+
+        const newFile = new FileModel({
+          owner: user._id,
+          name: req.file.originalname,
+          storageMethod: 'local_disk',
+          localPath: result.filePath,
+          url: result.url, // Relative URL for public access
+          downloadUrl: `/api/v1/files/${result.fileName}`, // Placeholder or actual download route
+          type: req.file.mimetype,
+          size: result.size || req.file.size,
+          uploadedAt: new Date(),
+        });
+
+        const savedFile = await newFile.save();
+        
+        // Update download URL with the real ID
+        savedFile.downloadUrl = `/api/v1/files/${savedFile._id}`;
+        await savedFile.save();
+
+        return res.status(200).json({
+          success: true,
+          message: "File uploaded successfully to local storage",
+          data: savedFile,
+        });
+      } catch (localError) {
+        logger.logError(localError, req, {
+          controller: 'fileController',
+          function: 'uploadFile',
+          resourceType: 'file',
+          level: 'error',
+          context: { userId: req?.user?._id, fileName: req.file?.originalname, storage: 'local' }
+        });
+        // Fallback to Google Drive if local fails and Drive is connected
+        if (!user.googleDriveConnected) {
+          return res.status(500).json({
+            success: false,
+            message: "Failed to upload to local storage: " + localError.message,
+          });
+        }
+        console.log('⚠️ Local upload failed, falling back to Google Drive');
+      }
+    }
+
+    // 2. Upload to Google Drive using OAuth (user's Drive)
     try {
+      if (!user.googleDriveConnected) {
+        return res.status(403).json({
+          success: false,
+          message: "Google Drive is not connected and local upload is disabled.",
+        });
+      }
+
       console.log('📤 Uploading to Google Drive (OAuth)');
       
       // Get user's folder name (default: "CodeShare-Uploads")
@@ -190,7 +253,7 @@ exports.uploadFile = async (req, res) => {
 
       res.status(200).json({
         success: true,
-        message: "File uploaded successfully",
+        message: "File uploaded successfully to Google Drive",
         data: savedFile,
       });
     } catch (driveError) {
@@ -251,8 +314,48 @@ exports.downloadFile = async (req, res) => {
       });
     }
 
+    // Check storage method
+    if (file.storageMethod === 'local_disk') {
+      try {
+        console.log('📥 Downloading from Local Disk');
+        
+        if (!file.localPath || !fs.existsSync(file.localPath)) {
+          return res.status(404).json({
+            success: false,
+            message: "Local file not found on disk",
+          });
+        }
+
+        // Set response headers
+        const isPreview = req.query.preview === 'true';
+        const disposition = isPreview ? 'inline' : 'attachment';
+        
+        res.setHeader('Content-Type', file.type || 'application/octet-stream');
+        res.setHeader('Content-Disposition', `${disposition}; filename="${file.name}"`);
+        
+        // Stream file to client
+        const fileStream = fs.createReadStream(file.localPath);
+        fileStream.pipe(res);
+        
+        console.log('✅ File streamed from Local Disk');
+        return;
+      } catch (localError) {
+        logger.logError(localError, req, {
+          controller: 'fileController',
+          function: 'downloadFile',
+          resourceType: 'file',
+          resourceId: fileId,
+          context: { userId: req?.user?._id, storage: 'local' }
+        });
+        return res.status(500).json({
+          success: false,
+          message: "Failed to download from local storage: " + localError.message,
+        });
+      }
+    }
+
     // Check if file has Google Drive ID
-    if (!file.googleDriveFileId) {
+    if (!file.googleDriveFileId && file.storageMethod === 'google_drive') {
       return res.status(400).json({
         success: false,
         message: "File is not stored in Google Drive",
@@ -265,9 +368,12 @@ exports.downloadFile = async (req, res) => {
       
       const stream = await googleDriveService.downloadFile(file.googleDriveFileId, user._id.toString());
       
+      const isPreview = req.query.preview === 'true';
+      const disposition = isPreview ? 'inline' : 'attachment';
+
       // Set response headers
       res.setHeader('Content-Type', file.type || 'application/octet-stream');
-      res.setHeader('Content-Disposition', `attachment; filename="${file.name}"`);
+      res.setHeader('Content-Disposition', `${disposition}; filename="${file.name}"`);
       res.setHeader('Cache-Control', 'private, max-age=3600');
 
       // Stream file to client
@@ -334,8 +440,26 @@ exports.deleteFile = async (req, res) => {
       });
     }
 
+    // Delete from Local Disk
+    if (file.storageMethod === 'local_disk' && file.localPath) {
+      try {
+        console.log('🗑️ Deleting from Local Disk');
+        await localStorageService.deleteFile(file.localPath);
+        console.log('✅ File deleted from Local Disk');
+      } catch (localError) {
+        logger.logError(localError, req, {
+          controller: 'fileController',
+          function: 'deleteFile',
+          resourceType: 'file',
+          resourceId: fileId,
+          level: 'warning',
+          context: { userId: req?.user?._id, storage: 'local' }
+        });
+      }
+    }
+
     // Delete from Google Drive using OAuth (user's Drive)
-    if (file.googleDriveFileId) {
+    if (file.storageMethod === 'google_drive' && file.googleDriveFileId) {
       try {
         console.log('🗑️ Deleting from Google Drive (OAuth)');
         await googleDriveService.deleteFile(file.googleDriveFileId, user._id.toString());

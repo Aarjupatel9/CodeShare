@@ -22,10 +22,16 @@ import {
   pinnedIcon,
   editIcon,
   fileIcon
-} from '../../../assets/svgs';
+} from '../../../assets/svgs'
 import { getPresizeFileName, generateRandomString } from '../../../common/functions';
 import useClickOutside from '../../../hooks/useClickOutside';
 import toast from 'react-hot-toast';
+
+const isPreviewable = (fileName) => {
+  if (!fileName) return false;
+  const ext = fileName.split('.').pop().toLowerCase();
+  return ['jpg', 'jpeg', 'png', 'gif', 'svg', 'pdf', 'html', 'md', 'txt', 'js', 'css', 'json'].includes(ext);
+};
 
 /**
  * EditorSidebar - Pages/Files sidebar for logged users
@@ -41,6 +47,7 @@ const EditorSidebar = ({
   onPageRemove,
   onSelectFile,
   onFileRemove,
+  onFilePreview,
   privateFileList,
   onPageRename,
   onPageReorder,
@@ -310,6 +317,14 @@ const EditorSidebar = ({
                           >
                             Download
                           </a>
+                          {isPreviewable(file.name) && (
+                            <button
+                              onClick={() => onFilePreview(file)}
+                              className="flex-1 px-3 py-1.5 text-xs bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 font-medium transition"
+                            >
+                              Preview
+                            </button>
+                          )}
                           <button
                             onClick={() => onFileRemove(file)}
                             className="px-3 py-1.5 text-xs bg-red-50 text-red-600 rounded-md hover:bg-red-100 font-medium transition"

@@ -28,6 +28,12 @@ import { getPresizeFileName, generateRandomString } from '../../../common/functi
 import useClickOutside from '../../../hooks/useClickOutside';
 import toast from 'react-hot-toast';
 
+const isPreviewable = (fileName) => {
+  if (!fileName) return false;
+  const ext = fileName.split('.').pop().toLowerCase();
+  return ['jpg', 'jpeg', 'png', 'gif', 'svg', 'pdf', 'html', 'md', 'txt', 'js', 'css', 'json'].includes(ext);
+};
+
 /**
  * MobileMenu - Mobile dropdown menu (hamburger)
  * Shows pages/files navigation on mobile devices
@@ -43,6 +49,7 @@ const MobileMenu = ({
   onPageRemove,
   onSelectFile,
   onFileRemove,
+  onFilePreview,
   privateFileList,
   onPageRename,
   onPageReorder,
@@ -358,6 +365,17 @@ const MobileMenu = ({
                               >
                                 Download
                               </a>
+                              {isPreviewable(file.name) && (
+                                <button
+                                  onClick={() => {
+                                    onFilePreview(file);
+                                    onToggle(); // Close menu
+                                  }}
+                                  className="flex-1 px-3 py-2 text-xs bg-blue-50 text-blue-600 rounded-md font-medium"
+                                >
+                                  Preview
+                                </button>
+                              )}
                               <button
                                 onClick={() => onFileRemove(file)}
                                 className="px-3 py-2 text-xs bg-red-50 text-red-600 rounded-md font-medium"

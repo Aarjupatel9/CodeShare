@@ -37,6 +37,7 @@ import FloatingHint from "./components/editor/FloatingHint";
 import FeatureModal from "./components/editor/FeatureModal";
 import RedirectUrlInput from "./components/editor/RedirectUrlInput";
 import InputModal from "../components/modals/InputModal";
+import FilePreviewModal from "./components/editor/FilePreviewModal";
 
 export default function MainPage(props) {
   const { currUser, setCurrUser } = useContext(UserContext);
@@ -83,6 +84,7 @@ export default function MainPage(props) {
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [renamePageId, setRenamePageId] = useState(null);
   const [saveModalType, setSaveModalType] = useState(null); // 'public' or 'new'
+  const [previewFile, setPreviewFile] = useState(null);
 
   // Note: Auth checking and userId validation now handled by PrivateRoute component
   
@@ -912,6 +914,7 @@ export default function MainPage(props) {
             onPagePinToggle={handlePagePinToggle}
             onSelectFile={onSelectFile}
             onFileRemove={confirmFileRemove}
+            onFilePreview={(file) => setPreviewFile(file)}
             privateFileList={privateFileList}
             // Public user URL input props
             tmpSlug={tmpSlug}
@@ -937,6 +940,7 @@ export default function MainPage(props) {
             onPagePinToggle={handlePagePinToggle}
             onSelectFile={onSelectFile}
             onFileRemove={confirmFileRemove}
+            onFilePreview={(file) => setPreviewFile(file)}
             privateFileList={privateFileList}
           />
         )}
@@ -1138,6 +1142,14 @@ export default function MainPage(props) {
         submitButtonText="Rename"
         validateInput={validateRenameInput}
       />
+
+      {/* File Preview Modal */}
+      {previewFile && (
+        <FilePreviewModal 
+          file={previewFile} 
+          onClose={() => setPreviewFile(null)} 
+        />
+      )}
     </div>
   );
 }

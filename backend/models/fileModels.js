@@ -19,10 +19,10 @@ const fileSchema = new mongoose.Schema({
         required: true,
         index: true, // Index for search by name
     },
-    // Storage method: 'google_drive' (primary), 'mongodb' (for future)
+    // Storage method: 'google_drive' (primary), 'mongodb' (for future), 'local_disk'
     storageMethod: {
         type: String,
-        enum: ['google_drive', 'mongodb'],
+        enum: ['google_drive', 'mongodb', 'local_disk'],
         default: 'google_drive',
         required: true,
     },
@@ -39,6 +39,11 @@ const fileSchema = new mongoose.Schema({
     url: {
         type: String, // View link
         required: false,
+    },
+    // Local storage fields
+    localPath: {
+        type: String,
+        required: function() { return this.storageMethod === 'local_disk'; },
     },
     // MongoDB GridFS fields (for future)
     gridfsId: {
