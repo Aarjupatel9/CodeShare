@@ -962,139 +962,84 @@ export default function MainPage(props) {
             />
           )}
 
-          {/* Page title and version - LOGGED USERS */}
-          {currUser && (
-            <div className="flex flex-row gap-3 items-center justify-between px-4 py-3 border-b border-gray-200 flex-shrink-0">
-              <div className="flex items-center gap-3 flex-1">
-                <div className="relative inline-block" ref={versionHistoryRef}>
-                  <button
-                    onClick={() => {
-                      getAllversionData(true);
-                      setDropdownVisibility(() => {
-                        var val = structuredClone(dropdownVisibility);
-                        val.history = !val.history;
-                        val.file = false;
-                        val.profile = false;
-                        return val;
-                      });
-                    }}
-                    type="button"
-                    className="gap-3 flex items-center bg-gray-100 hover:bg-gray-200 px-4 py-2 transition rounded-lg text-sm font-medium text-gray-900"
-                  >
-                    <span className="capitalize">📄 {latestVersion.timeformate ? userSlug : "New page"}</span>
-                    <span className="text-gray-500" title="Click to show page versions">
-                      {downArrowIcon}
-                    </span>
-                  </button>
+          {/* Toolbar: page title (left) + version picker + Save (right) */}
+          {(currUser || latestVersion.timeformate) && (
+            <div className="flex flex-row items-center justify-between gap-3 px-4 py-2.5 border-b border-gray-200 bg-white flex-shrink-0">
+              {/* Left: page label */}
+              <span className="text-sm font-medium text-gray-600 capitalize truncate max-w-[40%]">
+                📄 {latestVersion.timeformate ? userSlug : "New page"}
+              </span>
+
+              {/* Right: version picker + Save */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+
+                {/* Version picker (shown when document has at least one saved version) */}
+                {latestVersion.timeformate && (
+                  <div className="relative" ref={versionHistoryRef}>
+                    <button
+                      onClick={() => {
+                        getAllversionData(true);
+                        setDropdownVisibility(() => {
+                          var val = structuredClone(dropdownVisibility);
+                          val.history = !val.history;
+                          val.file = false;
+                          val.profile = false;
+                          return val;
+                        });
+                      }}
+                      type="button"
+                      className="gap-2 flex items-center bg-gray-100 hover:bg-gray-200 px-3 py-1.5 transition rounded-lg text-sm font-medium text-gray-700"
+                      title="View version history"
+                    >
+                      <span>🕐</span>
+                      <span className="hidden sm:inline">History</span>
+                      <span className="text-gray-500">{downArrowIcon}</span>
+                    </button>
 
                     {dropdownVisibility.history && allVersionData.length > 0 && (
                       <div
-                        className="absolute left-0 z-10 mt-2 min-w-[240px] max-w-[300px] max-h-96 overflow-auto p-1 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                        className="absolute right-0 z-10 mt-2 w-max max-h-96 overflow-auto p-1 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5"
                         role="menu"
-                        aria-orientation="vertical"
-                        aria-labelledby="menu-button"
                       >
-                        <ul
-                          className="py-2 text-sm text-gray-700 dark:text-gray-200 "
-                          aria-labelledby="dropdownDefaultButton"
-                        >
-                          {allVersionData.map((v, index) => {
-                            return (
-                              <li
-                                key={index}
-                                className="flex px-1 items-center justify-end min-w-[250px] max-w-[380px]"
+                        <ul className="py-1 text-sm text-gray-700">
+                          {allVersionData.map((v, index) => (
+                            <li
+                              key={index}
+                              className="flex items-center px-1 whitespace-nowrap"
+                            >
+                              <div className="w-5 flex-shrink-0" title="Current / loaded version">
+                                {v.isCurrent && currentVersionIcon(v)}
+                                {v.isLoaded && !v.isCurrent && versionIndicatorIcon}
+                              </div>
+                              <div
+                                title="Click to load this version"
+                                onClick={() => loadSpecificVersion(v.time, index)}
+                                className="flex-1 cursor-pointer px-2 py-1.5 hover:bg-gray-100 rounded"
                               >
-                                <div
-                                  className="min-w-[20px] max-w-[30px]"
-                                  title="Current version"
-                                >
-                                  {v.isCurrent && currentVersionIcon(v)}
-                                  {v.isLoaded && !v.isCurrent && versionIndicatorIcon}
-                                </div>
-                                <div
-                                  title="Click to load this version"
-                                  onClick={() => {
-                                    loadSpecificVersion(v.time, index);
-                                  }}
-                                  className="min-w-[230px] max-w-[350px] version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                                >
-                                  Version - {v.timeformat}
-                                </div>
-                              </li>
-                            );
-                          })}
+                                Version - {v.timeformat}
+                              </div>
+                            </li>
+                          ))}
                         </ul>
                       </div>
                     )}
                   </div>
-              </div>
-              
-              <button
-                type="button"
-                onClick={(e) => saveData()}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition shadow-sm flex items-center gap-2"
-              >
-                <span>💾</span>
-                <span className="hidden sm:inline">Save</span>
-              </button>
-            </div>
-          )}
-
-          {/* Version history bar - PUBLIC users (read-only, no Save button) */}
-          {!currUser && latestVersion.timeformate && (
-            <div className="flex items-center gap-3 px-4 py-2 border-b border-gray-200 bg-gray-50 flex-shrink-0">
-              <div className="relative inline-block" ref={versionHistoryRef}>
-                <button
-                  onClick={() => {
-                    getAllversionData(true);
-                    setDropdownVisibility(() => {
-                      var val = structuredClone(dropdownVisibility);
-                      val.history = !val.history;
-                      val.file = false;
-                      val.profile = false;
-                      return val;
-                    });
-                  }}
-                  type="button"
-                  className="gap-2 flex items-center bg-white border border-gray-200 hover:bg-gray-50 px-3 py-1.5 transition rounded-lg text-sm font-medium text-gray-700 shadow-sm"
-                  title="View previous versions of this document"
-                >
-                  <span>🕐</span>
-                  <span>Version history</span>
-                  <span className="text-gray-400">{downArrowIcon}</span>
-                </button>
-
-                {dropdownVisibility.history && allVersionData.length > 0 && (
-                  <div
-                    className="absolute left-0 z-10 mt-2 min-w-[240px] max-w-[300px] max-h-96 overflow-auto p-1 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5"
-                    role="menu"
-                  >
-                    <ul className="py-2 text-sm text-gray-700">
-                      {allVersionData.map((v, index) => (
-                        <li
-                          key={index}
-                          className="flex px-1 items-center min-w-[250px]"
-                        >
-                          <div className="min-w-[20px] max-w-[30px]" title="Current version">
-                            {v.isCurrent && currentVersionIcon(v)}
-                            {v.isLoaded && !v.isCurrent && versionIndicatorIcon}
-                          </div>
-                          <div
-                            title="Click to load this version"
-                            onClick={() => loadSpecificVersion(v.time, index)}
-                            className="flex-1 version-text cursor-pointer px-2 py-1 hover:bg-gray-100 rounded"
-                          >
-                            Version - {v.timeformat}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
                 )}
+
+                {/* Save — all users */}
+                <button
+                  type="button"
+                  onClick={() => saveData()}
+                  className="px-5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition shadow-sm flex items-center gap-2"
+                >
+                  <span>💾</span>
+                  <span className="hidden sm:inline">Save</span>
+                </button>
               </div>
-              <span className="text-xs text-gray-400 hidden sm:inline">Read-only · {userSlug}</span>
             </div>
           )}
+
+
 
           {/* Editor */}
           <div className="tinymce-parent flex-1 overflow-hidden">
