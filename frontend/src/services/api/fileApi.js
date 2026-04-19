@@ -103,6 +103,21 @@ class FileApi {
   }
 
   /**
+   * Update file content (local_disk text-based files only)
+   * @param {string} fileId - MongoDB file ID
+   * @param {string} content - New text content
+   */
+  async updateFileContent(fileId, content) {
+    try {
+      const response = await apiClient.put(`/api/v1/files/${fileId}/content`, { content });
+      return response;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+
+  /**
    * Handle API errors
    */
   handleError(error) {

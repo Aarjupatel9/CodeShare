@@ -26,6 +26,7 @@ import {
 import { getPresizeFileName, generateRandomString } from '../../../common/functions';
 import useClickOutside from '../../../hooks/useClickOutside';
 import useConfig from '../../../hooks/useConfig';
+import { isEditable } from './FileEditModal';
 import toast from 'react-hot-toast';
 
 const isPreviewable = (fileName) => {
@@ -49,6 +50,7 @@ const EditorSidebar = ({
   onSelectFile,
   onFileRemove,
   onFilePreview,
+  onFileEdit,
   privateFileList,
   onPageRename,
   onPageReorder,
@@ -321,7 +323,7 @@ const EditorSidebar = ({
                             {file.name ? getPresizeFileName(file.name) : "file"}
                           </span>
                         </div>
-                        <div className="flex gap-2 pt-2 border-t border-gray-100">
+                        <div className="flex gap-2 pt-2 border-t border-gray-100 flex-wrap">
                           <a
                             href={getFullUrl(file.downloadUrl || (file._id ? `/api/v1/files/${file._id}` : file.url))}
                             target="_blank"
@@ -337,6 +339,14 @@ const EditorSidebar = ({
                               className="flex-1 px-3 py-1.5 text-xs bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 font-medium transition"
                             >
                               Preview
+                            </button>
+                          )}
+                          {file.storageMethod === 'local_disk' && isEditable(file.name) && (
+                            <button
+                              onClick={() => onFileEdit(file)}
+                              className="flex-1 px-3 py-1.5 text-xs bg-violet-50 text-violet-600 rounded-md hover:bg-violet-100 font-medium transition"
+                            >
+                              Edit
                             </button>
                           )}
                           <button

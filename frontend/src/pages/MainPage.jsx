@@ -38,6 +38,7 @@ import FeatureModal from "./components/editor/FeatureModal";
 import RedirectUrlInput from "./components/editor/RedirectUrlInput";
 import InputModal from "../components/modals/InputModal";
 import FilePreviewModal from "./components/editor/FilePreviewModal";
+import FileEditModal from "./components/editor/FileEditModal";
 
 export default function MainPage(props) {
   const { currUser, setCurrUser } = useContext(UserContext);
@@ -85,6 +86,7 @@ export default function MainPage(props) {
   const [renamePageId, setRenamePageId] = useState(null);
   const [saveModalType, setSaveModalType] = useState(null); // 'public' or 'new'
   const [previewFile, setPreviewFile] = useState(null);
+  const [editFile, setEditFile] = useState(null);
 
   // Note: Auth checking and userId validation now handled by PrivateRoute component
   
@@ -913,8 +915,9 @@ export default function MainPage(props) {
             onPageReorder={handlePageReorder}
             onPagePinToggle={handlePagePinToggle}
             onSelectFile={onSelectFile}
-            onFileRemove={confirmFileRemove}
+             onFileRemove={confirmFileRemove}
             onFilePreview={(file) => setPreviewFile(file)}
+            onFileEdit={(file) => setEditFile(file)}
             privateFileList={privateFileList}
             // Public user URL input props
             tmpSlug={tmpSlug}
@@ -941,6 +944,7 @@ export default function MainPage(props) {
             onSelectFile={onSelectFile}
             onFileRemove={confirmFileRemove}
             onFilePreview={(file) => setPreviewFile(file)}
+            onFileEdit={(file) => setEditFile(file)}
             privateFileList={privateFileList}
           />
         )}
@@ -1148,6 +1152,20 @@ export default function MainPage(props) {
         <FilePreviewModal 
           file={previewFile} 
           onClose={() => setPreviewFile(null)} 
+        />
+      )}
+
+      {/* File Edit Modal */}
+      {editFile && (
+        <FileEditModal
+          file={editFile}
+          onClose={() => setEditFile(null)}
+          onSaved={(updatedFile) => {
+            // Refresh size in the file list so UI stays in sync
+            setPrivateFileList((prev) =>
+              prev.map((f) => f._id === updatedFile._id ? { ...f, size: updatedFile.size } : f)
+            );
+          }}
         />
       )}
     </div>

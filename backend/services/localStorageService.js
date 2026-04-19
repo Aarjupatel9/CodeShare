@@ -1,39 +1,51 @@
 const fs = require('fs');
 const path = require('path');
+const logger = require('../utils/loggerUtility');
 
 class LocalStorageService {
     constructor() {
-        this.primaryPath = '/home/ubuntu/Auction/backend/public/uploads/codeshare';
+        // Prefer an environment variable so path is not hardcoded per machine.
+        // Falls back to the legacy absolute path for backward compatibility.
+        this.primaryPath = process.env.LOCAL_UPLOAD_PATH || '/home/ubuntu/Auction/backend/public/uploads/codeshare';
         this.fallbackPath = path.join(__dirname, '../public/uploads/codeshare');
+        this._resolvedUploadPath = null; // Lazy, cached after first resolution
     }
 
     /**
-     * Get the appropriate upload path based on availability
-     * @returns {string} The path to use for uploads
+     * Get the appropriate upload path based on availability.
+     * Resolves once and caches the result. Does NOT throw at module-load time.
+     * @returns {string} The absolute path to use for uploads
      */
     getUploadPath() {
+        if (this._resolvedUploadPath) {
+            return this._resolvedUploadPath;
+        }
+
+        // Try primary path
         try {
-            // Check if we are on a system where the primary path is viable
-            // We check the base path '/home/ubuntu' to avoid creating deep directories on incompatible systems
-            if (fs.existsSync('/home/ubuntu')) {
+            const primaryBase = path.dirname(this.primaryPath).split(path.sep)[1]; // e.g. 'home'
+            if (fs.existsSync('/' + primaryBase)) {
                 if (!fs.existsSync(this.primaryPath)) {
                     fs.mkdirSync(this.primaryPath, { recursive: true });
                 }
-                return this.primaryPath;
+                this._resolvedUploadPath = this.primaryPath;
+                return this._resolvedUploadPath;
             }
         } catch (err) {
-            console.error('LocalStorageService: Error checking primary path:', err);
+            console.error('LocalStorageService: Error checking primary path:', err.message);
         }
 
-        // Fallback to project relative path
+        // Fall back to project-relative path
         try {
             if (!fs.existsSync(this.fallbackPath)) {
                 fs.mkdirSync(this.fallbackPath, { recursive: true });
             }
-            return this.fallbackPath;
+            this._resolvedUploadPath = this.fallbackPath;
+            return this._resolvedUploadPath;
         } catch (err) {
-            console.error('LocalStorageService: Error creating fallback path:', err);
-            throw new Error('Failed to initialize local storage path');
+            // Do not crash the process — defer error to upload time
+            console.error('LocalStorageService: Error creating fallback path:', err.message);
+            throw new Error('Failed to initialize local storage path: ' + err.message);
         }
     }
 
@@ -49,10 +61,9 @@ class LocalStorageService {
             const uniqueName = `${Date.now()}_${fileName.replace(/\s+/g, '-')}`;
             const filePath = path.join(uploadDir, uniqueName);
 
-            fs.writeFileSync(filePath, fileBuffer);
+            // Async write — does not block the event loop
+            await fs.promises.writeFile(filePath, fileBuffer);
 
-            // Calculate relative URL for preview/access
-            // The 'public' directory is served at root
             const url = `/uploads/codeshare/${uniqueName}`;
 
             return {
@@ -62,7 +73,7 @@ class LocalStorageService {
                 size: fileBuffer.length
             };
         } catch (error) {
-            console.error('LocalStorageService: Upload error:', error);
+            console.error('LocalStorageService: Upload error:', error.message);
             throw error;
         }
     }
@@ -75,12 +86,12 @@ class LocalStorageService {
     async deleteFile(filePath) {
         try {
             if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
+                await fs.promises.unlink(filePath);
                 return true;
             }
             return false;
         } catch (error) {
-            console.error('LocalStorageService: Delete error:', error);
+            console.error('LocalStorageService: Delete error:', error.message);
             return false;
         }
     }

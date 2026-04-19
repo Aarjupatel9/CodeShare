@@ -34,25 +34,28 @@ const FilePreviewModal = ({ file, onClose }) => {
 
   useEffect(() => {
     const isTextBased = ['html', 'md', 'txt', 'js', 'css', 'json'].includes(fileExt);
-    
-    if (isTextBased && downloadUrl && !configLoading) {
-      fetchContent();
-    }
-  }, [file, downloadUrl, configLoading]);
+    if (!isTextBased || !downloadUrl || configLoading) return;
 
-  const fetchContent = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const text = await fileApi.getFileContent(downloadUrl);
-      setContent(text);
-    } catch (err) {
-      console.error('FilePreviewModal: Error fetching file content:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    let cancelled = false;
+
+    const fetchContent = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const text = await fileApi.getFileContent(downloadUrl);
+        if (!cancelled) setContent(text);
+      } catch (err) {
+        console.error('FilePreviewModal: Error fetching file content:', err);
+        if (!cancelled) setError(err.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchContent();
+
+    return () => { cancelled = true; };
+  }, [file, fileExt, downloadUrl, configLoading]);
 
   const renderPreview = () => {
     if (loading) {
@@ -115,6 +118,7 @@ const FilePreviewModal = ({ file, onClose }) => {
             title={file.name}
             className="w-full h-full"
             frameBorder="0"
+            sandbox="allow-same-origin"
           />
         </div>
       );
@@ -184,7 +188,16 @@ const FilePreviewModal = ({ file, onClose }) => {
         {/* Modal Footer */}
         <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
           <a
-            href={downloadUrl.replace('preview=true', 'download=true')}
+            href={(() => {
+              try {
+                const u = new URL(downloadUrl);
+                u.searchParams.set('preview', 'false');
+                u.searchParams.set('download', 'true');
+                return u.toString();
+              } catch {
+                return downloadUrl;
+              }
+            })()}
             target="_blank"
             download={file.name}
             rel="noreferrer"

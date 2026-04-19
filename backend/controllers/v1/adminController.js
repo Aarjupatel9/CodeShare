@@ -708,7 +708,7 @@ exports.getOverviewStats = async (req, res) => {
       ActivityLog.distinct('userId', { action: 'login', createdAt: { $gte: last7d } }),
       ActivityLog.distinct('userId', { action: 'login', createdAt: { $gte: last30d } }),
       DataModel.countDocuments({ isDeleted: { $ne: true } }),
-      FileModel.countDocuments({ isDeleted: false }),
+      FileModel.countDocuments({ isDeleted: { $ne: true } }),
       UserModel.countDocuments({ createdAt: { $gte: last24h } }),
       UserModel.countDocuments({ createdAt: { $gte: last7d } }),
       UserModel.countDocuments({ createdAt: { $gte: last30d } })

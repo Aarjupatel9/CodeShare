@@ -14,7 +14,7 @@ module.exports = () => {
                     token = req.headers.authorization;
                 }
             }
-            if (!req.cookies.token && req.body && req.body.isPublic) {
+            if (!token && req.body && req.body.isPublic) {
                 const data = {
                     _id: '',
                     username: 'username',

@@ -27,6 +27,7 @@ import {
 import { getPresizeFileName, generateRandomString } from '../../../common/functions';
 import useClickOutside from '../../../hooks/useClickOutside';
 import useConfig from '../../../hooks/useConfig';
+import { isEditable } from './FileEditModal';
 import toast from 'react-hot-toast';
 
 const isPreviewable = (fileName) => {
@@ -51,6 +52,7 @@ const MobileMenu = ({
   onSelectFile,
   onFileRemove,
   onFilePreview,
+  onFileEdit,
   privateFileList,
   onPageRename,
   onPageReorder,
@@ -383,11 +385,22 @@ const MobileMenu = ({
                                 <button
                                   onClick={() => {
                                     onFilePreview(file);
-                                    onToggle(); // Close menu
+                                    onToggle();
                                   }}
                                   className="flex-1 px-3 py-2 text-xs bg-blue-50 text-blue-600 rounded-md font-medium"
                                 >
                                   Preview
+                                </button>
+                              )}
+                              {file.storageMethod === 'local_disk' && isEditable(file.name) && (
+                                <button
+                                  onClick={() => {
+                                    onFileEdit(file);
+                                    onToggle();
+                                  }}
+                                  className="flex-1 px-3 py-2 text-xs bg-violet-50 text-violet-600 rounded-md font-medium"
+                                >
+                                  Edit
                                 </button>
                               )}
                               <button
