@@ -2,6 +2,7 @@ const UserModel = require("../../models/userModels");
 const DataModel = require("../../models/dataModels");
 const ActivityLog = require("../../models/activityLogModel");
 const AdminSettings = require("../../models/adminModels");
+const FileModel = require("../../models/fileModels");
 const logger = require("../../utils/loggerUtility");
 
 /**
@@ -181,7 +182,7 @@ exports.getUserDetails = async (req, res) => {
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { username, email, role, isActive, isVerified, fileUploadEnabled, fileSizeLimit } = req.body;
+    const { username, email, role, isActive, isVerified, fileUploadEnabled, fileSizeLimit, localFileUploadEnabled } = req.body;
 
     // Prevent admin from removing their own admin role
     if (req.admin._id.toString() === id && role && role !== 'admin') {
@@ -201,6 +202,9 @@ exports.updateUser = async (req, res) => {
     // File upload settings
     if (typeof fileUploadEnabled === 'boolean') {
       updateData.fileUploadEnabled = fileUploadEnabled;
+    }
+    if (typeof localFileUploadEnabled === 'boolean') {
+      updateData.localFileUploadEnabled = localFileUploadEnabled;
     }
     if (fileSizeLimit !== undefined && fileSizeLimit !== null) {
       // Validate file size limit (should be in bytes, min 0.1MB, max 100MB)
@@ -704,11 +708,7 @@ exports.getOverviewStats = async (req, res) => {
       ActivityLog.distinct('userId', { action: 'login', createdAt: { $gte: last7d } }),
       ActivityLog.distinct('userId', { action: 'login', createdAt: { $gte: last30d } }),
       DataModel.countDocuments({ isDeleted: { $ne: true } }),
-      DataModel.aggregate([
-        { $match: { isDeleted: { $ne: true } } },
-        { $unwind: { path: '$files', preserveNullAndEmptyArrays: true } },
-        { $count: 'total' }
-      ]).then(result => result[0]?.total || 0).catch(() => 0),
+      FileModel.countDocuments({ isDeleted: { $ne: true } }),
       UserModel.countDocuments({ createdAt: { $gte: last24h } }),
       UserModel.countDocuments({ createdAt: { $gte: last7d } }),
       UserModel.countDocuments({ createdAt: { $gte: last30d } })
@@ -731,7 +731,7 @@ exports.getOverviewStats = async (req, res) => {
           total: totalDocuments
         },
         files: {
-          total: totalFiles[0]?.total || 0
+          total: totalFiles
         },
       }
     });

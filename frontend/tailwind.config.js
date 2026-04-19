@@ -2,7 +2,10 @@ module.exports = {
     content: [
         './src/**/*.{js,jsx,ts,tsx,css}',
     ],
-    plugins: [require('flowbite/plugin')],
+    plugins: [
+        require('flowbite/plugin'),
+        require('@tailwindcss/typography'),
+    ],
     theme: {
       screens: {
         sm: '300px',

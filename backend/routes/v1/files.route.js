@@ -8,6 +8,7 @@ const {
     deleteFile, 
     getFiles,
     validateFile,
+    updateFileContent,
 } = require("../../controllers/v1/fileController");
 const multer = require("multer");
 
@@ -25,7 +26,8 @@ router.use(authenticateUser());
 // File management (independent from documents)
 router.get("/", activityLogger('file_get', 'file'), getFiles); // Get all files for user
 router.post("/", validateFile, memoryStorage.single("file"), activityLogger('file_upload', 'file'), uploadFile); // Upload file (no document required)
-router.get("/:fileId", activityLogger('file_download', 'file'), downloadFile); // Download file
+router.get("/:fileId", activityLogger('file_download', 'file'), downloadFile); // Download / stream file
+router.put("/:fileId/content", activityLogger('file_edit', 'file'), updateFileContent); // Update file content (local_disk text files)
 router.delete("/:fileId", activityLogger('file_delete', 'file'), deleteFile); // Delete file
 
 module.exports = router;

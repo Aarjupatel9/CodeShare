@@ -37,6 +37,8 @@ import FloatingHint from "./components/editor/FloatingHint";
 import FeatureModal from "./components/editor/FeatureModal";
 import RedirectUrlInput from "./components/editor/RedirectUrlInput";
 import InputModal from "../components/modals/InputModal";
+import FilePreviewModal from "./components/editor/FilePreviewModal";
+import FileEditModal from "./components/editor/FileEditModal";
 
 export default function MainPage(props) {
   const { currUser, setCurrUser } = useContext(UserContext);
@@ -83,6 +85,8 @@ export default function MainPage(props) {
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [renamePageId, setRenamePageId] = useState(null);
   const [saveModalType, setSaveModalType] = useState(null); // 'public' or 'new'
+  const [previewFile, setPreviewFile] = useState(null);
+  const [editFile, setEditFile] = useState(null);
 
   // Note: Auth checking and userId validation now handled by PrivateRoute component
   
@@ -911,7 +915,9 @@ export default function MainPage(props) {
             onPageReorder={handlePageReorder}
             onPagePinToggle={handlePagePinToggle}
             onSelectFile={onSelectFile}
-            onFileRemove={confirmFileRemove}
+             onFileRemove={confirmFileRemove}
+            onFilePreview={(file) => setPreviewFile(file)}
+            onFileEdit={(file) => setEditFile(file)}
             privateFileList={privateFileList}
             // Public user URL input props
             tmpSlug={tmpSlug}
@@ -937,6 +943,8 @@ export default function MainPage(props) {
             onPagePinToggle={handlePagePinToggle}
             onSelectFile={onSelectFile}
             onFileRemove={confirmFileRemove}
+            onFilePreview={(file) => setPreviewFile(file)}
+            onFileEdit={(file) => setEditFile(file)}
             privateFileList={privateFileList}
           />
         )}
@@ -954,83 +962,84 @@ export default function MainPage(props) {
             />
           )}
 
-          {/* Page title and version - LOGGED USERS ONLY */}
-          {currUser && (
-            <div className="flex flex-row gap-3 items-center justify-between px-4 py-3 border-b border-gray-200 flex-shrink-0">
-              <div className="flex items-center gap-3 flex-1">
-                <div className="relative inline-block" ref={versionHistoryRef}>
-                  <button
-                    onClick={() => {
-                      getAllversionData(true);
-                      setDropdownVisibility(() => {
-                        var val = structuredClone(dropdownVisibility);
-                        val.history = !val.history;
-                        val.file = false;
-                        val.profile = false;
-                        return val;
-                      });
-                    }}
-                    type="button"
-                    className="gap-3 flex items-center bg-gray-100 hover:bg-gray-200 px-4 py-2 transition rounded-lg text-sm font-medium text-gray-900"
-                  >
-                    <span className="capitalize">📄 {latestVersion.timeformate ? userSlug : "New page"}</span>
-                    <span className="text-gray-500" title="Click to show page versions">
-                      {downArrowIcon}
-                    </span>
-                  </button>
+          {/* Toolbar: page title (left) + version picker + Save (right) */}
+          {(currUser || latestVersion.timeformate) && (
+            <div className="flex flex-row items-center justify-between gap-3 px-4 py-2.5 border-b border-gray-200 bg-white flex-shrink-0">
+              {/* Left: page label */}
+              <span className="text-sm font-medium text-gray-600 capitalize truncate max-w-[40%]">
+                📄 {latestVersion.timeformate ? userSlug : "New page"}
+              </span>
+
+              {/* Right: version picker + Save */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+
+                {/* Version picker (shown when document has at least one saved version) */}
+                {latestVersion.timeformate && (
+                  <div className="relative" ref={versionHistoryRef}>
+                    <button
+                      onClick={() => {
+                        getAllversionData(true);
+                        setDropdownVisibility(() => {
+                          var val = structuredClone(dropdownVisibility);
+                          val.history = !val.history;
+                          val.file = false;
+                          val.profile = false;
+                          return val;
+                        });
+                      }}
+                      type="button"
+                      className="gap-2 flex items-center bg-gray-100 hover:bg-gray-200 px-3 py-1.5 transition rounded-lg text-sm font-medium text-gray-700"
+                      title="View version history"
+                    >
+                      <span>🕐</span>
+                      <span className="hidden sm:inline">History</span>
+                      <span className="text-gray-500">{downArrowIcon}</span>
+                    </button>
 
                     {dropdownVisibility.history && allVersionData.length > 0 && (
                       <div
-                        className="absolute left-0 z-10 mt-2 min-w-[240px] max-w-[300px] max-h-96 overflow-auto p-1 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                        className="absolute right-0 z-10 mt-2 w-max max-h-96 overflow-auto p-1 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5"
                         role="menu"
-                        aria-orientation="vertical"
-                        aria-labelledby="menu-button"
                       >
-                        <ul
-                          className="py-2 text-sm text-gray-700 dark:text-gray-200 "
-                          aria-labelledby="dropdownDefaultButton"
-                        >
-                          {allVersionData.map((v, index) => {
-                            return (
-                              <li
-                                key={index}
-                                className="flex px-1 items-center justify-end min-w-[250px] max-w-[380px]"
+                        <ul className="py-1 text-sm text-gray-700">
+                          {allVersionData.map((v, index) => (
+                            <li
+                              key={index}
+                              className="flex items-center px-1 whitespace-nowrap"
+                            >
+                              <div className="w-5 flex-shrink-0" title="Current / loaded version">
+                                {v.isCurrent && currentVersionIcon(v)}
+                                {v.isLoaded && !v.isCurrent && versionIndicatorIcon}
+                              </div>
+                              <div
+                                title="Click to load this version"
+                                onClick={() => loadSpecificVersion(v.time, index)}
+                                className="flex-1 cursor-pointer px-2 py-1.5 hover:bg-gray-100 rounded"
                               >
-                                <div
-                                  className="min-w-[20px] max-w-[30px]"
-                                  title="Current version"
-                                >
-                                  {v.isCurrent && currentVersionIcon(v)}
-                                  {v.isLoaded && !v.isCurrent && versionIndicatorIcon}
-                                </div>
-                                <div
-                                  title="Click to load this version"
-                                  onClick={() => {
-                                    loadSpecificVersion(v.time, index);
-                                  }}
-                                  className="min-w-[230px] max-w-[350px] version-text text-justify cursor-pointer block gap-1 px-2 py-1 border-1 border-black-100 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                                >
-                                  Version - {v.timeformat}
-                                </div>
-                              </li>
-                            );
-                          })}
+                                Version - {v.timeformat}
+                              </div>
+                            </li>
+                          ))}
                         </ul>
                       </div>
                     )}
                   </div>
+                )}
+
+                {/* Save — all users */}
+                <button
+                  type="button"
+                  onClick={() => saveData()}
+                  className="px-5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition shadow-sm flex items-center gap-2"
+                >
+                  <span>💾</span>
+                  <span className="hidden sm:inline">Save</span>
+                </button>
               </div>
-              
-              <button
-                type="button"
-                onClick={(e) => saveData()}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition shadow-sm flex items-center gap-2"
-              >
-                <span>💾</span>
-                <span className="hidden sm:inline">Save</span>
-              </button>
             </div>
           )}
+
+
 
           {/* Editor */}
           <div className="tinymce-parent flex-1 overflow-hidden">
@@ -1138,6 +1147,28 @@ export default function MainPage(props) {
         submitButtonText="Rename"
         validateInput={validateRenameInput}
       />
+
+      {/* File Preview Modal */}
+      {previewFile && (
+        <FilePreviewModal 
+          file={previewFile} 
+          onClose={() => setPreviewFile(null)} 
+        />
+      )}
+
+      {/* File Edit Modal */}
+      {editFile && (
+        <FileEditModal
+          file={editFile}
+          onClose={() => setEditFile(null)}
+          onSaved={(updatedFile) => {
+            // Refresh size in the file list so UI stays in sync
+            setPrivateFileList((prev) =>
+              prev.map((f) => f._id === updatedFile._id ? { ...f, size: updatedFile.size } : f)
+            );
+          }}
+        />
+      )}
     </div>
   );
 }

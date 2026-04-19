@@ -6,3 +6,4 @@ yarn.lock
 
 # custom folder/files
 ui-prototypes
+backend/public/uploads/
