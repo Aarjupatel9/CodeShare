@@ -962,7 +962,7 @@ export default function MainPage(props) {
             />
           )}
 
-          {/* Page title and version - LOGGED USERS ONLY */}
+          {/* Page title and version - LOGGED USERS */}
           {currUser && (
             <div className="flex flex-row gap-3 items-center justify-between px-4 py-3 border-b border-gray-200 flex-shrink-0">
               <div className="flex items-center gap-3 flex-1">
@@ -1037,6 +1037,62 @@ export default function MainPage(props) {
                 <span>💾</span>
                 <span className="hidden sm:inline">Save</span>
               </button>
+            </div>
+          )}
+
+          {/* Version history bar - PUBLIC users (read-only, no Save button) */}
+          {!currUser && latestVersion.timeformate && (
+            <div className="flex items-center gap-3 px-4 py-2 border-b border-gray-200 bg-gray-50 flex-shrink-0">
+              <div className="relative inline-block" ref={versionHistoryRef}>
+                <button
+                  onClick={() => {
+                    getAllversionData(true);
+                    setDropdownVisibility(() => {
+                      var val = structuredClone(dropdownVisibility);
+                      val.history = !val.history;
+                      val.file = false;
+                      val.profile = false;
+                      return val;
+                    });
+                  }}
+                  type="button"
+                  className="gap-2 flex items-center bg-white border border-gray-200 hover:bg-gray-50 px-3 py-1.5 transition rounded-lg text-sm font-medium text-gray-700 shadow-sm"
+                  title="View previous versions of this document"
+                >
+                  <span>🕐</span>
+                  <span>Version history</span>
+                  <span className="text-gray-400">{downArrowIcon}</span>
+                </button>
+
+                {dropdownVisibility.history && allVersionData.length > 0 && (
+                  <div
+                    className="absolute left-0 z-10 mt-2 min-w-[240px] max-w-[300px] max-h-96 overflow-auto p-1 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5"
+                    role="menu"
+                  >
+                    <ul className="py-2 text-sm text-gray-700">
+                      {allVersionData.map((v, index) => (
+                        <li
+                          key={index}
+                          className="flex px-1 items-center min-w-[250px]"
+                        >
+                          <div className="min-w-[20px] max-w-[30px]" title="Current version">
+                            {v.isCurrent && currentVersionIcon(v)}
+                            {v.isLoaded && !v.isCurrent && versionIndicatorIcon}
+                          </div>
+                          <div
+                            title="Click to load this version"
+                            onClick={() => loadSpecificVersion(v.time, index)}
+                            className="flex-1 version-text cursor-pointer px-2 py-1 hover:bg-gray-100 rounded"
+                          >
+                            Version - {v.timeformat}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+              <span className="text-xs text-gray-400 hidden sm:inline">Read-only · {userSlug}</span>
             </div>
           )}
 
