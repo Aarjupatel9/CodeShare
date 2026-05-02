@@ -11,6 +11,7 @@ var bodyParser = require("body-parser");
 // Legacy routes
 const userRoute = require('../routes/userRoute');
 const authRoute = require('../routes/authRoute');
+const counterRoute = require('../routes/counterRoutes');
 
 // New API v1 routes
 const v1Routes = require('../routes/v1');
@@ -79,6 +80,7 @@ app.use("/api/v1", v1Routes);
 // Legacy routes (for backward compatibility)
 app.use("/api/data", userRoute);
 app.use("/api/auth", authRoute);
+app.use("/api/counter", counterRoute);
 
 app.get('*', (req, res) => {
     return res.status(404).json({ message: 'Content not found' });
