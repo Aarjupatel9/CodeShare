@@ -15,8 +15,8 @@ exports.syncData = async (req, res) => {
             // Strict Deep Validation to prevent data loss
             const serverData = counter.data || {};
             const localData = data || {};
-            
-            // O(1) Fast-Fail: If local grand_total is strictly less than server's, 
+
+            // O(1) Fast-Fail: If local grand_total is strictly less than server's,
             // it's mathematically impossible for local to have all the server's data.
             const serverGrandTotal = serverData.grand_total || 0;
             const localGrandTotal = localData.grand_total || 0;
@@ -63,6 +63,55 @@ exports.syncData = async (req, res) => {
             context: { userId: req.user?._id }
         });
         res.status(500).json({ message: "Error syncing data", success: false, error: error.message });
+    }
+};
+
+exports.getConflicts = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { data } = req.body;
+
+        if (!data) {
+            return res.status(400).json({ message: "No local data provided", success: false });
+        }
+
+        const counter = await Counter.findOne({ userId });
+        if (!counter) {
+            return res.status(404).json({ message: "No counter data found", success: false });
+        }
+
+        const serverDaily = (counter.data && counter.data.daily_counts) || {};
+        const localDaily = (data && data.daily_counts) || {};
+
+        const conflicts = [];
+
+        for (const date of Object.keys(serverDaily)) {
+            const serverCategories = serverDaily[date] || {};
+            const localCategories = localDaily[date] || {};
+
+            for (const category of Object.keys(serverCategories)) {
+                const serverCount = serverCategories[category] || 0;
+                const localCount = localCategories[category] || 0;
+
+                if (serverCount > localCount) {
+                    conflicts.push({ date, category, serverCount, localCount });
+                }
+            }
+        }
+
+        res.status(200).json({
+            success: true,
+            conflicts,
+            serverData: counter.data,
+        });
+    } catch (error) {
+        logger.logError(error, req, {
+            controller: 'counterController',
+            function: 'getConflicts',
+            resourceType: 'counter',
+            context: { userId: req.user?._id }
+        });
+        res.status(500).json({ message: "Error fetching conflicts", success: false, error: error.message });
     }
 };
 
